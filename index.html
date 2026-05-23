@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shiba | Portfolio</title>
+  <meta name="description" content="Osobné portfolio - projekty, skills a kontakt." />
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background: radial-gradient(circle at top, #1f2937, #020617 60%);
+      color: white;
+      min-height: 100vh;
+    }
+
+    nav {
+      width: 100%;
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 100;
+      background: rgba(2, 6, 23, 0.75);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .nav-container {
+      max-width: 1100px;
+      margin: auto;
+      padding: 18px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      font-size: 22px;
+      font-weight: bold;
+      color: #38bdf8;
+    }
+
+    .nav-links a {
+      color: #cbd5e1;
+      text-decoration: none;
+      margin-left: 22px;
+      font-size: 15px;
+      transition: 0.2s;
+    }
+
+    .nav-links a:hover {
+      color: #38bdf8;
+    }
+
+    section {
+      max-width: 1100px;
+      margin: auto;
+      padding: 90px 24px;
+    }
+
+    .hero {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      align-items: center;
+      gap: 40px;
+      padding-top: 120px;
+    }
+
+    .badge {
+      display: inline-block;
+      background: rgba(56, 189, 248, 0.12);
+      color: #7dd3fc;
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+
+    .hero h1 {
+      font-size: clamp(42px, 7vw, 74px);
+      line-height: 1.05;
+      margin-bottom: 20px;
+    }
+
+    .hero h1 span {
+      color: #38bdf8;
+    }
+
+    .hero p {
+      color: #cbd5e1;
+      font-size: 18px;
+      line-height: 1.7;
+      max-width: 620px;
+      margin-bottom: 30px;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 13px 20px;
+      border-radius: 14px;
+      text-decoration: none;
+      font-weight: bold;
+      transition: 0.2s;
+    }
+
+    .btn-primary {
+      background: #38bdf8;
+      color: #020617;
+    }
+
+    .btn-primary:hover {
+      background: #7dd3fc;
+      transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: white;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .btn-secondary:hover {
+      border-color: #38bdf8;
+      transform: translateY(-2px);
+    }
+
+    .profile-card {
+      background: linear-gradient(145deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.75));
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 30px;
+      padding: 28px;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
+      text-align: center;
+    }
+
+    .avatar {
+      width: 145px;
+      height: 145px;
+      margin: 0 auto 22px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #38bdf8, #a855f7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 55px;
+      font-weight: bold;
+    }
+
+    .profile-card h2 {
+      margin-bottom: 10px;
+      font-size: 26px;
+    }
+
+    .profile-card p {
+      color: #cbd5e1;
+      margin-bottom: 18px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .stat {
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 18px;
+      padding: 14px;
+    }
+
+    .stat strong {
+      display: block;
+      color: #38bdf8;
+      font-size: 22px;
+    }
+
+    .section-title {
+      font-size: 36px;
+      margin-bottom: 14px;
+      text-align: center;
+    }
+
+    .section-text {
+      color: #cbd5e1;
+      text-align: center;
+      max-width: 700px;
+      margin: 0 auto 42px;
+      line-height: 1.7;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 22px;
+    }
+
+    .card {
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 24px;
+      padding: 24px;
+      transition: 0.25s;
+    }
+
+    .card:hover {
+      transform: translateY(-6px);
+      border-color: rgba(56, 189, 248, 0.5);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+    }
+
+    .card h3 {
+      color: #7dd3fc;
+      margin-bottom: 12px;
+      font-size: 22px;
+    }
+
+    .card p {
+      color: #cbd5e1;
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+
+    .tag {
+      display: inline-block;
+      margin: 4px 4px 0 0;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(56, 189, 248, 0.12);
+      color: #bae6fd;
+      font-size: 13px;
+    }
+
+    .skills {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .skill {
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 12px 16px;
+      border-radius: 14px;
+      color: #e2e8f0;
+    }
+
+    .contact-box {
+      background: linear-gradient(145deg, rgba(56, 189, 248, 0.12), rgba(168, 85, 247, 0.12));
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 28px;
+      padding: 34px;
+      text-align: center;
+    }
+
+    .contact-box p {
+      color: #cbd5e1;
+      margin: 14px 0 24px;
+      line-height: 1.7;
+    }
+
+    footer {
+      text-align: center;
+      padding: 28px;
+      color: #94a3b8;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    @media (max-width: 850px) {
+      .hero {
+        grid-template-columns: 1fr;
+        text-align: center;
+      }
+
+      .hero p {
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      .buttons {
+        justify-content: center;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .nav-links {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="nav-container">
+      <div class="logo">TvojeMeno.dev</div>
+      <div class="nav-links">
+        <a href="#about">O mne</a>
+        <a href="#projects">Projekty</a>
+        <a href="#skills">Skills</a>
+        <a href="#contact">Kontakt</a>
+      </div>
+    </div>
+  </nav>
+
+  <section class="hero" id="about">
+    <div>
+      <span class="badge">Developer • Roblox • Web • Minecraft</span>
+      <h1>Ahoj, som <span>Shiba</span>.</h1>
+      <p>
+        Tvorím weby, Roblox systémy, herné projekty a experimentujem s technológiami.
+        Toto je moje osobné portfolio pre moje projekty, nápady a kontakty.
+      </p>
+      <div class="buttons">
+        <a href="#projects" class="btn btn-primary">Pozrieť projekty</a>
+        <a href="#contact" class="btn btn-secondary">Kontaktovať ma</a>
+      </div>
+    </div>
+
+    <div class="profile-card">
+      <div class="avatar">TM</div>
+      <h2>Shiba</h2>
+      <p>Game & Web Developer</p>
+      <div class="stats">
+        <div class="stat"><strong>5+</strong><span>Projektov</span></div>
+        <div class="stat"><strong>HTML</strong><span>Web</span></div>
+        <div class="stat"><strong>Lua</strong><span>Roblox</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="projects">
+    <h2 class="section-title">Moje projekty</h2>
+    <p class="section-text">
+      Tu si môžeš dať svoje najlepšie projekty. Názvy, popisy a odkazy si vieš jednoducho prepísať.
+    </p>
+
+    <div class="grid">
+      <div class="card">
+        <h3>Escape the Shiba's Facility</h3>
+        <p>Roblox hororová hra s round systémom, shibou, survivorami, útekmi a croissant menou.</p>
+        <span class="tag">Roblox</span>
+        <span class="tag">Lua</span>
+        <span class="tag">Game Dev</span>
+      </div>
+
+      <div class="card">
+        <h3>Minecraft Server</h3>
+        <p>Server s pluginmi, permission systémom, mapou, anti-cheatom a vlastnými nastaveniami.</p>
+        <span class="tag">Minecraft</span>
+        <span class="tag">Plugins</span>
+        <span class="tag">Server</span>
+      </div>
+
+      <div class="card">
+        <h3>Osobná stránka</h3>
+        <p>Moderné portfolio hostované cez GitHub Pages a pripojené na is-a.dev subdoménu.</p>
+        <span class="tag">HTML</span>
+        <span class="tag">CSS</span>
+        <span class="tag">GitHub</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="skills">
+    <h2 class="section-title">Čo viem</h2>
+    <p class="section-text">
+      Sem si môžeš doplniť technológie, ktoré používaš alebo sa ich učíš.
+    </p>
+
+    <div class="skills">
+      <div class="skill">HTML</div>
+      <div class="skill">CSS</div>
+      <div class="skill">JavaScript</div>
+      <div class="skill">Roblox Lua</div>
+      <div class="skill">GitHub</div>
+      <div class="skill">Minecraft servery</div>
+      <div class="skill">Windows</div>
+      <div class="skill">Networking</div>
+    </div>
+  </section>
+
+  <section id="contact">
+    <div class="contact-box">
+      <h2 class="section-title">Kontakt</h2>
+      <p>
+        Chceš ma kontaktovať alebo pozrieť moje projekty? Tu si pridaj svoje odkazy.
+      </p>
+      <div class="buttons" style="justify-content: center;">
+        <a href="mailto:holani2@zsuskalite.sk" class="btn btn-primary">Email</a>
+        <a href="https://github.com/tvojgithub" target="_blank" class="btn btn-secondary">GitHub</a>
+        <a href="https://discord.com" target="_blank" class="btn btn-secondary">Discord</a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    © 2026 Shiba. Všetky práva vyhradené.
+  </footer>
+</body>
+</html>
