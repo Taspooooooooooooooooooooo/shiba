@@ -1,1 +1,179 @@
-html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>LAPD Internal Management System</title>
+
+    <link rel="stylesheet" href="css/login.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+</head>
+
+<body>
+
+<!-- ================= BOOT SCREEN ================= -->
+
+<div id="bootScreen">
+
+    <div class="bootLogo">
+        LAPD
+    </div>
+
+    <div class="bootTitle">
+
+        Los Angeles Police Department
+
+    </div>
+
+    <div class="bootSubtitle">
+
+        Internal Management System
+
+    </div>
+
+    <div class="bootVersion">
+
+        Build v1.0.0
+
+    </div>
+
+    <div class="bootLoading">
+
+        <div class="loadingBar">
+
+            <div id="loadingFill"></div>
+
+        </div>
+
+    </div>
+
+    <div id="bootStatus">
+
+        Initializing...
+
+    </div>
+
+</div>
+
+<!-- ================= LOGIN ================= -->
+
+<div id="loginContainer" class="hidden">
+
+    <div class="loginCard">
+
+        <div class="loginLogo">
+
+            LAPD
+
+        </div>
+
+        <h1>
+
+            Welcome Back
+
+        </h1>
+
+        <p>
+
+            Please sign in to continue.
+
+        </p>
+
+        <input
+        id="username"
+        type="text"
+        placeholder="Username">
+
+        <input
+        id="password"
+        type="password"
+        placeholder="Password">
+
+        <button id="loginButton">
+
+            SIGN IN
+
+        </button>
+
+    </div>
+
+</div>
+
+<!-- ================= PIN WINDOW ================= -->
+
+<div id="pinContainer" class="hidden">
+
+    <div class="pinCard">
+
+        <h2>
+
+            Two-Factor Authentication
+
+        </h2>
+
+        <p>
+
+            Enter your security PIN.
+
+        </p>
+
+        <input
+        id="pin"
+        type="password"
+        maxlength="4"
+        placeholder="PIN">
+
+        <button id="verifyButton">
+
+            VERIFY
+
+        </button>
+
+    </div>
+
+</div>
+
+<!-- ================= LOADING ================= -->
+
+<div id="loadingOverlay" class="hidden">
+
+    <div class="spinner"></div>
+
+    <h2>
+
+        Authenticating...
+
+    </h2>
+
+</div>
+
+<!-- ================= TOAST ================= -->
+
+<div id="toast">
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+<script src="js/supabase.js"></script>
+
+<script src="js/session.js"></script>
+
+<script src="js/login.js"></script>
+
+<script>
+
+lucide.createIcons();
+
+</script>
+
+</body>
+</html>
