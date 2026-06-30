@@ -31,6 +31,13 @@
                  background: #6fae6f; color: #07130a; font-size: 15px; font-weight: 650; cursor: pointer; }
   #gate button:hover { background: #7dbd7d; }
   #gate .err { color: #ff8a8a; font-size: 13px; min-height: 18px; margin-top: 10px; }
+  #gate .mstat { font-size: 12.5px; color: #cfe0dd; margin: 14px 0 2px; }
+  #gate .mstat b { font-weight: 650; color: #eef4f3; }
+  #gate .badge { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 11.5px;
+                 font-weight: 650; vertical-align: middle; margin-left: 4px; }
+  #gate .badge.checking { background: rgba(255,255,255,0.10); color: #cfe0dd; }
+  #gate .badge.found    { background: rgba(111,174,111,0.18); color: #8fd98f; }
+  #gate .badge.missing  { background: rgba(255,107,107,0.18); color: #ff9b9b; }
   .shake { animation: shake 0.35s; }
   @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-7px)}
                      40%,80%{transform:translateX(7px)} }
@@ -107,6 +114,7 @@
     <div class="card">
       <h2>Protected model</h2>
       <p class="sub">Enter the password to view</p>
+      <p class="mstat">Model: <b id="mname">—</b> <span id="mbadge" class="badge checking">Checking…</span></p>
       <input id="pw" type="password" placeholder="Password" autocomplete="off" autocapitalize="off" spellcheck="false">
       <button id="pwBtn">Unlock</button>
       <p id="pwErr" class="err"></p>
@@ -179,6 +187,37 @@
   }
   function setToastDetail(el, text) { const s = el && el.querySelector('.tx span'); if (s) s.textContent = text; }
 
+  // ---------- PROJECT REGISTRY ----------
+  const PROJECTS = {
+    MainProject01: { title: "A-Frame Cabin", file: "MainProject01" }
+  };
+  function getProjectId() {
+    const raw = location.search.replace(/^\?/, '');
+    if (!raw) return 'MainProject01';
+    if (raw.includes('=')) {
+      const p = new URLSearchParams(location.search);
+      return p.get('project') || p.get('model') || 'MainProject01';
+    }
+    return decodeURIComponent(raw);
+  }
+
+  // ---------- LOCK-SCREEN MODEL PREFLIGHT ----------
+  // Checks whether the model file exists and shows it on the lock screen,
+  // before the password is entered. The lock screen can only confirm the file
+  // is FOUND on the server (not that it rendered), so it reads "Found".
+  (function preflightModel() {
+    const id = getProjectId();
+    const cfg = PROJECTS[id] || PROJECTS.MainProject01;
+    const base = cfg.file || id;
+    const nameEl = document.getElementById('mname');
+    const badge = document.getElementById('mbadge');
+    if (nameEl) nameEl.textContent = '"' + id + '"';
+    function set(state, text) { if (badge) { badge.className = 'badge ' + state; badge.textContent = text; } }
+    fetch('./' + base + '.obj', { method: 'HEAD', cache: 'no-store' })
+      .then((r) => set(r.ok ? 'found' : 'missing', r.ok ? 'Found' : 'Not found'))
+      .catch(() => set('missing', 'Not found'));
+  })();
+
   // ---------- PASSWORD GATE (soft client-side gate, not strong security) ----------
   // SHA-256 of your password. Current password: "zahradka1234".
   const PASSWORD_HASH = "daf74d0a31d0093afa4899b3f0764a4db9b45e4386c5c99bbc536987ccdc41ca";
@@ -210,20 +249,6 @@
   document.getElementById('pwBtn').addEventListener('click', tryUnlock);
   pwInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') tryUnlock(); });
   pwInput.focus();
-
-  // ---------- PROJECT REGISTRY ----------
-  const PROJECTS = {
-    MainProject01: { title: "A-Frame Cabin", file: "MainProject01" }
-  };
-  function getProjectId() {
-    const raw = location.search.replace(/^\?/, '');
-    if (!raw) return 'MainProject01';
-    if (raw.includes('=')) {
-      const p = new URLSearchParams(location.search);
-      return p.get('project') || p.get('model') || 'MainProject01';
-    }
-    return decodeURIComponent(raw);
-  }
 
   // ---------- VIEWER ----------
   function buildViewer() {
