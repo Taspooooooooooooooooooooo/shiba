@@ -13,7 +13,6 @@
   canvas { display: block; }
   button { font-family: inherit; }
 
-  /* --- Password gate --- */
   #gate { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center;
           background: radial-gradient(circle at 50% 30%, #14242b, #0b1418);
           transition: opacity 0.5s ease; }
@@ -42,7 +41,6 @@
   @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-7px)}
                      40%,80%{transform:translateX(7px)} }
 
-  /* --- Toast notifications (pop-out) --- */
   #toasts { position: fixed; top: 14px; left: 50%; transform: translateX(-50%);
             display: flex; flex-direction: column; gap: 10px; z-index: 30;
             width: min(92vw, 420px); pointer-events: none; }
@@ -60,9 +58,7 @@
   .toast.info    { border-left-color: #5aa6d6; }
   .toast .ic { flex: 0 0 20px; width: 20px; height: 20px; margin-top: 1px; }
   .toast .ic svg { width: 100%; height: 100%; display: block; }
-  .toast.error .ic   { color: #ff6b6b; }
-  .toast.success .ic { color: #6fae6f; }
-  .toast.info .ic    { color: #5aa6d6; }
+  .toast.error .ic { color: #ff6b6b; } .toast.success .ic { color: #6fae6f; } .toast.info .ic { color: #5aa6d6; }
   .toast .tx { flex: 1; font-size: 13px; line-height: 1.45; }
   .toast .tx b { display: block; font-weight: 650; font-size: 13.5px; margin-bottom: 1px; }
   .toast .tx span { opacity: 0.78; }
@@ -70,7 +66,6 @@
               color: #9fb6b2; font-size: 15px; line-height: 1; padding: 2px 4px; }
   .toast .x:hover { color: #fff; }
 
-  /* --- Overlay info --- */
   #info { position: fixed; left: 16px; bottom: 16px; max-width: 70vw; padding: 12px 16px;
           border-radius: 14px; background: rgba(10,20,24,0.55); backdrop-filter: blur(8px);
           -webkit-backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.12);
@@ -78,7 +73,6 @@
   #info h1 { font-size: clamp(15px,2.6vw,20px); font-weight: 650; }
   #info p  { font-size: clamp(11px,1.9vw,13px); opacity: 0.78; margin-top: 3px; }
 
-  /* --- Viewer control buttons (top-right) --- */
   #vcontrols { position: fixed; top: 16px; right: 16px; z-index: 4;
                display: flex; flex-direction: column; gap: 8px; }
   #vcontrols button { width: 44px; height: 44px; display: grid; place-items: center;
@@ -90,7 +84,6 @@
   #vcontrols button.active { background: #6fae6f; color: #07130a; }
   #vcontrols svg { width: 20px; height: 20px; }
 
-  /* --- Transform toolbar (bottom) --- */
   #tools { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
            display: flex; gap: 8px; padding: 6px; border-radius: 999px;
            background: rgba(10,20,24,0.55); backdrop-filter: blur(8px);
@@ -143,6 +136,99 @@
     <button data-mode="reset">Reset</button>
   </div>
 
+  <!-- ================================================================== -->
+  <!-- SIMPLE LOGIN + UI  (plain script: works everywhere, no dependencies) -->
+  <!-- ================================================================== -->
+  <script>
+    // ---- the password (plain and simple; just for you and your friend) ----
+    var PASSWORD = "zahradka1234";
+
+    // ---- project registry: URL ?MainProject01 -> loads MainProject01.obj ----
+    window.PROJECTS = { MainProject01: { title: "A-Frame Cabin", file: "MainProject01" } };
+    window.getProjectId = function () {
+      var raw = location.search.replace(/^\?/, '');
+      if (!raw) return 'MainProject01';
+      if (raw.indexOf('=') !== -1) {
+        var p = new URLSearchParams(location.search);
+        return p.get('project') || p.get('model') || 'MainProject01';
+      }
+      return decodeURIComponent(raw);
+    };
+
+    // ---- toast notifications (shared with the 3D code via window) ----
+    var ICONS = {
+      error:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+      success: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+      info:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>'
+    };
+    window.dismissToast = function (el) { el.classList.remove('show'); setTimeout(function () { el.remove(); }, 340); };
+    window.toast = function (title, detail, type, sticky) {
+      type = type || 'info';
+      var wrap = document.getElementById('toasts');
+      var el = document.createElement('div');
+      el.className = 'toast ' + type;
+      el.innerHTML = '<span class="ic">' + (ICONS[type] || ICONS.info) + '</span><div class="tx"><b></b><span></span></div>';
+      el.querySelector('b').textContent = title;
+      var sp = el.querySelector('span');
+      if (detail) sp.textContent = detail; else sp.remove();
+      if (sticky || type === 'error') {
+        var x = document.createElement('button');
+        x.className = 'x'; x.textContent = '\u2715'; x.setAttribute('aria-label', 'Dismiss');
+        x.addEventListener('click', function () { window.dismissToast(el); });
+        el.appendChild(x);
+      }
+      wrap.appendChild(el);
+      requestAnimationFrame(function () { el.classList.add('show'); });
+      if (!sticky && type !== 'error') setTimeout(function () { window.dismissToast(el); }, 3200);
+      return el;
+    };
+    window.setToastDetail = function (el, text) { var s = el && el.querySelector('.tx span'); if (s) s.textContent = text; };
+
+    // ---- lock-screen preflight: does the model file exist? ----
+    (function () {
+      var id = window.getProjectId();
+      var cfg = window.PROJECTS[id] || window.PROJECTS.MainProject01;
+      var base = cfg.file || id;
+      var nameEl = document.getElementById('mname');
+      var badge = document.getElementById('mbadge');
+      if (nameEl) nameEl.textContent = '"' + id + '"';
+      function set(state, text) { if (badge) { badge.className = 'badge ' + state; badge.textContent = text; } }
+      try {
+        fetch('./' + base + '.obj', { method: 'HEAD', cache: 'no-store' })
+          .then(function (r) { set(r.ok ? 'found' : 'missing', r.ok ? 'Found' : 'Not found'); })
+          .catch(function () { set('missing', 'Not found'); });
+      } catch (e) { set('missing', 'Not found'); }
+    })();
+
+    // ---- the login itself: plain comparison, instant, works in any context ----
+    (function () {
+      var gate = document.getElementById('gate');
+      var pwInput = document.getElementById('pw');
+      var pwErr = document.getElementById('pwErr');
+      var unlocked = false;
+      function tryUnlock() {
+        if (unlocked) return;
+        if (pwInput.value.trim() === PASSWORD) {
+          unlocked = true;
+          window.__unlocked = true;
+          gate.classList.add('hide');
+          setTimeout(function () { gate.remove(); }, 500);
+          window.toast('Unlocked', 'Loading your model…', 'success');
+          if (window.__startViewer) window.__startViewer();   // start 3D if it is ready
+        } else {
+          pwErr.textContent = 'Incorrect password';
+          var card = gate.querySelector('.card');
+          card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
+          pwInput.select();
+          window.toast('Wrong password', 'Check it and try again.', 'error');
+        }
+      }
+      document.getElementById('pwBtn').addEventListener('click', tryUnlock);
+      pwInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') tryUnlock(); });
+      pwInput.focus();
+    })();
+  </script>
+
   <script type="importmap">
   {
     "imports": {
@@ -152,6 +238,9 @@
   }
   </script>
 
+  <!-- ================================================================== -->
+  <!-- 3D VIEWER  (loads Three.js; runs only after a correct password)     -->
+  <!-- ================================================================== -->
   <script type="module">
   import * as THREE from 'three';
   import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
@@ -159,99 +248,10 @@
   import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
   import { MTLLoader } from 'three/addons/loaders/MTLLoader.js';
 
-  // ---------- TOAST SYSTEM ----------
-  const ICONS = {
-    error:   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
-    success: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`,
-    info:    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`
-  };
-  function dismissToast(el) { el.classList.remove('show'); setTimeout(() => el.remove(), 340); }
-  function toast(title, detail, type = 'info', sticky = false) {
-    const wrap = document.getElementById('toasts');
-    const el = document.createElement('div');
-    el.className = 'toast ' + type;
-    el.innerHTML = `<span class="ic">${ICONS[type] || ICONS.info}</span><div class="tx"><b></b><span></span></div>`;
-    el.querySelector('b').textContent = title;
-    const sp = el.querySelector('span');
-    if (detail) sp.textContent = detail; else sp.remove();
-    if (sticky || type === 'error') {
-      const x = document.createElement('button');
-      x.className = 'x'; x.textContent = '\u2715'; x.setAttribute('aria-label', 'Dismiss');
-      x.addEventListener('click', () => dismissToast(el));
-      el.appendChild(x);
-    }
-    wrap.appendChild(el);
-    requestAnimationFrame(() => el.classList.add('show'));
-    if (!sticky && type !== 'error') setTimeout(() => dismissToast(el), 3200);
-    return el;
-  }
-  function setToastDetail(el, text) { const s = el && el.querySelector('.tx span'); if (s) s.textContent = text; }
-
-  // ---------- PROJECT REGISTRY ----------
-  const PROJECTS = {
-    MainProject01: { title: "A-Frame Cabin", file: "MainProject01" }
-  };
-  function getProjectId() {
-    const raw = location.search.replace(/^\?/, '');
-    if (!raw) return 'MainProject01';
-    if (raw.includes('=')) {
-      const p = new URLSearchParams(location.search);
-      return p.get('project') || p.get('model') || 'MainProject01';
-    }
-    return decodeURIComponent(raw);
-  }
-
-  // ---------- LOCK-SCREEN MODEL PREFLIGHT ----------
-  // Checks whether the model file exists and shows it on the lock screen,
-  // before the password is entered. The lock screen can only confirm the file
-  // is FOUND on the server (not that it rendered), so it reads "Found".
-  (function preflightModel() {
-    const id = getProjectId();
-    const cfg = PROJECTS[id] || PROJECTS.MainProject01;
-    const base = cfg.file || id;
-    const nameEl = document.getElementById('mname');
-    const badge = document.getElementById('mbadge');
-    if (nameEl) nameEl.textContent = '"' + id + '"';
-    function set(state, text) { if (badge) { badge.className = 'badge ' + state; badge.textContent = text; } }
-    fetch('./' + base + '.obj', { method: 'HEAD', cache: 'no-store' })
-      .then((r) => set(r.ok ? 'found' : 'missing', r.ok ? 'Found' : 'Not found'))
-      .catch(() => set('missing', 'Not found'));
-  })();
-
-  // ---------- PASSWORD GATE (soft client-side gate, not strong security) ----------
-  // SHA-256 of your password. Current password: "zahradka1234".
-  const PASSWORD_HASH = "daf74d0a31d0093afa4899b3f0764a4db9b45e4386c5c99bbc536987ccdc41ca";
-  async function sha256Hex(str) {
-    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-    return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
-  }
-  const gate = document.getElementById('gate');
-  const pwInput = document.getElementById('pw');
-  const pwErr = document.getElementById('pwErr');
-  let unlocked = false;
-  async function tryUnlock() {
-    if (unlocked) return;
-    if (!pwInput.value) return;
-    if (await sha256Hex(pwInput.value) === PASSWORD_HASH) {
-      unlocked = true;
-      gate.classList.add('hide');
-      setTimeout(() => gate.remove(), 500);
-      toast('Unlocked', 'Loading your model…', 'success');
-      buildViewer();
-    } else {
-      pwErr.textContent = 'Incorrect password';
-      const card = gate.querySelector('.card');
-      card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
-      pwInput.select();
-      toast('Wrong password', 'Check it and try again.', 'error');
-    }
-  }
-  document.getElementById('pwBtn').addEventListener('click', tryUnlock);
-  pwInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') tryUnlock(); });
-  pwInput.focus();
-
-  // ---------- VIEWER ----------
   function buildViewer() {
+    const PROJECTS = window.PROJECTS, getProjectId = window.getProjectId;
+    const toast = window.toast, dismissToast = window.dismissToast, setToastDetail = window.setToastDetail;
+
     const cfg = PROJECTS[getProjectId()] || PROJECTS.MainProject01;
     const base = cfg.file || getProjectId();
     const SKY = 0x9ec4dc;
@@ -284,8 +284,7 @@
     sun.position.set(20, 30, 16); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
     scene.add(sun);
 
-    const ground = new THREE.Mesh(
-      new THREE.CircleGeometry(400, 48),
+    const ground = new THREE.Mesh(new THREE.CircleGeometry(400, 48),
       new THREE.MeshStandardMaterial({ color: 0x3f5a2e, roughness: 1 }));
     ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true;
     scene.add(ground);
@@ -299,40 +298,29 @@
     function setMode(mode) {
       controls.autoRotate = false;
       if (!model) return;
-      if (mode === 'reset') {
-        model.position.copy(home.pos); model.rotation.copy(home.rot); model.scale.copy(home.scl);
-        return;
-      }
+      if (mode === 'reset') { model.position.copy(home.pos); model.rotation.copy(home.rot); model.scale.copy(home.scl); return; }
       gizmo.setMode(mode);
-      document.querySelectorAll('#tools button').forEach((b) =>
-        b.classList.toggle('active', b.dataset.mode === mode));
+      document.querySelectorAll('#tools button').forEach((b) => b.classList.toggle('active', b.dataset.mode === mode));
     }
-    document.querySelectorAll('#tools button').forEach((b) =>
-      b.addEventListener('click', () => setMode(b.dataset.mode)));
+    document.querySelectorAll('#tools button').forEach((b) => b.addEventListener('click', () => setMode(b.dataset.mode)));
     window.addEventListener('keydown', (e) => {
       const k = e.key.toLowerCase();
-      if (k === 'w') setMode('translate');
-      else if (k === 'e') setMode('rotate');
-      else if (k === 'r') setMode('scale');
+      if (k === 'w') setMode('translate'); else if (k === 'e') setMode('rotate'); else if (k === 'r') setMode('scale');
     });
 
-    // Viewer controls
     document.getElementById('btnReset').addEventListener('click', () => {
       if (camHome) { camera.position.copy(camHome.pos); controls.target.copy(camHome.target); }
       if (model && home) { model.position.copy(home.pos); model.rotation.copy(home.rot); model.scale.copy(home.scl); }
-      controls.autoRotate = false;
-      toast('View reset', null, 'info');
+      controls.autoRotate = false; toast('View reset', null, 'info');
     });
     document.getElementById('btnWire').addEventListener('click', (e) => {
       wire = !wire;
-      if (model) model.traverse((c) => {
-        if (c.isMesh) (Array.isArray(c.material) ? c.material : [c.material]).forEach((m) => { if (m) m.wireframe = wire; });
-      });
+      if (model) model.traverse((c) => { if (c.isMesh) (Array.isArray(c.material) ? c.material : [c.material]).forEach((m) => { if (m) m.wireframe = wire; }); });
       e.currentTarget.classList.toggle('active', wire);
     });
-    document.getElementById('btnFull').addEventListener('click', (e) => {
-      if (!document.fullscreenElement) { (document.documentElement.requestFullscreen || (() => {})).call(document.documentElement); }
-      else { (document.exitFullscreen || (() => {})).call(document); }
+    document.getElementById('btnFull').addEventListener('click', () => {
+      if (!document.fullscreenElement) { if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen(); }
+      else { if (document.exitFullscreen) document.exitFullscreen(); }
     });
     document.addEventListener('fullscreenchange', () => {
       document.getElementById('btnFull').classList.toggle('active', !!document.fullscreenElement);
@@ -342,28 +330,22 @@
 
     function onModelLoaded(obj) {
       obj.traverse((c) => {
-        if (c.isMesh) {
-          c.castShadow = true; c.receiveShadow = true;
-          (Array.isArray(c.material) ? c.material : [c.material]).forEach((m) => { if (m) m.side = THREE.DoubleSide; });
-        }
+        if (c.isMesh) { c.castShadow = true; c.receiveShadow = true;
+          (Array.isArray(c.material) ? c.material : [c.material]).forEach((m) => { if (m) m.side = THREE.DoubleSide; }); }
       });
       const box = new THREE.Box3().setFromObject(obj);
       const size = box.getSize(new THREE.Vector3());
       const center = box.getCenter(new THREE.Vector3());
       obj.position.x -= center.x; obj.position.z -= center.z; obj.position.y -= box.min.y;
-
       const maxDim = Math.max(size.x, size.y, size.z) || 1;
       controls.target.set(0, size.y * 0.45, 0);
       controls.minDistance = maxDim * 0.4; controls.maxDistance = maxDim * 12;
       camera.position.set(maxDim * 1.4, maxDim * 1.0, maxDim * 1.7);
-
       scene.add(obj);
       model = obj;
       home = { pos: obj.position.clone(), rot: obj.rotation.clone(), scl: obj.scale.clone() };
       camHome = { pos: camera.position.clone(), target: controls.target.clone() };
-      gizmo.attach(obj);
-      setMode('translate');
-
+      gizmo.attach(obj); setMode('translate');
       document.getElementById('title').textContent = cfg.title;
       document.getElementById('dims').textContent =
         `${size.x.toFixed(1)} × ${size.y.toFixed(1)} × ${size.z.toFixed(1)} (model units)`;
@@ -375,37 +357,30 @@
       const objLoader = new OBJLoader();
       if (materials) objLoader.setMaterials(materials);
       objLoader.setPath('./');
-      objLoader.load(
-        base + '.obj',
-        onModelLoaded,
+      objLoader.load(base + '.obj', onModelLoaded,
         (xhr) => { if (xhr.total) setToastDetail(loadingToast, base + '.obj — ' + Math.round(xhr.loaded / xhr.total * 100) + '%'); },
-        () => { dismissToast(loadingToast);
-                toast('Can\u2019t load ' + base + '.obj', 'Check the file is in this folder and the name matches exactly (case-sensitive).', 'error'); }
-      );
+        () => { dismissToast(loadingToast); toast('Can\u2019t load ' + base + '.obj', 'Check the file is in this folder and the name matches exactly (case-sensitive).', 'error'); });
     }
 
     const mtlLoader = new MTLLoader();
     mtlLoader.setPath('./'); mtlLoader.setResourcePath('./');
-    mtlLoader.load(
-      base + '.mtl',
+    mtlLoader.load(base + '.mtl',
       (materials) => { materials.preload(); loadOBJ(materials); },
       undefined,
-      () => { toast('No materials file', 'Showing ' + base + '.obj without colours. Add ' + base + '.mtl to include them.', 'info'); loadOBJ(null); }
-    );
+      () => { toast('No materials file', 'Showing ' + base + '.obj without colours. Add ' + base + '.mtl to include them.', 'info'); loadOBJ(null); });
 
-    function onResize() {
+    window.addEventListener('resize', () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
-    }
-    window.addEventListener('resize', onResize);
+    });
 
-    (function animate() {
-      requestAnimationFrame(animate);
-      controls.update();
-      renderer.render(scene, camera);
-    })();
+    (function animate() { requestAnimationFrame(animate); controls.update(); renderer.render(scene, camera); })();
   }
+
+  // expose for the login script, and start now if the user already unlocked
+  window.__startViewer = buildViewer;
+  if (window.__unlocked) buildViewer();
   </script>
 </body>
 </html>
