@@ -1,1 +1,342 @@
-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Shiba 3D Viewer</title>
+<style>
+  :root { color-scheme: dark; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #0b1418;
+               font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  #app { position: fixed; inset: 0; }
+  canvas { display: block; }
+ 
+  /* --- Overlay UI --- */
+  #info {
+    position: fixed; left: 16px; bottom: 16px; max-width: 70vw;
+    padding: 12px 16px; border-radius: 14px;
+    background: rgba(10, 20, 24, 0.55); backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #eef4f3; pointer-events: none; line-height: 1.4;
+  }
+  #info h1 { font-size: clamp(15px, 2.6vw, 20px); font-weight: 650; letter-spacing: 0.2px; }
+  #info p  { font-size: clamp(11px, 1.9vw, 13px); opacity: 0.78; margin-top: 3px; }
+ 
+  #hint {
+    position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+    padding: 8px 14px; border-radius: 999px;
+    background: rgba(10, 20, 24, 0.5); backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #dfeae8; font-size: 12px; pointer-events: none;
+    transition: opacity 0.8s ease; opacity: 1;
+  }
+  #hint.hide { opacity: 0; }
+ 
+  /* --- Interactive toolbar --- */
+  #tools {
+    position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
+    display: flex; gap: 8px; padding: 6px;
+    border-radius: 999px; background: rgba(10, 20, 24, 0.55);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.12); z-index: 4;
+  }
+  #tools button {
+    appearance: none; border: 0; cursor: pointer;
+    min-height: 42px; padding: 0 16px; border-radius: 999px;
+    font-size: 13px; font-weight: 600; color: #dfeae8;
+    background: transparent; transition: background 0.15s ease, color 0.15s ease;
+  }
+  #tools button:hover { background: rgba(255, 255, 255, 0.08); }
+  #tools button.active { background: #6fae6f; color: #07130a; }
+ 
+  #loader {
+    position: fixed; inset: 0; display: grid; place-items: center;
+    background: #0b1418; color: #9fb6b2; font-size: 14px; z-index: 5;
+    transition: opacity 0.5s ease;
+  }
+  #loader.hide { opacity: 0; pointer-events: none; }
+</style>
+</head>
+<body>
+  <div id="app"></div>
+  <div id="loader">Loading 3D model…</div>
+  <div id="hint">Drag to orbit &nbsp;·&nbsp; use the buttons to move, rotate &amp; scale</div>
+  <div id="info"><h1 id="title">A-Frame Cabin</h1><p id="dims"></p><p id="note">Fully interactive — move, rotate &amp; scale</p></div>
+  <div id="tools">
+    <button data-mode="translate" class="active">Move</button>
+    <button data-mode="rotate">Rotate</button>
+    <button data-mode="scale">Scale</button>
+    <button data-mode="reset">Reset</button>
+  </div>
+ 
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/[email protected]/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/[email protected]/examples/jsm/"
+    }
+  }
+  </script>
+ 
+  <script type="module">
+  import * as THREE from 'three';
+  import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+  import { TransformControls } from 'three/addons/controls/TransformControls.js';
+ 
+  // ======================================================================
+  // PROJECT REGISTRY
+  // The URL ?MainProject01 picks which entry to show. Add more entries here
+  // later (MainProject02, etc.) and they all work from this one page.
+  // ======================================================================
+  const PROJECTS = {
+    MainProject01: {
+      title: "A-Frame Cabin — Main Project 01",
+      // These match the Blender script defaults (your tape readings).
+      WIDTH: 4.1, LENGTH: 8.9, RIDGE_HEIGHT: 5.0,
+      FLOOR_THICKNESS: 0.20, ADD_LOFT: true, LOFT_HEIGHT: 2.4, LOFT_COVERAGE: 0.40,
+      ADD_DECK: true, DECK_DEPTH: 2.0, ADD_PIERS: true, PIER_HEIGHT: 0.6, PIER_SIZE: 0.20
+    }
+  };
+ 
+  // --- Read the project id from the URL (?MainProject01 or ?project=MainProject01) ---
+  function getProjectId() {
+    const raw = location.search.replace(/^\?/, '');
+    if (!raw) return 'MainProject01';
+    if (raw.includes('=')) {
+      const p = new URLSearchParams(location.search);
+      return p.get('project') || p.get('model') || 'MainProject01';
+    }
+    return decodeURIComponent(raw);
+  }
+  const cfg = PROJECTS[getProjectId()] || PROJECTS.MainProject01;
+ 
+  // ======================================================================
+  // SCENE
+  // ======================================================================
+  const SKY = 0x9ec4dc;
+  const app = document.getElementById('app');
+ 
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(SKY);
+  scene.fog = new THREE.Fog(SKY, 35, 120);
+ 
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  app.appendChild(renderer.domElement);
+ 
+  const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 500);
+  camera.position.set(cfg.WIDTH * 2.4, cfg.RIDGE_HEIGHT * 1.15, cfg.LENGTH * 1.25);
+ 
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.08;
+  controls.target.set(0, cfg.RIDGE_HEIGHT * 0.4, 0);
+  controls.minDistance = cfg.WIDTH * 1.2;
+  controls.maxDistance = 70;
+  controls.maxPolarAngle = Math.PI * 0.495;   // don't dip below the ground
+  controls.autoRotate = true;                 // gentle showcase spin (good for TVs)
+  controls.autoRotateSpeed = 0.5;
+  controls.addEventListener('start', () => { controls.autoRotate = false; hideHint(); });
+ 
+  // --- Lighting ---
+  scene.add(new THREE.HemisphereLight(0xbfe3ff, 0x3a5230, 0.85));
+  const sun = new THREE.DirectionalLight(0xfff2dd, 2.0);
+  sun.position.set(14, 22, 10);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(2048, 2048);
+  const s = 22;
+  sun.shadow.camera.left = -s; sun.shadow.camera.right = s;
+  sun.shadow.camera.top = s; sun.shadow.camera.bottom = -s;
+  sun.shadow.camera.near = 1; sun.shadow.camera.far = 80;
+  sun.shadow.bias = -0.0004;
+  scene.add(sun);
+ 
+  // ======================================================================
+  // GEOMETRY HELPERS
+  // ======================================================================
+  function quadMesh(p1, p2, p3, p4, material) {
+    const g = new THREE.BufferGeometry();
+    const v = new Float32Array([
+      ...p1, ...p2, ...p3,
+      ...p1, ...p3, ...p4
+    ]);
+    g.setAttribute('position', new THREE.BufferAttribute(v, 3));
+    g.computeVertexNormals();
+    const m = new THREE.Mesh(g, material);
+    m.castShadow = true; m.receiveShadow = true;
+    return m;
+  }
+  function triMesh(p1, p2, p3, material) {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array([...p1, ...p2, ...p3]), 3));
+    g.computeVertexNormals();
+    const m = new THREE.Mesh(g, material);
+    m.castShadow = true; m.receiveShadow = true;
+    return m;
+  }
+  function box(w, h, d, x, y, z, material) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
+    m.position.set(x, y, z);
+    m.castShadow = true; m.receiveShadow = true;
+    return m;
+  }
+ 
+  // ======================================================================
+  // BUILD THE CABIN  (X = width, Y = up/height, Z = length)
+  // ======================================================================
+  const matRoof  = new THREE.MeshStandardMaterial({ color: 0x4d3526, roughness: 0.85, side: THREE.DoubleSide });
+  const matGable = new THREE.MeshStandardMaterial({ color: 0x9a7350, roughness: 0.8,  side: THREE.DoubleSide });
+  const matWood  = new THREE.MeshStandardMaterial({ color: 0x73512f, roughness: 0.85 });
+  const matPier  = new THREE.MeshStandardMaterial({ color: 0x3a3a3a, roughness: 0.9 });
+ 
+  const cabin = new THREE.Group();
+  const hw = cfg.WIDTH / 2, hl = cfg.LENGTH / 2, H = cfg.RIDGE_HEIGHT;
+  const ft = cfg.FLOOR_THICKNESS;
+ 
+  // Floor (top face at y = 0)
+  cabin.add(box(cfg.WIDTH, ft, cfg.LENGTH, 0, -ft / 2, 0, matWood));
+ 
+  // Roof slopes
+  cabin.add(quadMesh([-hw, 0, -hl], [-hw, 0, hl], [0, H, hl], [0, H, -hl], matRoof)); // left
+  cabin.add(quadMesh([hw, 0, -hl], [0, H, -hl], [0, H, hl], [hw, 0, hl], matRoof));   // right
+ 
+  // Gable end walls (triangles)
+  cabin.add(triMesh([-hw, 0, -hl], [hw, 0, -hl], [0, H, -hl], matGable)); // front
+  cabin.add(triMesh([-hw, 0, hl], [hw, 0, hl], [0, H, hl], matGable));    // back
+ 
+  // Loft (narrows because the A-frame narrows with height)
+  if (cfg.ADD_LOFT && cfg.LOFT_HEIGHT < H) {
+    const loftHW = hw * (1 - cfg.LOFT_HEIGHT / H);
+    const cov = cfg.LOFT_COVERAGE * cfg.LENGTH;
+    cabin.add(box(2 * loftHW, 0.12, cov, 0, cfg.LOFT_HEIGHT, hl - cov / 2, matWood));
+  }
+ 
+  // Front deck
+  if (cfg.ADD_DECK) {
+    cabin.add(box(cfg.WIDTH, 0.12, cfg.DECK_DEPTH, 0, -0.06, -hl - cfg.DECK_DEPTH / 2, matWood));
+  }
+ 
+  // Support piers (for the sloped site)
+  let groundY = -ft;
+  if (cfg.ADD_PIERS) {
+    const ph = cfg.PIER_HEIGHT, ps = cfg.PIER_SIZE, inset = ps;
+    groundY = -ft - ph;
+    const xs = [-hw + inset, hw - inset];
+    const zs = [-hl + inset, 0, hl - inset];
+    for (const x of xs) for (const z of zs)
+      cabin.add(box(ps, ph, ps, x, -ft - ph / 2, z, matPier));
+  }
+  scene.add(cabin);
+ 
+  // ======================================================================
+  // INTERACTIVITY  (move / rotate / scale the model)
+  // ======================================================================
+  const gizmo = new TransformControls(camera, renderer.domElement);
+  gizmo.attach(cabin);
+  gizmo.setSpace('world');
+  scene.add(gizmo);
+  // Stop the camera orbit while dragging a gizmo handle (so they don't fight)
+  gizmo.addEventListener('dragging-changed', (e) => { controls.enabled = !e.value; });
+ 
+  const home = {
+    pos: cabin.position.clone(),
+    rot: cabin.rotation.clone(),
+    scl: cabin.scale.clone()
+  };
+ 
+  function setMode(mode) {
+    controls.autoRotate = false;
+    hideHint();
+    if (mode === 'reset') {
+      cabin.position.copy(home.pos);
+      cabin.rotation.copy(home.rot);
+      cabin.scale.copy(home.scl);
+      return;
+    }
+    gizmo.setMode(mode);
+    document.querySelectorAll('#tools button').forEach((b) =>
+      b.classList.toggle('active', b.dataset.mode === mode));
+  }
+ 
+  document.querySelectorAll('#tools button').forEach((b) =>
+    b.addEventListener('click', () => setMode(b.dataset.mode)));
+ 
+  // Desktop shortcuts: W = move, E = rotate, R = scale
+  window.addEventListener('keydown', (e) => {
+    const k = e.key.toLowerCase();
+    if (k === 'w') setMode('translate');
+    else if (k === 'e') setMode('rotate');
+    else if (k === 'r') setMode('scale');
+  });
+ 
+  // ======================================================================
+  // ENVIRONMENT  (forest floor + simple conifers, to echo the real site)
+  // ======================================================================
+  const ground = new THREE.Mesh(
+    new THREE.CircleGeometry(120, 48),
+    new THREE.MeshStandardMaterial({ color: 0x3f5a2e, roughness: 1 })
+  );
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.y = groundY;
+  ground.receiveShadow = true;
+  scene.add(ground);
+ 
+  const trunkMat = new THREE.MeshStandardMaterial({ color: 0x5b4326, roughness: 1 });
+  const leafMat  = new THREE.MeshStandardMaterial({ color: 0x2f5d33, roughness: 1 });
+  function tree(x, z, scale) {
+    const t = new THREE.Group();
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.18, 1.4, 6), trunkMat);
+    trunk.position.y = 0.7; trunk.castShadow = true; t.add(trunk);
+    for (let i = 0; i < 3; i++) {
+      const c = new THREE.Mesh(new THREE.ConeGeometry(1.3 - i * 0.32, 1.5, 8), leafMat);
+      c.position.y = 1.6 + i * 1.0; c.castShadow = true; t.add(c);
+    }
+    t.position.set(x, groundY, z);
+    t.scale.setScalar(scale);
+    scene.add(t);
+  }
+  // Scatter trees in a ring, keeping clear of the cabin footprint
+  let seed = 1337;
+  const rnd = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+  for (let i = 0; i < 16; i++) {
+    const ang = rnd() * Math.PI * 2;
+    const dist = 9 + rnd() * 14;
+    tree(Math.cos(ang) * dist, Math.sin(ang) * dist, 0.8 + rnd() * 0.9);
+  }
+ 
+  // ======================================================================
+  // UI + RENDER LOOP
+  // ======================================================================
+  document.getElementById('title').textContent = cfg.title;
+  document.getElementById('dims').textContent =
+    `${cfg.WIDTH} m wide · ${cfg.LENGTH} m long · ${cfg.RIDGE_HEIGHT} m ridge`;
+ 
+  const hint = document.getElementById('hint');
+  let hintTimer = setTimeout(hideHint, 5000);
+  function hideHint() { hint.classList.add('hide'); clearTimeout(hintTimer); }
+ 
+  const loader = document.getElementById('loader');
+  requestAnimationFrame(() => loader.classList.add('hide'));
+ 
+  function onResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  }
+  window.addEventListener('resize', onResize);
+ 
+  function animate() {
+    requestAnimationFrame(animate);
+    controls.update();
+    renderer.render(scene, camera);
+  }
+  animate();
+  </script>
+</body>
+</html>
