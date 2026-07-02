@@ -1,181 +1,85 @@
 /* ==========================================================
-   LAPD Internal Management System
-   session.js
-   Build v1.0.0
+   SHIBA PIMS
+   Session Manager
+   Auto Logout + Security Layer
 ========================================================== */
 
-/*
-    Session Storage Keys
-*/
+class SessionManager {
 
-const SESSION_KEY = "lapd_session";
+    constructor() {
 
-/*
-    Save Session
-*/
+        this.timeout = 15 * 60 * 1000; // 15 min
 
-function saveSession(user){
+        this.timer = null;
 
-    const session = {
+        this.lastActivity = Date.now();
 
-        username: user.username,
-
-        fullname: user.fullname,
-
-        role: user.role,
-
-        badge: user.badge,
-
-        loginTime: new Date().toISOString(),
-
-        build: BUILD
-
-    };
-
-    sessionStorage.setItem(
-        SESSION_KEY,
-        JSON.stringify(session)
-    );
-
-}
-
-/*
-    Load Session
-*/
-
-function loadSession(){
-
-    const data = sessionStorage.getItem(SESSION_KEY);
-
-    if(!data){
-
-        return null;
+        this.init();
 
     }
 
-    try{
+    init() {
 
-        return JSON.parse(data);
+        this.resetTimer();
 
-    }catch{
+        document.addEventListener("click", () => this.resetTimer());
 
-        clearSession();
+        document.addEventListener("keypress", () => this.resetTimer());
 
-        return null;
+        document.addEventListener("mousemove", () => this.resetTimer());
+
+        setInterval(() => this.checkSession(), 5000);
+
+    }
+
+    resetTimer() {
+
+        this.lastActivity = Date.now();
+
+        clearTimeout(this.timer);
+
+        this.timer = setTimeout(() => {
+
+            this.logout();
+
+        }, this.timeout);
+
+    }
+
+    checkSession() {
+
+        const loggedIn = sessionStorage.getItem("loggedIn");
+
+        if (!loggedIn) return;
+
+        const diff = Date.now() - this.lastActivity;
+
+        if (diff > this.timeout) {
+
+            this.logout();
+
+        }
+
+    }
+
+    logout() {
+
+        sessionStorage.clear();
+
+        if (typeof UI !== "undefined") {
+
+            UI.warning("Session expired. Logging out...");
+
+        }
+
+        setTimeout(() => {
+
+            window.location.href = "index.html";
+
+        }, 1500);
 
     }
 
 }
 
-/*
-    Clear Session
-*/
-
-function clearSession(){
-
-    sessionStorage.removeItem(SESSION_KEY);
-
-}
-
-/*
-    Is Logged
-*/
-
-function isLoggedIn(){
-
-    return loadSession() !== null;
-
-}
-
-/*
-    Logout
-*/
-
-function logout(){
-
-    clearSession();
-
-    location.href="index.html";
-
-}
-
-/*
-    Auto Login
-*/
-
-window.addEventListener("DOMContentLoaded",()=>{
-
-    const session = loadSession();
-
-    if(!session){
-
-        return;
-
-    }
-
-    console.log("Session Found");
-
-    console.log(session);
-
-    /*
-        Dashboard ešte neexistuje.
-        Keď ho vytvoríme,
-        stačí odkomentovať riadok nižšie.
-    */
-
-    // window.location.href="dashboard.html";
-
-});
-
-/*
-    Auto Timeout
-*/
-
-let inactivityTimer;
-
-function resetInactivityTimer(){
-
-    clearTimeout(inactivityTimer);
-
-    inactivityTimer=setTimeout(()=>{
-
-        alert("You have been logged out due to inactivity.");
-
-        logout();
-
-    },15*60*1000);
-
-}
-
-[
-"mousemove",
-"keydown",
-"click",
-"touchstart"
-].forEach(event=>{
-
-    document.addEventListener(event,resetInactivityTimer);
-
-});
-
-resetInactivityTimer();
-
-/*
-==========================================================
-
-Future Features
-
-✔ Remember Me
-
-✔ Refresh Token
-
-✔ Session Validation
-
-✔ Database Check
-
-✔ Multiple Devices
-
-✔ Login History
-
-==========================================================
-*/
+const Session = new SessionManager();
