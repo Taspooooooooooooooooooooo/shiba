@@ -1,1 +1,189 @@
-dashboard
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>SHIBA PIMS | Dashboard</title>
+
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+
+</head>
+
+<body>
+
+<header class="topbar">
+
+    <div>
+
+        <h2>SHIBA PIMS</h2>
+
+        <span>Police Information Management System</span>
+
+    </div>
+
+    <div class="userInfo">
+
+        <div id="welcomeUser">
+
+            Welcome
+
+        </div>
+
+        <button id="logoutButton">
+
+            Logout
+
+        </button>
+
+    </div>
+
+</header>
+
+<nav class="sidebar">
+
+    <h3>Navigation</h3>
+
+    <a href="#">🏠 Dashboard</a>
+
+    <a href="#">👮 Officers</a>
+
+    <a href="#">📂 Cases</a>
+
+    <a href="#">📄 Reports</a>
+
+    <a href="#">📷 Bodycam</a>
+
+    <a href="#">🚔 Vehicles</a>
+
+    <a href="#">🏆 Certificates</a>
+
+    <a href="#">📅 Shifts</a>
+
+    <a href="#">💬 Messages</a>
+
+    <a href="#">⚙ Settings</a>
+
+</nav>
+
+<main class="content">
+
+    <section class="card">
+
+        <h1>
+
+            Welcome back!
+
+        </h1>
+
+        <p>
+
+            SHIBA Police Information Management System
+
+        </p>
+
+    </section>
+
+    <section class="grid">
+
+        <div class="card">
+
+            <h3>Open Cases</h3>
+
+            <h1 id="casesCount">
+
+                0
+
+            </h1>
+
+        </div>
+
+        <div class="card">
+
+            <h3>Reports</h3>
+
+            <h1>
+
+                0
+
+            </h1>
+
+        </div>
+
+        <div class="card">
+
+            <h3>Officers</h3>
+
+            <h1>
+
+                0
+
+            </h1>
+
+        </div>
+
+        <div class="card">
+
+            <h3>Notifications</h3>
+
+            <h1>
+
+                0
+
+            </h1>
+
+        </div>
+
+    </section>
+
+    <section class="card">
+
+        <h2>
+
+            Live Activity
+
+        </h2>
+
+        <div id="activityFeed">
+
+            <p>
+
+                No recent activity.
+
+            </p>
+
+        </div>
+
+    </section>
+
+</main>
+
+<script>
+
+if(sessionStorage.getItem("loggedIn")!="true"){
+
+    window.location.href="index.html";
+
+}
+
+document.getElementById("welcomeUser").innerHTML=
+
+sessionStorage.getItem("username")+"<br>"+sessionStorage.getItem("role");
+
+document.getElementById("logoutButton").onclick=function(){
+
+    sessionStorage.clear();
+
+    window.location.href="index.html";
+
+}
+
+</script>
+
+</body>
+
+</html>
