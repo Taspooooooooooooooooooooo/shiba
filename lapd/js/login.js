@@ -1,177 +1,234 @@
 /* ==========================================================
-   LAPD Internal Management System
-   login.js
-   Build v1.0.0
+   SHIBA PIMS
+   Login System
+   Version 1.0.0
 ========================================================== */
 
-const bootScreen = document.getElementById("bootScreen");
-const loginContainer = document.getElementById("loginContainer");
-const pinContainer = document.getElementById("pinContainer");
-const loadingOverlay = document.getElementById("loadingOverlay");
+document.addEventListener("DOMContentLoaded", () => {
 
-const bootStatus = document.getElementById("bootStatus");
-const loadingFill = document.getElementById("loadingFill");
+    /* ----------------------------------------------------- */
+    /* Elements                                               */
+    /* ----------------------------------------------------- */
 
-const username = document.getElementById("username");
-const password = document.getElementById("password");
+    const loginForm = document.getElementById("loginForm");
 
-const loginButton = document.getElementById("loginButton");
+    const username = document.getElementById("username");
 
-const pinInput = document.getElementById("pin");
-const verifyButton = document.getElementById("verifyButton");
+    const password = document.getElementById("password");
 
-const toast = document.getElementById("toast");
+    const pinModal = document.getElementById("pinModal");
 
-/* ==========================================================
-   SETTINGS
-========================================================== */
+    const pinInput = document.getElementById("pin");
 
-const BUILD = "v1.0.0";
+    const verifyPin = document.getElementById("verifyPin");
 
-let currentUser = null;
+    const loadingOverlay = document.getElementById("loadingOverlay");
 
-/* ==========================================================
-   TOAST SYSTEM
-========================================================== */
+    const loadingText = document.getElementById("loadingText");
 
-function showToast(message, color = "#2f88ff") {
+    const showPassword = document.getElementById("showPassword");
 
-    toast.innerHTML = message;
+    const bootScreen = document.getElementById("bootScreen");
 
-    toast.style.background = color;
+    const loginPage = document.getElementById("loginPage");
 
-    toast.style.opacity = "1";
+    const progressBar = document.getElementById("progressBar");
 
-    setTimeout(() => {
+    const bootStatus = document.getElementById("bootStatus");
 
-        toast.style.opacity = "0";
+    /* ----------------------------------------------------- */
+    /* Temporary Local Users                                 */
+    /* Later -> Supabase                                     */
+    /* ----------------------------------------------------- */
 
-    }, 3000);
+    const users = [
 
-}
+        {
 
-/* ==========================================================
-   BOOT SEQUENCE
-========================================================== */
+            username: "vladko",
 
-const bootSteps = [
+            password: "vladinko",
 
-"Initializing Internal System...",
+            pin: "5080",
 
-"Checking Secure Database...",
-
-"Loading Officer Registry...",
-
-"Loading Authentication Module...",
-
-"Checking Permissions...",
-
-"Loading Evidence System...",
-
-"Loading Reports Module...",
-
-"Starting User Interface...",
-
-"Ready."
-
-];
-
-let progress = 0;
-
-let currentStep = 0;
-
-const bootInterval = setInterval(() => {
-
-    progress += 2;
-
-    loadingFill.style.width = progress + "%";
-
-    if(progress % 12 === 0){
-
-        if(currentStep < bootSteps.length){
-
-            bootStatus.innerHTML = bootSteps[currentStep];
-
-            currentStep++;
+            role: "Super Administrator"
 
         }
 
-    }
+    ];
 
-    if(progress >= 100){
+    /* ----------------------------------------------------- */
+    /* Boot Screen                                            */
+    /* ----------------------------------------------------- */
 
-        clearInterval(bootInterval);
+    const bootSteps = [
 
-        setTimeout(() => {
+        "Loading Core...",
+        "Loading Database...",
+        "Loading Authentication...",
+        "Loading Storage...",
+        "Loading Realtime...",
+        "Loading Notifications...",
+        "Loading Permissions...",
+        "Loading UI...",
+        "System Ready."
 
-            bootScreen.classList.add("hidden");
+    ];
 
-            loginContainer.classList.remove("hidden");
+    let progress = 0;
 
-            username.focus();
+    let step = 0;
 
-        },600);
+    const bootInterval = setInterval(() => {
 
-    }
+        progress += 12;
 
-},60);
+        progressBar.style.width = progress + "%";
 
-/* ==========================================================
-   LOGIN BUTTON
-========================================================== */
+        bootStatus.innerText = bootSteps[step];
 
-loginButton.addEventListener("click", login);
+        step++;
 
-password.addEventListener("keypress", e=>{
+        if (step >= bootSteps.length) {
 
-    if(e.key==="Enter"){
+            clearInterval(bootInterval);
 
-        login();
+            setTimeout(() => {
+
+                bootScreen.style.display = "none";
+
+                loginPage.classList.remove("hidden");
+
+            }, 600);
+
+        }
+
+    }, 350);
+
+    /* ----------------------------------------------------- */
+    /* Show Password                                          */
+    /* ----------------------------------------------------- */
+
+    showPassword.addEventListener("click", () => {
+
+        if (password.type === "password") {
+
+            password.type = "text";
+
+            showPassword.innerText = "Hide";
+
+        } else {
+
+            password.type = "password";
+
+            showPassword.innerText = "Show";
+
+        }
+
+    });
+
+    /* ----------------------------------------------------- */
+    /* Login                                                  */
+    /* ----------------------------------------------------- */
+
+    let currentUser = null;
+
+    loginForm.addEventListener("submit", (event) => {
+
+        event.preventDefault();
+
+        const user = users.find(u =>
+
+            u.username === username.value.trim() &&
+            u.password === password.value
+
+        );
+
+        if (!user) {
+
+            alert("Invalid username or password.");
+
+            return;
+
+        }
+
+        currentUser = user;
+
+        pinModal.classList.remove("hidden");
+
+        pinInput.focus();
+
+    });
+
+    /* ----------------------------------------------------- */
+    /* PIN Verification                                       */
+    /* ----------------------------------------------------- */
+
+    verifyPin.addEventListener("click", () => {
+
+        if (!currentUser) return;
+
+        if (pinInput.value !== currentUser.pin) {
+
+            alert("Invalid PIN.");
+
+            pinInput.value = "";
+
+            pinInput.focus();
+
+            return;
+
+        }
+
+        pinModal.classList.add("hidden");
+
+        loadingOverlay.classList.remove("hidden");
+
+        authenticate();
+
+    });
+
+    /* ----------------------------------------------------- */
+    /* Fake Authentication                                    */
+    /* ----------------------------------------------------- */
+
+    function authenticate() {
+
+        const messages = [
+
+            "Verifying user...",
+            "Checking permissions...",
+            "Loading profile...",
+            "Loading notifications...",
+            "Connecting database...",
+            "Authentication successful..."
+
+        ];
+
+        let i = 0;
+
+        const loading = setInterval(() => {
+
+            loadingText.innerText = messages[i];
+
+            i++;
+
+            if (i >= messages.length) {
+
+                clearInterval(loading);
+
+                sessionStorage.setItem("loggedIn", "true");
+
+                sessionStorage.setItem("username", currentUser.username);
+
+                sessionStorage.setItem("role", currentUser.role);
+
+                window.location.href = "dashboard.html";
+
+            }
+
+        }, 700);
 
     }
 
 });
-
-function login(){
-
-    const user = username.value.trim();
-
-    const pass = password.value.trim();
-
-    if(user===""){
-
-        showToast("Please enter your username.","#d9534f");
-
-        username.focus();
-
-        return;
-
-    }
-
-    if(pass===""){
-
-        showToast("Please enter your password.","#d9534f");
-
-        password.focus();
-
-        return;
-
-    }
-
-    loadingOverlay.classList.remove("hidden");
-
-    setTimeout(()=>{
-
-        loadingOverlay.classList.add("hidden");
-
-        currentUser=user;
-
-        loginContainer.classList.add("hidden");
-
-        pinContainer.classList.remove("hidden");
-
-        pinInput.focus();
-
-    },1200);
-
-}
