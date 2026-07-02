@@ -1,179 +1,267 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>LAPD Internal Management System</title>
+    <title>SHIBA PIMS | Login</title>
 
+    <meta name="description" content="SHIBA Police Information Management System">
+    <meta name="theme-color" content="#0b1623">
+
+    <link rel="icon" href="assets/favicon.ico">
+
+    <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/login.css">
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
-    <script src="https://unpkg.com/lucide@latest"></script>
-
+    <link rel="stylesheet" href="css/animations.css">
 </head>
 
 <body>
 
-<!-- ================= BOOT SCREEN ================= -->
+    <!-- ===================================================== -->
+    <!-- Boot Screen                                            -->
+    <!-- ===================================================== -->
 
-<div id="bootScreen">
+    <div id="bootScreen">
 
-    <div class="bootLogo">
-        LAPD
-    </div>
+        <div class="boot-container">
 
-    <div class="bootTitle">
+            <h1>SHIBA PIMS</h1>
 
-        Los Angeles Police Department
+            <h2>Police Information Management System</h2>
 
-    </div>
+            <div class="build">
+                Build v1.0.0 Alpha
+            </div>
 
-    <div class="bootSubtitle">
+            <div class="progress">
 
-        Internal Management System
+                <div id="progressBar"></div>
 
-    </div>
+            </div>
 
-    <div class="bootVersion">
+            <div id="bootStatus">
 
-        Build v1.0.0
+                Initializing...
 
-    </div>
-
-    <div class="bootLoading">
-
-        <div class="loadingBar">
-
-            <div id="loadingFill"></div>
+            </div>
 
         </div>
 
     </div>
 
-    <div id="bootStatus">
+    <!-- ===================================================== -->
+    <!-- Login Screen                                           -->
+    <!-- ===================================================== -->
 
-        Initializing...
+    <main id="loginPage" class="hidden">
 
-    </div>
+        <div class="background-blur"></div>
 
-</div>
+        <section class="login-card">
 
-<!-- ================= LOGIN ================= -->
+            <div class="logo">
 
-<div id="loginContainer" class="hidden">
+                <h1>SHIBA PIMS</h1>
 
-    <div class="loginCard">
+                <span>
+                    Police Information Management System
+                </span>
 
-        <div class="loginLogo">
+            </div>
 
-            LAPD
+            <form id="loginForm">
+
+                <div class="input-group">
+
+                    <label for="username">
+                        Username
+                    </label>
+
+                    <input
+                        type="text"
+                        id="username"
+                        autocomplete="username"
+                        placeholder="Enter username"
+                        required>
+
+                </div>
+
+                <div class="input-group">
+
+                    <label for="password">
+
+                        Password
+
+                    </label>
+
+                    <input
+                        type="password"
+                        id="password"
+                        autocomplete="current-password"
+                        placeholder="Enter password"
+                        required>
+
+                </div>
+
+                <div class="options">
+
+                    <label>
+
+                        <input type="checkbox" id="remember">
+
+                        Remember me
+
+                    </label>
+
+                    <button
+                        type="button"
+                        id="showPassword">
+
+                        Show
+
+                    </button>
+
+                </div>
+
+                <button
+                    class="loginButton"
+                    type="submit">
+
+                    Continue
+
+                </button>
+
+            </form>
+
+            <div class="system-status">
+
+                <div>
+
+                    <span class="dot online"></span>
+
+                    Authentication
+
+                </div>
+
+                <div>
+
+                    <span class="dot online"></span>
+
+                    Database
+
+                </div>
+
+                <div>
+
+                    <span class="dot online"></span>
+
+                    Storage
+
+                </div>
+
+                <div>
+
+                    <span class="dot online"></span>
+
+                    Realtime
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- ===================================================== -->
+    <!-- PIN Window                                             -->
+    <!-- ===================================================== -->
+
+    <div id="pinModal" class="hidden">
+
+        <div class="pin-card">
+
+            <h2>
+
+                Security Verification
+
+            </h2>
+
+            <p>
+
+                Enter your security PIN.
+
+            </p>
+
+            <input
+                type="password"
+                id="pin"
+                maxlength="4"
+                placeholder="••••">
+
+            <button id="verifyPin">
+
+                Verify
+
+            </button>
 
         </div>
 
-        <h1>
-
-            Welcome Back
-
-        </h1>
-
-        <p>
-
-            Please sign in to continue.
-
-        </p>
-
-        <input
-        id="username"
-        type="text"
-        placeholder="Username">
-
-        <input
-        id="password"
-        type="password"
-        placeholder="Password">
-
-        <button id="loginButton">
-
-            SIGN IN
-
-        </button>
-
     </div>
 
-</div>
+    <!-- ===================================================== -->
+    <!-- Loading Overlay                                        -->
+    <!-- ===================================================== -->
 
-<!-- ================= PIN WINDOW ================= -->
+    <div id="loadingOverlay" class="hidden">
 
-<div id="pinContainer" class="hidden">
-
-    <div class="pinCard">
+        <div class="loader"></div>
 
         <h2>
 
-            Two-Factor Authentication
+            Authenticating...
 
         </h2>
 
-        <p>
+        <p id="loadingText">
 
-            Enter your security PIN.
+            Connecting to database...
 
         </p>
 
-        <input
-        id="pin"
-        type="password"
-        maxlength="4"
-        placeholder="PIN">
-
-        <button id="verifyButton">
-
-            VERIFY
-
-        </button>
-
     </div>
 
-</div>
+    <!-- ===================================================== -->
+    <!-- Toast Notifications                                    -->
+    <!-- ===================================================== -->
 
-<!-- ================= LOADING ================= -->
+    <div id="toastContainer"></div>
 
-<div id="loadingOverlay" class="hidden">
+    <!-- ===================================================== -->
+    <!-- Footer                                                 -->
+    <!-- ===================================================== -->
 
-    <div class="spinner"></div>
+    <footer>
 
-    <h2>
+        SHIBA PIMS © 2026
 
-        Authenticating...
+    </footer>
 
-    </h2>
+    <!-- ===================================================== -->
+    <!-- JavaScript                                             -->
+    <!-- ===================================================== -->
 
-</div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 
-<!-- ================= TOAST ================= -->
-
-<div id="toast">
-
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-
-<script src="js/supabase.js"></script>
-
-<script src="js/session.js"></script>
-
-<script src="js/login.js"></script>
-
-<script>
-
-lucide.createIcons();
-
-</script>
+    <script src="js/utils.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/session.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/login.js"></script>
 
 </body>
+
 </html>
