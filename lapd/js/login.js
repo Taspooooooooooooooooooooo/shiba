@@ -146,7 +146,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (!user) {
 
-            alert("Invalid username or password.");
+            UI.error("Invalid username or password.");
 
             return;
 
@@ -170,7 +170,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (pinInput.value !== currentUser.pin) {
 
-            alert("Invalid PIN.");
+            UI.error("Invalid PIN.");
 
             pinInput.value = "";
 
@@ -185,7 +185,7 @@ document.addEventListener("DOMContentLoaded", () => {
         loadingOverlay.classList.remove("hidden");
 
         authenticate();
-
+       UI.success("Authentication successful.");
     });
 
     /* ----------------------------------------------------- */
