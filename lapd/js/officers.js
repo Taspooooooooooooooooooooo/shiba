@@ -4,13 +4,31 @@
 ============================================================ */
 
 class OfficersEngine {
+   addTimeline(officerId, text) {
+
+    if(!this.timeline[officerId]){
+
+        this.timeline[officerId] = [];
+
+    }
+
+    const event = {
+
+        time: new Date().toLocaleString(),
+
+        text: text
+
+    };
+
+    this.timeline[officerId].unshift(event);
+
+}
 
     constructor() {
 
         this.officers = [];
-
         this.initDemoData();
-
+       this.timeline = {};
     }
 
     /* =========================
