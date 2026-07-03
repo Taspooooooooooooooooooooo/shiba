@@ -90,7 +90,7 @@ class OfficersEngine {
 
         };
 
-        this.officers.push(officer);
+        this.addTimeline(officer.id,"Officer created sucessfully!");
 
         UI?.success("Officer created successfully");
 
@@ -173,7 +173,7 @@ class OfficersEngine {
 
         if (index < ranks.length - 1) {
 
-            officer.rank = ranks[index + 1];
+            this.addTimeline(officer.id, `Promoted to ${officer.rank}`);
 
             UI?.success(`${officer.name} promoted to ${officer.rank}`);
 
