@@ -2,50 +2,15 @@
    SHIBA PIMS
    Officers Logic Engine
 ============================================================ */
-window.supabase
-async load(){
-   const { data, error } = await supabase
-      .from("officers")
-      .select("*");
-   if(error){
-      console.error(error);
-      return;
-   }
-   this.data= data;
-   this.renderList();
-}
 
 class OfficersEngine {
-   getTimeline(officerId){
-
-    return this.timeline[officerId] || [];
-
-}
-   addTimeline(officerId, text) {
-
-    if(!this.timeline[officerId]){
-
-        this.timeline[officerId] = [];
-
-    }
-
-    const event = {
-
-        time: new Date().toLocaleString(),
-
-        text: text
-
-    };
-
-    this.timeline[officerId].unshift(event);
-
-}
 
     constructor() {
 
         this.officers = [];
+        this.timeline = {};
         this.initDemoData();
-       this.timeline = {};
+
     }
 
     /* =========================
@@ -77,35 +42,151 @@ class OfficersEngine {
     }
 
     /* =========================
+       LOAD FROM DATABASE
+       (keeps demo data if the
+       database is empty/offline)
+    ========================== */
+
+    async load() {
+
+        if (!window.db) {
+            this.renderList();
+            return;
+        }
+
+        const { data, error } = await db
+            .from("officers")
+            .select("*");
+
+        if (error) {
+            console.error(error);
+            this.renderList();
+            return;
+        }
+
+        if (data && data.length > 0) {
+
+            this.officers = data.map(row => ({
+                id: row.id,
+                name: row.first_name || row.name || "Unknown",
+                badge: row.badge_number || row.badge || "—",
+                rank: row.rank || "Officer",
+                division: row.division || "—",
+                status: row.status || "Off Duty",
+                lastActive: row.last_active || "—"
+            }));
+
+        }
+
+        this.renderList();
+
+    }
+
+    /* =========================
        CREATE OFFICER
     ========================== */
 
-    async createOfficer(officer){
+    async createOfficer(officer) {
 
-    const badge = "BDG-" + Math.floor(Math.random()*99999);
+        if (!window.db) return;
 
-    const { data, error } = await supabase
-        .from("officers")
-        .insert([{
-            first_name: officer.name,
-            division_id: null,
-            rank_id: null,
-            badge_number: badge,
-            photo_url: officer.photo || null,
-            status: "Off Duty"
-        }])
-        .select();
+        const badge = "BDG-" + Math.floor(Math.random() * 99999);
 
-    if(error){
-        console.error(error);
-        return;
+        const { data, error } = await db
+            .from("officers")
+            .insert([{
+                first_name: officer.name,
+                division_id: null,
+                rank_id: null,
+                badge_number: badge,
+                photo_url: officer.photo || null,
+                status: "Off Duty"
+            }])
+            .select();
+
+        if (error) {
+            console.error(error);
+            return;
+        }
+
+        this.addTimeline(data[0].id, "Officer created");
+
+        this.load();
+
     }
 
-    this.addTimeline(data[0].id, "Officer created");
+    /* =========================
+       DELETE OFFICER
+    ========================== */
 
-    this.load();
+    async deleteOfficer(id) {
 
-}
+        if (!window.db) return;
+
+        await db
+            .from("officers")
+            .delete()
+            .eq("id", id);
+
+        this.load();
+
+    }
+
+    /* =========================
+       PROMOTE SYSTEM
+    ========================== */
+
+    async promote(id) {
+
+        const officer = this.officers.find(o => o.id === id);
+
+        if (!officer) return;
+
+        const ranks = ["Officer", "Officer II", "Corporal", "Sergeant I", "Sergeant II", "Lieutenant"];
+
+        let index = ranks.indexOf(officer.rank || "Officer");
+
+        let newRank = ranks[Math.min(index + 1, ranks.length - 1)];
+
+        if (window.db) {
+
+            await db
+                .from("officers")
+                .update({ rank: newRank })
+                .eq("id", id);
+
+        }
+
+        officer.rank = newRank;
+
+        this.addTimeline(id, "Promoted to " + newRank);
+
+        this.load();
+
+    }
+
+    /* =========================
+       TIMELINE (local)
+    ========================== */
+
+    addTimeline(officerId, text) {
+
+        if (!this.timeline[officerId]) {
+            this.timeline[officerId] = [];
+        }
+
+        this.timeline[officerId].unshift({
+            time: new Date().toLocaleString(),
+            text: text
+        });
+
+    }
+
+    getTimeline(officerId) {
+
+        return this.timeline[officerId] || [];
+
+    }
 
     /* =========================
        ID GENERATOR
@@ -128,20 +209,6 @@ class OfficersEngine {
     }
 
     /* =========================
-       DELETE OFFICER
-    ========================== */
-
-async deleteOfficer(id){
-
-    await supabase
-        .from("officers")
-        .delete()
-        .eq("id", id);
-
-    this.load();
-
-}
-    /* =========================
        SEARCH + FILTER
     ========================== */
 
@@ -155,31 +222,6 @@ async deleteOfficer(id){
         );
 
     }
-
-    /* =========================
-       PROMOTE SYSTEM
-    ========================== */
-
-   async promote(id){
-
-    const officer = this.data.find(o => o.id === id);
-
-    const ranks = ["Officer","Officer II","Corporal","Sergeant I","Sergeant II","Lieutenant"];
-
-    let index = ranks.indexOf(officer.rank || "Officer");
-
-    let newRank = ranks[Math.min(index + 1, ranks.length-1)];
-
-    await supabase
-        .from("officers")
-        .update({ rank: newRank })
-        .eq("id", id);
-
-    this.addTimeline(id, "Promoted to " + newRank);
-
-    this.load();
-
-}
 
     /* =========================
        RENDER TABLE
@@ -219,6 +261,12 @@ async deleteOfficer(id){
 
     }
 
+    renderList() {
+
+        this.render(this.officers);
+
+    }
+
     /* =========================
        STATUS UI
     ========================== */
@@ -235,193 +283,168 @@ async deleteOfficer(id){
     }
 
     /* =========================
-       VIEW OFFICER (future drawer)
+       VIEW OFFICER (drawer)
     ========================== */
-Officers.view = function(id){
 
-    const officer = this.officers.find(o => o.id === id);
+    view(id) {
 
-    if(!officer) return;
+        const officer = this.officers.find(o => o.id === id);
 
-    currentOfficerId = id;
+        if (!officer) return;
 
-    document.getElementById("drawerName").innerText = officer.name;
-    document.getElementById("drawerRank").innerText = officer.rank;
-    document.getElementById("drawerBadge").innerText = officer.badge;
-    document.getElementById("drawerDivision").innerText = officer.division;
-    document.getElementById("drawerStatus").innerText = officer.status;
+        currentOfficerId = id;
 
-    document.getElementById("drawerPhoto").src =
-        officer.photo || "https://via.placeholder.com/100";
+        document.getElementById("drawerName").innerText = officer.name;
+        document.getElementById("drawerRank").innerText = officer.rank;
+        document.getElementById("drawerBadge").innerText = officer.badge;
+        document.getElementById("drawerDivision").innerText = officer.division;
+        document.getElementById("drawerStatus").innerText = officer.status;
 
-    // TIMELINE RENDER
-    const timeline = this.getTimeline(id);
+        document.getElementById("drawerPhoto").src =
+            officer.photo || "https://via.placeholder.com/100";
 
-    const container = document.getElementById("drawerTimeline");
+        const timeline = this.getTimeline(id);
 
-    container.innerHTML = "";
+        const container = document.getElementById("drawerTimeline");
 
-    if(timeline.length === 0){
+        container.innerHTML = "";
 
-        container.innerHTML = "<p>No activity yet</p>";
+        if (timeline.length === 0) {
 
-    } else {
+            container.innerHTML = "<p>No activity yet</p>";
 
-        timeline.forEach(t => {
+        } else {
 
-            const div = document.createElement("div");
+            timeline.forEach(t => {
 
-            div.className = "timelineItem";
+                const div = document.createElement("div");
 
-            div.innerHTML = `
-                <small>${t.time}</small><br>
-                <span>${t.text}</span>
-                <hr>
-            `;
+                div.className = "timelineItem";
 
-            container.appendChild(div);
+                div.innerHTML = `
+                    <small>${t.time}</small><br>
+                    <span>${t.text}</span>
+                    <hr>
+                `;
 
-        });
+                container.appendChild(div);
+
+            });
+
+        }
+
+        document.getElementById("officerDrawer")
+            .classList.remove("hidden");
 
     }
 
-    document.getElementById("officerDrawer")
-    .classList.remove("hidden");
-
-};
+}
 
 /* GLOBAL INSTANCE */
 
 const Officers = new OfficersEngine();
 
-/* INIT RENDER */
-
-document.addEventListener("DOMContentLoaded", () => {
-
-    Officers.render();
-
-});
-/* ============================
-   MODAL CONTROL
-============================ */
-
-const modal = document.getElementById("officerModal");
-
-const openBtn = document.getElementById("createOfficerBtn");
-const closeBtn = document.getElementById("closeModal");
-const confirmBtn = document.getElementById("createOfficerConfirm");
-
-openBtn.onclick = () => {
-    modal.classList.remove("hidden");
-};
-
-closeBtn.onclick = () => {
-    modal.classList.add("hidden");
-};
-
-/* ============================
-   CREATE OFFICER ACTION
-============================ */
-
-confirmBtn.onclick = () => {
-
-    const name = document.getElementById("offName").value;
-    const division = document.getElementById("offDivision").value;
-    const photo = document.getElementById("offPhoto").value;
-    const rank = document.getElementById("offRank").value;
-
-    if(!name || !division){
-
-        UI?.error("Please fill required fields");
-
-        return;
-
-    }
-
-    Officers.createOfficer({
-
-        name,
-        division,
-        photo,
-        rank
-
-    });
-
-    modal.classList.add("hidden");
-
-    document.getElementById("offName").value = "";
-    document.getElementById("offDivision").value = "";
-    document.getElementById("offPhoto").value = "";
-
-};
+window.Officers = Officers;
 
 let currentOfficerId = null;
 
 /* ============================
-   OPEN DRAWER
+   PAGE WIRING
+   (only runs on pages that
+   actually have these elements)
 ============================ */
 
-Officers.view = function(id){
+document.addEventListener("DOMContentLoaded", () => {
 
-    const officer = this.officers.find(o => o.id === id);
+    Officers.load();
 
-    if(!officer) return;
+    /* MODAL CONTROL */
 
-    currentOfficerId = id;
+    const modal = document.getElementById("officerModal");
 
-    document.getElementById("drawerName").innerText = officer.name;
-    document.getElementById("drawerRank").innerText = officer.rank;
-    document.getElementById("drawerBadge").innerText = officer.badge;
-    document.getElementById("drawerDivision").innerText = officer.division;
-    document.getElementById("drawerStatus").innerText = officer.status;
+    const openBtn = document.getElementById("createOfficerBtn");
+    const closeBtn = document.getElementById("closeModal");
+    const confirmBtn = document.getElementById("createOfficerConfirm");
 
-    document.getElementById("drawerPhoto").src =
-        officer.photo || "https://via.placeholder.com/100";
+    if (modal && openBtn) {
 
-    document.getElementById("officerDrawer").classList.remove("hidden");
+        openBtn.onclick = () => {
+            modal.classList.remove("hidden");
+        };
 
-};
-
-/* ============================
-   CLOSE DRAWER
-============================ */
-
-document.getElementById("closeDrawer").onclick = () => {
-
-    document.getElementById("officerDrawer")
-    .classList.add("hidden");
-
-    currentOfficerId = null;
-
-};
-
-async addTimeline(officerId, text){
-
-    await supabase
-        .from("officer_timeline")
-        .insert([{
-            officer_id: officerId,
-            action: text,
-            details: ""
-        }]);
-
-}
-
-async getTimeline(id){
-
-    const { data } = await supabase
-        .from("officer_timeline")
-        .select("*")
-        .eq("officer_id", id)
-        .order("created_at", { ascending: false });
-
-    return data || [];
-
-}
-window.Officers = Officers;
-
-window.addEventListener("load", () => {
-    if (window.Officers) {
-        Officers.renderList();
     }
+
+    if (modal && closeBtn) {
+
+        closeBtn.onclick = () => {
+            modal.classList.add("hidden");
+        };
+
+    }
+
+    if (modal && confirmBtn) {
+
+        confirmBtn.onclick = () => {
+
+            const name = document.getElementById("offName").value;
+            const division = document.getElementById("offDivision").value;
+            const photo = document.getElementById("offPhoto").value;
+            const rank = document.getElementById("offRank").value;
+
+            if (!name || !division) {
+
+                UI?.error("Please fill required fields");
+
+                return;
+
+            }
+
+            Officers.createOfficer({
+                name,
+                division,
+                photo,
+                rank
+            });
+
+            modal.classList.add("hidden");
+
+            document.getElementById("offName").value = "";
+            document.getElementById("offDivision").value = "";
+            document.getElementById("offPhoto").value = "";
+
+        };
+
+    }
+
+    /* CLOSE DRAWER */
+
+    const closeDrawer = document.getElementById("closeDrawer");
+
+    if (closeDrawer) {
+
+        closeDrawer.onclick = () => {
+
+            document.getElementById("officerDrawer")
+                .classList.add("hidden");
+
+            currentOfficerId = null;
+
+        };
+
+    }
+
+    /* SEARCH */
+
+    const searchInput = document.getElementById("searchInput");
+
+    if (searchInput) {
+
+        searchInput.addEventListener("input", () => {
+
+            Officers.render(Officers.search(searchInput.value));
+
+        });
+
+    }
+
 });

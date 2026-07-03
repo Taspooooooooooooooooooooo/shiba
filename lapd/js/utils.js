@@ -1,1 +1,4 @@
-some = utilities (end end end end
+/* ==========================================================
+   SHIBA PIMS
+   Utilities (placeholder — helpers will be added here)
+========================================================== */

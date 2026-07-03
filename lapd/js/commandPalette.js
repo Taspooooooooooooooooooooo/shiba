@@ -50,6 +50,14 @@ class CommandPalette {
 
     create() {
 
+        if (!document.body) {
+
+            document.addEventListener("DOMContentLoaded", () => this.create());
+
+            return;
+
+        }
+
         document.body.insertAdjacentHTML("beforeend", `
 
 <div id="commandPalette" class="hidden">
@@ -163,8 +171,3 @@ class CommandPalette {
 }
 
 const Palette=new CommandPalette();
-const container = document.getElementById("commandPalette");
-
-if(!container){
-    console.warn("Command palette missing in HTML");
-}

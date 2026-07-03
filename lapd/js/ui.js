@@ -11,7 +11,33 @@ class UIManager {
 
     }
 
+    getContainer() {
+
+        if (!this.toastContainer) {
+
+            this.toastContainer = document.getElementById("toastContainer");
+
+        }
+
+        if (!this.toastContainer && document.body) {
+
+            this.toastContainer = document.createElement("div");
+
+            this.toastContainer.id = "toastContainer";
+
+            document.body.appendChild(this.toastContainer);
+
+        }
+
+        return this.toastContainer;
+
+    }
+
     toast(message, type = "info") {
+
+        const container = this.getContainer();
+
+        if (!container) return;
 
         const toast = document.createElement("div");
 
@@ -22,7 +48,7 @@ class UIManager {
             ${message}
         `;
 
-        this.toastContainer.appendChild(toast);
+        container.appendChild(toast);
 
         setTimeout(() => {
 

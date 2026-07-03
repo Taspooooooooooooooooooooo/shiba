@@ -11,10 +11,8 @@
 
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/dashboard.css">
-    <script src="js/commandPalette.js"></script>
 
 </head>
-<script src="js/officers.js"></script>
 <body>
 
 <header class="topbar">
@@ -163,6 +161,8 @@
 
 </main>
 
+<script src="js/commandPalette.js"></script>
+
 <script>
 
 if(sessionStorage.getItem("loggedIn")!="true"){
@@ -188,14 +188,3 @@ document.getElementById("logoutButton").onclick=function(){
 </body>
 
 </html>
-<script src="js/supabaseClient.js"></script>
-<script src="js/commandPalette.js"></script>
-<script src="js/officers.js"></script>
-<script src="js/login.js"></script>
-<script src="js/ui.js"></script>
-
-<script>
-window.addEventListener("DOMContentLoaded", () => {
-    if(window.Officers) Officers.renderList?.();
-});
-</script>
