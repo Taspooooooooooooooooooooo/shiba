@@ -44,6 +44,71 @@
     </div>
 
 </div>
+<div id="officerDrawer" class="drawer hidden">
+
+    <div class="drawerHeader">
+
+        <h2 id="drawerName">Officer</h2>
+
+        <button id="closeDrawer">✖</button>
+
+    </div>
+
+    <div class="drawerBody">
+
+        <div class="profileTop">
+
+            <img id="drawerPhoto" src="" alt="photo">
+
+            <div>
+
+                <h3 id="drawerRank">Rank</h3>
+
+                <p id="drawerBadge">Badge</p>
+
+                <p id="drawerDivision">Division</p>
+
+                <p id="drawerStatus">Status</p>
+
+            </div>
+
+        </div>
+
+        <hr>
+
+        <div class="drawerSection">
+
+            <h4>Quick Actions</h4>
+
+            <button onclick="Officers.promote(currentOfficerId)">🏅 Promote</button>
+
+            <button>📂 Cases</button>
+
+            <button>📄 Reports</button>
+
+            <button>📷 Bodycam</button>
+
+            <button>🏆 Certificates</button>
+
+        </div>
+
+        <hr>
+
+        <div class="drawerSection">
+
+            <h4>Officer Timeline</h4>
+
+            <div id="drawerTimeline">
+
+                <p>No activity yet</p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
 </head>
 
 <body>
