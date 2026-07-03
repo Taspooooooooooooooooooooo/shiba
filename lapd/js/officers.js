@@ -419,3 +419,9 @@ async getTimeline(id){
 
 }
 window.Officers = Officers;
+
+window.addEventListener("load", () => {
+    if (window.Officers) {
+        Officers.renderList();
+    }
+});
