@@ -3,6 +3,17 @@
    Officers Logic Engine
 ============================================================ */
 import { supabase } from "./supabaseClient.js"
+async load(){
+   const { data, error } = await supabase
+      .from("officers")
+      .select("*");
+   if(error){
+      console.error(error);
+      return;
+   }
+   this.data= data;
+   this.renderList();
+}
 
 class OfficersEngine {
    getTimeline(officerId){
@@ -69,37 +80,32 @@ class OfficersEngine {
        CREATE OFFICER
     ========================== */
 
-    createOfficer(data) {
+    async createOfficer(officer){
 
-        const officer = {
+    const badge = "BDG-" + Math.floor(Math.random()*99999);
 
-            id: this.generateID(),
+    const { data, error } = await supabase
+        .from("officers")
+        .insert([{
+            first_name: officer.name,
+            division_id: null,
+            rank_id: null,
+            badge_number: badge,
+            photo_url: officer.photo || null,
+            status: "Off Duty"
+        }])
+        .select();
 
-            name: data.name,
-
-            badge: this.generateBadge(),
-
-            rank: "Officer",
-
-            division: data.division || "Patrol",
-
-            status: "On Duty",
-
-            lastActive: "Now",
-
-            createdAt: new Date().toISOString()
-
-        };
-
-        this.addTimeline(officer.id,"Officer created sucessfully!");
-
-        UI?.success("Officer created successfully");
-
-        this.render();
-
-        return officer;
-
+    if(error){
+        console.error(error);
+        return;
     }
+
+    this.addTimeline(data[0].id, "Officer created");
+
+    this.load();
+
+}
 
     /* =========================
        ID GENERATOR
@@ -125,16 +131,16 @@ class OfficersEngine {
        DELETE OFFICER
     ========================== */
 
-    deleteOfficer(id) {
+async deleteOfficer(id){
 
-        this.officers = this.officers.filter(o => o.id !== id);
+    await supabase
+        .from("officers")
+        .delete()
+        .eq("id", id);
 
-        UI?.warning("Officer removed");
+    this.load();
 
-        this.render();
-
-    }
-
+}
     /* =========================
        SEARCH + FILTER
     ========================== */
@@ -154,39 +160,26 @@ class OfficersEngine {
        PROMOTE SYSTEM
     ========================== */
 
-    promote(id) {
+   async promote(id){
 
-        const officer = this.officers.find(o => o.id === id);
+    const officer = this.data.find(o => o.id === id);
 
-        if (!officer) return;
+    const ranks = ["Officer","Officer II","Corporal","Sergeant I","Sergeant II","Lieutenant"];
 
-        const ranks = [
-            "Officer",
-            "Officer II",
-            "Corporal",
-            "Sergeant I",
-            "Sergeant II",
-            "Lieutenant",
-            "Captain"
-        ];
+    let index = ranks.indexOf(officer.rank || "Officer");
 
-        let index = ranks.indexOf(officer.rank);
+    let newRank = ranks[Math.min(index + 1, ranks.length-1)];
 
-        if (index < ranks.length - 1) {
+    await supabase
+        .from("officers")
+        .update({ rank: newRank })
+        .eq("id", id);
 
-            this.addTimeline(officer.id, `Promoted to ${officer.rank}`);
+    this.addTimeline(id, "Promoted to " + newRank);
 
-            UI?.success(`${officer.name} promoted to ${officer.rank}`);
+    this.load();
 
-        } else {
-
-            UI?.info("Max rank reached");
-
-        }
-
-        this.render();
-
-    }
+}
 
     /* =========================
        RENDER TABLE
@@ -401,3 +394,27 @@ document.getElementById("closeDrawer").onclick = () => {
     currentOfficerId = null;
 
 };
+
+async addTimeline(officerId, text){
+
+    await supabase
+        .from("officer_timeline")
+        .insert([{
+            officer_id: officerId,
+            action: text,
+            details: ""
+        }]);
+
+}
+
+async getTimeline(id){
+
+    const { data } = await supabase
+        .from("officer_timeline")
+        .select("*")
+        .eq("officer_id", id)
+        .order("created_at", { ascending: false });
+
+    return data || [];
+
+}
