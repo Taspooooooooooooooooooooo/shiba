@@ -4,7 +4,6 @@
 <head>
 
 <meta charset="UTF-8">
-
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>SHIBA PIMS | Officers</title>
@@ -16,94 +15,122 @@
 
 <body>
 
-<div class="sidebar">
-
-<h2>SHIBA PIMS</h2>
-
-<a href="dashboard.html">🏠 Dashboard</a>
-
-<a class="active">👮 Officers</a>
-
-<a href="#">📂 Cases</a>
-
-<a href="#">📄 Reports</a>
-
-<a href="#">📷 Bodycam</a>
-
-<a href="#">🚔 Vehicles</a>
-
-<a href="#">🏆 Certificates</a>
-
-<a href="#">📅 Shifts</a>
-
-<a href="#">💬 Messages</a>
-
-<a href="#">⚙ Settings</a>
-
-</div>
+<!-- LAYOUT -->
+<div id="layoutTop"></div>
 
 <div class="content">
 
-<div class="card">
+    <!-- HEADER -->
+    <div class="card">
 
-<h1>Officer Management</h1>
+        <h1>👮 Officer Management</h1>
 
-<p>
+        <p>
+            Manage personnel, ranks, permissions, and operational status.
+        </p>
 
-Manage every police officer inside SHIBA PIMS.
+    </div>
 
-</p>
+    <!-- ACTION BAR -->
+    <div class="card actionBar">
+
+        <button id="createOfficerBtn">＋ Create Officer</button>
+
+        <button>📤 Export</button>
+
+        <button>🖨️ Print</button>
+
+        <button>🔍 Advanced Search</button>
+
+    </div>
+
+    <!-- FILTER BAR -->
+    <div class="card">
+
+        <input id="searchInput" placeholder="Search officers...">
+
+        <select>
+            <option>All Status</option>
+            <option>On Duty</option>
+            <option>Off Duty</option>
+            <option>Training</option>
+            <option>Suspended</option>
+        </select>
+
+        <select>
+            <option>All Ranks</option>
+            <option>Officer</option>
+            <option>Corporal</option>
+            <option>Sergeant</option>
+            <option>Lieutenant</option>
+            <option>Captain</option>
+        </select>
+
+    </div>
+
+    <!-- TABLE -->
+    <div class="card">
+
+        <table class="table">
+
+            <thead>
+
+                <tr>
+
+                    <th>Status</th>
+                    <th>Name</th>
+                    <th>Badge ID</th>
+                    <th>Rank</th>
+                    <th>Division</th>
+                    <th>Last Active</th>
+                    <th>Actions</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody id="officersTable">
+
+                <tr>
+
+                    <td>🟢 On Duty</td>
+                    <td>John Smith</td>
+                    <td>SH-2026-00421</td>
+                    <td>Sergeant II</td>
+                    <td>Metro</td>
+                    <td>Now</td>
+                    <td>
+                        <button>View</button>
+                        <button>Edit</button>
+                        <button>Promote</button>
+                        <button>More</button>
+                    </td>
+
+                </tr>
+
+            </tbody>
+
+        </table>
+
+    </div>
 
 </div>
 
-<div class="card">
-
-<button id="createOfficer">
-
-＋ Create Officer
-
-</button>
-
-</div>
-
-<div class="card">
-
-<table id="officerTable">
-
-<thead>
-
-<tr>
-
-<th>Photo</th>
-
-<th>Name</th>
-
-<th>Badge</th>
-
-<th>Rank</th>
-
-<th>Division</th>
-
-<th>Status</th>
-
-<th>Actions</th>
-
-</tr>
-
-</thead>
-
-<tbody>
-
-</tbody>
-
-</table>
-
-</div>
-
-</div>
+<!-- FOOTER -->
+<div id="layoutFooter"></div>
 
 <script src="js/auth.js"></script>
+<script src="js/session.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/layout.js"></script>
 <script src="js/officers.js"></script>
+
+<script>
+
+document.getElementById("layoutTop").innerHTML = AppLayout.createTopbar();
+document.getElementById("layoutFooter").innerHTML = AppLayout.createFooter();
+
+</script>
 
 </body>
 
