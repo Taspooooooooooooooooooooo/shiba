@@ -4,6 +4,11 @@
 ============================================================ */
 
 class OfficersEngine {
+   getTimeline(officerId){
+
+    return this.timeline[officerId] || [];
+
+}
    addTimeline(officerId, text) {
 
     if(!this.timeline[officerId]){
