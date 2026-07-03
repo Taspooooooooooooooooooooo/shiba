@@ -243,20 +243,58 @@ class OfficersEngine {
     /* =========================
        VIEW OFFICER (future drawer)
     ========================== */
+Officers.view = function(id){
 
-    view(id) {
+    const officer = this.officers.find(o => o.id === id);
 
-        const officer = this.officers.find(o => o.id === id);
+    if(!officer) return;
 
-        if (!officer) return;
+    currentOfficerId = id;
 
-        alert(
-            `${officer.name}\n${officer.rank}\n${officer.badge}`
-        );
+    document.getElementById("drawerName").innerText = officer.name;
+    document.getElementById("drawerRank").innerText = officer.rank;
+    document.getElementById("drawerBadge").innerText = officer.badge;
+    document.getElementById("drawerDivision").innerText = officer.division;
+    document.getElementById("drawerStatus").innerText = officer.status;
+
+    document.getElementById("drawerPhoto").src =
+        officer.photo || "https://via.placeholder.com/100";
+
+    // TIMELINE RENDER
+    const timeline = this.getTimeline(id);
+
+    const container = document.getElementById("drawerTimeline");
+
+    container.innerHTML = "";
+
+    if(timeline.length === 0){
+
+        container.innerHTML = "<p>No activity yet</p>";
+
+    } else {
+
+        timeline.forEach(t => {
+
+            const div = document.createElement("div");
+
+            div.className = "timelineItem";
+
+            div.innerHTML = `
+                <small>${t.time}</small><br>
+                <span>${t.text}</span>
+                <hr>
+            `;
+
+            container.appendChild(div);
+
+        });
 
     }
 
-}
+    document.getElementById("officerDrawer")
+    .classList.remove("hidden");
+
+};
 
 /* GLOBAL INSTANCE */
 
