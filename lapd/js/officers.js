@@ -246,3 +246,56 @@ document.addEventListener("DOMContentLoaded", () => {
     Officers.render();
 
 });
+/* ============================
+   MODAL CONTROL
+============================ */
+
+const modal = document.getElementById("officerModal");
+
+const openBtn = document.getElementById("createOfficerBtn");
+const closeBtn = document.getElementById("closeModal");
+const confirmBtn = document.getElementById("createOfficerConfirm");
+
+openBtn.onclick = () => {
+    modal.classList.remove("hidden");
+};
+
+closeBtn.onclick = () => {
+    modal.classList.add("hidden");
+};
+
+/* ============================
+   CREATE OFFICER ACTION
+============================ */
+
+confirmBtn.onclick = () => {
+
+    const name = document.getElementById("offName").value;
+    const division = document.getElementById("offDivision").value;
+    const photo = document.getElementById("offPhoto").value;
+    const rank = document.getElementById("offRank").value;
+
+    if(!name || !division){
+
+        UI?.error("Please fill required fields");
+
+        return;
+
+    }
+
+    Officers.createOfficer({
+
+        name,
+        division,
+        photo,
+        rank
+
+    });
+
+    modal.classList.add("hidden");
+
+    document.getElementById("offName").value = "";
+    document.getElementById("offDivision").value = "";
+    document.getElementById("offPhoto").value = "";
+
+};
