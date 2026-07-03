@@ -2,6 +2,7 @@
    SHIBA PIMS
    Officers Logic Engine
 ============================================================ */
+import { supabase } from "./supabaseClient.js"
 
 class OfficersEngine {
    getTimeline(officerId){
