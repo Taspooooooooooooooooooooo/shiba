@@ -2,7 +2,7 @@
    SHIBA PIMS
    Officers Logic Engine
 ============================================================ */
-import { supabase } from "./supabaseClient.js"
+window.supabase
 async load(){
    const { data, error } = await supabase
       .from("officers")
