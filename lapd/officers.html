@@ -10,7 +10,40 @@
 
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/dashboard.css">
+<div id="officerModal" class="modal hidden">
 
+    <div class="modalBox">
+
+        <h2>👮 Create Officer</h2>
+
+        <p>Fill in officer details</p>
+
+        <input id="offName" placeholder="Full Name">
+
+        <input id="offDivision" placeholder="Division (e.g. Metro)">
+
+        <input id="offPhoto" placeholder="Photo URL (optional)">
+
+        <select id="offRank">
+
+            <option>Officer</option>
+            <option>Officer II</option>
+            <option>Corporal</option>
+            <option>Sergeant I</option>
+
+        </select>
+
+        <div class="modalActions">
+
+            <button id="createOfficerConfirm">Create</button>
+
+            <button id="closeModal">Cancel</button>
+
+        </div>
+
+    </div>
+
+</div>
 </head>
 
 <body>
