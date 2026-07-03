@@ -418,3 +418,4 @@ async getTimeline(id){
     return data || [];
 
 }
+window.Officers = Officers;
