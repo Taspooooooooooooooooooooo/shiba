@@ -299,3 +299,43 @@ confirmBtn.onclick = () => {
     document.getElementById("offPhoto").value = "";
 
 };
+
+let currentOfficerId = null;
+
+/* ============================
+   OPEN DRAWER
+============================ */
+
+Officers.view = function(id){
+
+    const officer = this.officers.find(o => o.id === id);
+
+    if(!officer) return;
+
+    currentOfficerId = id;
+
+    document.getElementById("drawerName").innerText = officer.name;
+    document.getElementById("drawerRank").innerText = officer.rank;
+    document.getElementById("drawerBadge").innerText = officer.badge;
+    document.getElementById("drawerDivision").innerText = officer.division;
+    document.getElementById("drawerStatus").innerText = officer.status;
+
+    document.getElementById("drawerPhoto").src =
+        officer.photo || "https://via.placeholder.com/100";
+
+    document.getElementById("officerDrawer").classList.remove("hidden");
+
+};
+
+/* ============================
+   CLOSE DRAWER
+============================ */
+
+document.getElementById("closeDrawer").onclick = () => {
+
+    document.getElementById("officerDrawer")
+    .classList.add("hidden");
+
+    currentOfficerId = null;
+
+};
