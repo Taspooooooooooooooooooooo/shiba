@@ -163,3 +163,8 @@ class CommandPalette {
 }
 
 const Palette=new CommandPalette();
+const container = document.getElementById("commandPalette");
+
+if(!container){
+    console.warn("Command palette missing in HTML");
+}
