@@ -41,6 +41,8 @@ const AppLayout = {
 
     <a href="officers.html">👮 Officers</a>
 
+    <a href="../cloud/">☁️ Cloud</a>
+
     <a href="#">📂 Cases</a>
 
     <a href="#">📄 Reports</a>

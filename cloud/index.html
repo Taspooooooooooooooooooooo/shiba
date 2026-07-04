@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>SHIBA CLOUD | File Sharing</title>
+
+    <meta name="description" content="SHIBA CLOUD - upload files and share them with a link">
+    <meta name="theme-color" content="#0b1623">
+
+    <link rel="stylesheet" href="../lapd/css/style.css">
+
+    <style>
+
+        body{
+
+            min-height:100vh;
+
+            display:flex;
+
+            flex-direction:column;
+
+            align-items:center;
+
+            padding:40px 20px;
+
+            gap:25px;
+
+        }
+
+        .cloud-header{
+
+            text-align:center;
+
+        }
+
+        .cloud-header h1{
+
+            font-size:34px;
+
+            color:var(--primary);
+
+        }
+
+        .cloud-header span{
+
+            color:var(--text2);
+
+        }
+
+        .cloud-card{
+
+            background:var(--card);
+
+            border:1px solid var(--border);
+
+            border-radius:var(--radius);
+
+            box-shadow:var(--shadow);
+
+            padding:25px;
+
+            width:640px;
+
+            max-width:95vw;
+
+        }
+
+        #dropZone{
+
+            border:2px dashed var(--border);
+
+            border-radius:14px;
+
+            padding:45px 20px;
+
+            text-align:center;
+
+            color:var(--text2);
+
+            cursor:pointer;
+
+            transition:0.2s;
+
+        }
+
+        #dropZone.dragover,
+        #dropZone:hover{
+
+            border-color:var(--primary);
+
+            color:var(--text);
+
+            background:#2e8bff14;
+
+        }
+
+        #fileInput{
+
+            display:none;
+
+        }
+
+        .file-row{
+
+            display:flex;
+
+            align-items:center;
+
+            justify-content:space-between;
+
+            gap:10px;
+
+            padding:12px;
+
+            border-radius:10px;
+
+            background:#15283d;
+
+            margin-top:10px;
+
+            flex-wrap:wrap;
+
+        }
+
+        .file-row .meta{
+
+            flex:1;
+
+            min-width:180px;
+
+            overflow:hidden;
+
+        }
+
+        .file-row .meta strong{
+
+            display:block;
+
+            white-space:nowrap;
+
+            overflow:hidden;
+
+            text-overflow:ellipsis;
+
+        }
+
+        .file-row .meta small{
+
+            color:var(--text2);
+
+        }
+
+        .file-row button,
+        .viewer-actions a,
+        .viewer-actions button{
+
+            padding:8px 14px;
+
+            border:none;
+
+            border-radius:8px;
+
+            background:var(--primary);
+
+            color:white;
+
+            cursor:pointer;
+
+            font-size:13px;
+
+            text-decoration:none;
+
+            transition:0.2s;
+
+        }
+
+        .file-row button:hover,
+        .viewer-actions a:hover,
+        .viewer-actions button:hover{
+
+            background:var(--primaryHover);
+
+        }
+
+        .file-row button.danger{
+
+            background:#3d1520;
+
+        }
+
+        .file-row button.danger:hover{
+
+            background:var(--danger);
+
+        }
+
+        .banner{
+
+            padding:14px;
+
+            border-radius:10px;
+
+            margin-bottom:15px;
+
+            display:none;
+
+        }
+
+        .banner.error{
+
+            display:block;
+
+            background:#3d152033;
+
+            border:1px solid var(--danger);
+
+            color:var(--text);
+
+        }
+
+        .banner.info{
+
+            display:block;
+
+            background:#2e8bff14;
+
+            border:1px solid var(--primary);
+
+            color:var(--text);
+
+        }
+
+        #viewerPreview{
+
+            margin-top:15px;
+
+            text-align:center;
+
+        }
+
+        #viewerPreview img,
+        #viewerPreview video{
+
+            max-width:100%;
+
+            max-height:420px;
+
+            border-radius:12px;
+
+            border:1px solid var(--border);
+
+        }
+
+        .viewer-actions{
+
+            display:flex;
+
+            gap:10px;
+
+            justify-content:center;
+
+            margin-top:15px;
+
+            flex-wrap:wrap;
+
+        }
+
+        footer{
+
+            margin-top:auto;
+
+            color:var(--text2);
+
+        }
+
+        .backlink{
+
+            color:var(--primary);
+
+            text-decoration:none;
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+    <!-- ===================================================== -->
+    <!-- Header                                                 -->
+    <!-- ===================================================== -->
+
+    <div class="cloud-header">
+
+        <h1>☁️ SHIBA CLOUD</h1>
+
+        <span>Upload a file, get a link, share it anywhere.</span>
+
+    </div>
+
+    <!-- ===================================================== -->
+    <!-- Shared-file viewer (?f=ID)                             -->
+    <!-- ===================================================== -->
+
+    <div class="cloud-card hidden" id="viewerCard">
+
+        <div id="viewerBanner" class="banner"></div>
+
+        <h2 id="viewerName">Loading...</h2>
+
+        <small id="viewerInfo" style="color:var(--text2)"></small>
+
+        <div id="viewerPreview"></div>
+
+        <div class="viewer-actions" id="viewerActions"></div>
+
+    </div>
+
+    <!-- ===================================================== -->
+    <!-- Upload area                                            -->
+    <!-- ===================================================== -->
+
+    <div class="cloud-card" id="uploadCard">
+
+        <div id="uploadBanner" class="banner"></div>
+
+        <div id="dropZone">
+
+            <h2>📤 Drop files here</h2>
+
+            <p>or click to choose (max 50 MB per file)</p>
+
+        </div>
+
+        <input type="file" id="fileInput" multiple>
+
+        <div id="uploadResults"></div>
+
+    </div>
+
+    <!-- ===================================================== -->
+    <!-- Recent uploads                                         -->
+    <!-- ===================================================== -->
+
+    <div class="cloud-card" id="recentCard">
+
+        <h2>🗂️ Recent uploads</h2>
+
+        <div id="recentList"><p style="color:var(--text2)">Loading...</p></div>
+
+    </div>
+
+    <footer>
+
+        SHIBA CLOUD © 2026 · <a class="backlink" href="../lapd/dashboard.html">Back to SHIBA PIMS</a>
+
+    </footer>
+
+    <!-- ===================================================== -->
+    <!-- JavaScript                                             -->
+    <!-- ===================================================== -->
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+    <script src="../lapd/js/supabaseClient.js"></script>
+
+    <script>
+
+    /* ======================================================
+       SHIBA CLOUD
+       Uploads go to the Supabase storage bucket "cloud",
+       metadata to the cloud_files table.
+       Share link:  /cloud/?f=<ID>
+    ====================================================== */
+
+    const BUCKET = "cloud";
+
+    const SETUP_HINT =
+        "Storage is not set up yet — run cloud/SETUP.sql in the Supabase SQL Editor once.";
+
+    function generateFileId() {
+
+        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+        const bytes = new Uint8Array(11);
+
+        crypto.getRandomValues(bytes);
+
+        return [...bytes].map(b => chars[b % chars.length]).join("");
+
+    }
+
+    function formatSize(bytes) {
+
+        if (bytes == null) return "";
+
+        if (bytes < 1024) return bytes + " B";
+
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+
+        return (bytes / 1024 / 1024).toFixed(1) + " MB";
+
+    }
+
+    function shareLink(id) {
+
+        return location.origin + location.pathname + "?f=" + id;
+
+    }
+
+    function directLink(path) {
+
+        return db.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+
+    }
+
+    function copyText(text, button) {
+
+        navigator.clipboard.writeText(text).then(() => {
+
+            const old = button.innerText;
+
+            button.innerText = "Copied!";
+
+            setTimeout(() => button.innerText = old, 1500);
+
+        });
+
+    }
+
+    function showBanner(el, type, text) {
+
+        el.className = "banner " + type;
+
+        el.innerText = text;
+
+    }
+
+    /* ======================================================
+       VIEWER MODE (?f=ID)
+    ====================================================== */
+
+    async function openViewer(id) {
+
+        const card = document.getElementById("viewerCard");
+
+        card.classList.remove("hidden");
+
+        const banner = document.getElementById("viewerBanner");
+
+        const { data, error } = await db
+            .from("cloud_files")
+            .select("*")
+            .eq("id", id)
+            .maybeSingle();
+
+        if (error || !data) {
+
+            document.getElementById("viewerName").innerText = "File not found";
+
+            showBanner(banner, "error",
+                "No file exists for this link. It may have been deleted.");
+
+            return;
+
+        }
+
+        document.getElementById("viewerName").innerText = data.name;
+
+        document.getElementById("viewerInfo").innerText =
+            formatSize(data.size) + " · uploaded " +
+            new Date(data.created_at).toLocaleString();
+
+        const url = directLink(data.path);
+
+        const preview = document.getElementById("viewerPreview");
+
+        const mime = data.mime || "";
+
+        if (mime.startsWith("image/")) {
+
+            preview.innerHTML = `<img src="${url}" alt="${data.name}">`;
+
+        } else if (mime.startsWith("video/")) {
+
+            preview.innerHTML = `<video src="${url}" controls></video>`;
+
+        } else if (mime.startsWith("audio/")) {
+
+            preview.innerHTML = `<audio src="${url}" controls></audio>`;
+
+        }
+
+        const actions = document.getElementById("viewerActions");
+
+        actions.innerHTML = `
+            <a href="${url}" target="_blank" rel="noopener">⬇️ Open / Download</a>
+            <button id="copyDirect">🔗 Copy direct link</button>
+            <button id="copyShare">💬 Copy share link</button>
+        `;
+
+        document.getElementById("copyDirect").onclick =
+            (e) => copyText(url, e.target);
+
+        document.getElementById("copyShare").onclick =
+            (e) => copyText(shareLink(id), e.target);
+
+    }
+
+    /* ======================================================
+       UPLOAD
+    ====================================================== */
+
+    async function uploadFile(file) {
+
+        const results = document.getElementById("uploadResults");
+
+        const row = document.createElement("div");
+
+        row.className = "file-row";
+
+        row.innerHTML = `
+            <div class="meta">
+                <strong>${file.name}</strong>
+                <small>${formatSize(file.size)} · uploading...</small>
+            </div>
+        `;
+
+        results.prepend(row);
+
+        if (file.size > 50 * 1024 * 1024) {
+
+            row.querySelector("small").innerText = "Too big — 50 MB limit";
+
+            return;
+
+        }
+
+        const id = generateFileId();
+
+        const path = id + "/" + file.name;
+
+        const { error } = await db.storage
+            .from(BUCKET)
+            .upload(path, file);
+
+        if (error) {
+
+            console.error("UPLOAD ERROR:", error);
+
+            row.querySelector("small").innerText = "Upload failed";
+
+            showBanner(document.getElementById("uploadBanner"), "error",
+                /bucket|policy|security|not.*found/i.test(error.message)
+                    ? SETUP_HINT
+                    : "Upload failed: " + error.message);
+
+            return;
+
+        }
+
+        const { error: dbError } = await db
+            .from("cloud_files")
+            .insert([{
+                id: id,
+                name: file.name,
+                path: path,
+                size: file.size,
+                mime: file.type || null
+            }]);
+
+        if (dbError) {
+
+            console.error("METADATA ERROR:", dbError);
+
+            showBanner(document.getElementById("uploadBanner"), "error", SETUP_HINT);
+
+            row.querySelector("small").innerText = "Upload failed (metadata)";
+
+            return;
+
+        }
+
+        row.querySelector("small").innerText = formatSize(file.size) + " · done";
+
+        const actions = document.createElement("div");
+
+        const share = document.createElement("button");
+
+        share.innerText = "💬 Copy share link";
+
+        share.onclick = (e) => copyText(shareLink(id), e.target);
+
+        const direct = document.createElement("button");
+
+        direct.innerText = "🔗 Copy direct link";
+
+        direct.onclick = (e) => copyText(directLink(path), e.target);
+
+        actions.append(share, direct);
+
+        row.appendChild(actions);
+
+        loadRecent();
+
+    }
+
+    /* ======================================================
+       RECENT UPLOADS
+    ====================================================== */
+
+    async function loadRecent() {
+
+        const list = document.getElementById("recentList");
+
+        const { data, error } = await db
+            .from("cloud_files")
+            .select("*")
+            .order("created_at", { ascending: false })
+            .limit(25);
+
+        if (error) {
+
+            console.error("RECENT ERROR:", error);
+
+            list.innerHTML = `<p style="color:var(--text2)">${SETUP_HINT}</p>`;
+
+            return;
+
+        }
+
+        if (!data || data.length === 0) {
+
+            list.innerHTML =
+                `<p style="color:var(--text2)">Nothing here yet — upload something!</p>`;
+
+            return;
+
+        }
+
+        list.innerHTML = "";
+
+        data.forEach(f => {
+
+            const row = document.createElement("div");
+
+            row.className = "file-row";
+
+            row.innerHTML = `
+                <div class="meta">
+                    <strong>${f.name}</strong>
+                    <small>${formatSize(f.size)} · ${new Date(f.created_at).toLocaleString()}</small>
+                </div>
+            `;
+
+            const share = document.createElement("button");
+
+            share.innerText = "💬 Share";
+
+            share.onclick = (e) => copyText(shareLink(f.id), e.target);
+
+            const direct = document.createElement("button");
+
+            direct.innerText = "🔗 Direct";
+
+            direct.onclick = (e) => copyText(directLink(f.path), e.target);
+
+            const del = document.createElement("button");
+
+            del.className = "danger";
+
+            del.innerText = "🗑️";
+
+            del.onclick = async () => {
+
+                await db.storage.from(BUCKET).remove([f.path]);
+
+                await db.from("cloud_files").delete().eq("id", f.id);
+
+                loadRecent();
+
+            };
+
+            row.append(share, direct, del);
+
+            list.appendChild(row);
+
+        });
+
+    }
+
+    /* ======================================================
+       WIRING
+    ====================================================== */
+
+    document.addEventListener("DOMContentLoaded", () => {
+
+        const params = new URLSearchParams(location.search);
+
+        /* supports ?f=ID and the bare ?=ID style */
+
+        const fileId = params.get("f") || params.get("") || null;
+
+        if (fileId) {
+
+            openViewer(fileId);
+
+        }
+
+        const loggedIn = sessionStorage.getItem("loggedIn") === "true";
+
+        const uploadCard = document.getElementById("uploadCard");
+
+        const recentCard = document.getElementById("recentCard");
+
+        if (!loggedIn) {
+
+            /* visitors with a share link can view, but not upload */
+
+            uploadCard.querySelector("#dropZone").style.display = "none";
+
+            recentCard.style.display = "none";
+
+            showBanner(document.getElementById("uploadBanner"), "info",
+                "Log in to SHIBA PIMS to upload files. Shared links work without login.");
+
+            const banner = document.getElementById("uploadBanner");
+
+            banner.innerHTML +=
+                ' <a class="backlink" href="../lapd/index.html">Go to login →</a>';
+
+            return;
+
+        }
+
+        const dropZone = document.getElementById("dropZone");
+
+        const fileInput = document.getElementById("fileInput");
+
+        dropZone.onclick = () => fileInput.click();
+
+        fileInput.onchange = () => {
+
+            [...fileInput.files].forEach(uploadFile);
+
+            fileInput.value = "";
+
+        };
+
+        dropZone.ondragover = (e) => {
+
+            e.preventDefault();
+
+            dropZone.classList.add("dragover");
+
+        };
+
+        dropZone.ondragleave = () => dropZone.classList.remove("dragover");
+
+        dropZone.ondrop = (e) => {
+
+            e.preventDefault();
+
+            dropZone.classList.remove("dragover");
+
+            [...e.dataTransfer.files].forEach(uploadFile);
+
+        };
+
+        loadRecent();
+
+    });
+
+    </script>
+
+</body>
+
+</html>
