@@ -1,50 +1,43 @@
 /* ============================================================
    SHIBA PIMS
    Officers Logic Engine
+   (matched to the Supabase schema: officers, ranks,
+    divisions, officer_timeline)
 ============================================================ */
+
+/* =========================
+   HELPERS
+========================== */
+
+function generateOfficerId() {
+
+    return "OFCR-" + String(Date.now()).slice(-6);
+
+}
+
+function splitName(fullName) {
+
+    const parts = fullName.trim().split(" ");
+
+    return {
+        first: parts[0] || "Unknown",
+        last: parts.slice(1).join(" ") || "Unknown"
+    };
+
+}
 
 class OfficersEngine {
 
     constructor() {
 
         this.officers = [];
-        this.timeline = {};
-        this.initDemoData();
+        this.ranks = [];
+        this.divisions = [];
 
     }
 
     /* =========================
-       DEMO DATA
-    ========================== */
-
-    initDemoData() {
-
-        this.officers.push({
-            id: this.generateID(),
-            name: "John Smith",
-            badge: "SH-2026-00421",
-            rank: "Sergeant II",
-            division: "Metro",
-            status: "On Duty",
-            lastActive: "Now"
-        });
-
-        this.officers.push({
-            id: this.generateID(),
-            name: "Mike Johnson",
-            badge: "SH-2026-00112",
-            rank: "Officer",
-            division: "Patrol",
-            status: "Off Duty",
-            lastActive: "2h ago"
-        });
-
-    }
-
-    /* =========================
-       LOAD FROM DATABASE
-       (keeps demo data if the
-       database is empty/offline)
+       LOAD OFFICERS
     ========================== */
 
     async load() {
@@ -56,62 +49,129 @@ class OfficersEngine {
 
         const { data, error } = await db
             .from("officers")
-            .select("*");
+            .select("*, ranks(name, level), divisions(name)");
 
         if (error) {
-            console.error(error);
-            this.renderList();
+            console.error("LOAD OFFICERS ERROR:", error);
+            UI?.error("Failed to load officers");
             return;
         }
 
-        if (data && data.length > 0) {
-
-            this.officers = data.map(row => ({
-                id: row.id,
-                name: row.first_name || row.name || "Unknown",
-                badge: row.badge_number || row.badge || "—",
-                rank: row.rank || "Officer",
-                division: row.division || "—",
-                status: row.status || "Off Duty",
-                lastActive: row.last_active || "—"
-            }));
-
-        }
+        this.officers = (data || []).map(row => ({
+            id: row.id,
+            officerId: row.officer_id,
+            name: (row.first_name + " " + row.last_name).trim(),
+            badge: row.badge_number,
+            rank: row.ranks?.name || "—",
+            rankLevel: row.ranks?.level ?? null,
+            division: row.divisions?.name || "—",
+            status: row.status || "Off Duty",
+            photo: row.photo_url,
+            lastActive: row.updated_at
+                ? new Date(row.updated_at).toLocaleDateString()
+                : "—"
+        }));
 
         this.renderList();
 
     }
 
     /* =========================
-       CREATE OFFICER
+       LOAD RANKS + DIVISIONS
+       (for create + promote)
     ========================== */
 
-    async createOfficer(officer) {
+    async loadLookups() {
 
         if (!window.db) return;
 
-        const badge = "BDG-" + Math.floor(Math.random() * 99999);
+        const [ranksRes, divisionsRes] = await Promise.all([
+            db.from("ranks").select("*").order("level"),
+            db.from("divisions").select("*")
+        ]);
+
+        this.ranks = ranksRes.data || [];
+        this.divisions = divisionsRes.data || [];
+
+    }
+
+    /* =========================
+       CREATE OFFICER
+       (reads the modal inputs,
+       returns true on success)
+    ========================== */
+
+    async createOfficer() {
+
+        const fullName = document.getElementById("offName").value;
+        const photo = document.getElementById("offPhoto")?.value || null;
+        const divisionName = document.getElementById("offDivision")?.value || "";
+        const rankName = document.getElementById("offRank")?.value || "";
+
+        if (!fullName.trim()) {
+            UI?.error("Name is required!");
+            return false;
+        }
+
+        if (!window.db) {
+            UI?.error("No database connection");
+            return false;
+        }
+
+        const name = splitName(fullName);
+
+        const officerId = generateOfficerId();
+
+        const badge = "BDG-" + Math.floor(10000 + Math.random() * 90000);
+
+        if (this.ranks.length === 0 && this.divisions.length === 0) {
+            await this.loadLookups();
+        }
+
+        const rank = this.ranks.find(r =>
+            r.name.toLowerCase() === rankName.toLowerCase());
+
+        const division = this.divisions.find(d =>
+            d.name.toLowerCase() === divisionName.trim().toLowerCase());
 
         const { data, error } = await db
             .from("officers")
             .insert([{
-                first_name: officer.name,
-                division_id: null,
-                rank_id: null,
+                officer_id: officerId,
+                first_name: name.first,
+                last_name: name.last,
                 badge_number: badge,
-                photo_url: officer.photo || null,
-                status: "Off Duty"
+                photo_url: photo,
+                division_id: division?.id || null,
+                rank_id: rank?.id || null,
+                user_id: null,
+                status: "Off Duty",
+                hire_date: new Date().toISOString().slice(0, 10),
+                notes: null
             }])
             .select();
 
         if (error) {
-            console.error(error);
-            return;
+            console.error("CREATE OFFICER ERROR:", error);
+            UI?.error("Error creating officer!");
+            return false;
         }
 
-        this.addTimeline(data[0].id, "Officer created");
+        console.log("OFFICER CREATED:", data);
 
-        this.load();
+        await this.addTimeline(data[0].id, "Officer created");
+
+        await this.load();
+
+        UI?.success(officerId + " was successfully created");
+
+        window.Notifications?.send?.(
+            "system",
+            "Officer Created",
+            `${officerId} was successfully created`
+        );
+
+        return true;
 
     }
 
@@ -123,10 +183,23 @@ class OfficersEngine {
 
         if (!window.db) return;
 
+        /* timeline rows reference the officer, remove them first */
+
         await db
+            .from("officer_timeline")
+            .delete()
+            .eq("officer_id", id);
+
+        const { error } = await db
             .from("officers")
             .delete()
             .eq("id", id);
+
+        if (error) {
+            console.error("DELETE OFFICER ERROR:", error);
+            UI?.error("Error deleting officer!");
+            return;
+        }
 
         this.load();
 
@@ -134,77 +207,92 @@ class OfficersEngine {
 
     /* =========================
        PROMOTE SYSTEM
+       (uses the ranks table)
     ========================== */
 
     async promote(id) {
+
+        if (!window.db) return;
+
+        if (this.ranks.length === 0) {
+            await this.loadLookups();
+        }
+
+        if (this.ranks.length === 0) {
+            UI?.warning("No ranks defined in the database yet");
+            return;
+        }
 
         const officer = this.officers.find(o => o.id === id);
 
         if (!officer) return;
 
-        const ranks = ["Officer", "Officer II", "Corporal", "Sergeant I", "Sergeant II", "Lieutenant"];
+        const currentLevel = officer.rankLevel ?? -1;
 
-        let index = ranks.indexOf(officer.rank || "Officer");
+        const next = this.ranks
+            .filter(r => r.level > currentLevel)
+            .sort((a, b) => a.level - b.level)[0];
 
-        let newRank = ranks[Math.min(index + 1, ranks.length - 1)];
-
-        if (window.db) {
-
-            await db
-                .from("officers")
-                .update({ rank: newRank })
-                .eq("id", id);
-
+        if (!next) {
+            UI?.info(officer.name + " already has the highest rank");
+            return;
         }
 
-        officer.rank = newRank;
+        const { error } = await db
+            .from("officers")
+            .update({ rank_id: next.id })
+            .eq("id", id);
 
-        this.addTimeline(id, "Promoted to " + newRank);
+        if (error) {
+            console.error("PROMOTE ERROR:", error);
+            UI?.error("Error promoting officer!");
+            return;
+        }
+
+        await this.addTimeline(id, "Promoted to " + next.name);
 
         this.load();
 
     }
 
     /* =========================
-       TIMELINE (local)
+       TIMELINE (officer_timeline)
     ========================== */
 
-    addTimeline(officerId, text) {
+    async addTimeline(officerId, text) {
 
-        if (!this.timeline[officerId]) {
-            this.timeline[officerId] = [];
+        if (!window.db) return;
+
+        const { error } = await db
+            .from("officer_timeline")
+            .insert([{
+                officer_id: officerId,
+                action: text,
+                details: ""
+            }]);
+
+        if (error) {
+            console.error("TIMELINE ERROR:", error);
         }
 
-        this.timeline[officerId].unshift({
-            time: new Date().toLocaleString(),
-            text: text
-        });
-
     }
 
-    getTimeline(officerId) {
+    async getTimeline(officerId) {
 
-        return this.timeline[officerId] || [];
+        if (!window.db) return [];
 
-    }
+        const { data, error } = await db
+            .from("officer_timeline")
+            .select("*")
+            .eq("officer_id", officerId)
+            .order("created_at", { ascending: false });
 
-    /* =========================
-       ID GENERATOR
-    ========================== */
+        if (error) {
+            console.error("TIMELINE ERROR:", error);
+            return [];
+        }
 
-    generateID() {
-
-        return "OFF-" + Math.random().toString(36).substring(2, 10).toUpperCase();
-
-    }
-
-    generateBadge() {
-
-        const year = new Date().getFullYear();
-
-        const num = Math.floor(Math.random() * 90000) + 10000;
-
-        return `SH-${year}-${num}`;
+        return data || [];
 
     }
 
@@ -214,11 +302,14 @@ class OfficersEngine {
 
     search(query) {
 
+        const q = query.toLowerCase();
+
         return this.officers.filter(o =>
-            o.name.toLowerCase().includes(query.toLowerCase()) ||
-            o.badge.toLowerCase().includes(query.toLowerCase()) ||
-            o.rank.toLowerCase().includes(query.toLowerCase()) ||
-            o.division.toLowerCase().includes(query.toLowerCase())
+            o.name.toLowerCase().includes(q) ||
+            o.badge.toLowerCase().includes(q) ||
+            o.officerId.toLowerCase().includes(q) ||
+            o.rank.toLowerCase().includes(q) ||
+            o.division.toLowerCase().includes(q)
         );
 
     }
@@ -234,6 +325,18 @@ class OfficersEngine {
         if (!tbody) return;
 
         tbody.innerHTML = "";
+
+        if (list.length === 0) {
+
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7">No officers yet — create one with ＋ Create Officer</td>
+                </tr>
+            `;
+
+            return;
+
+        }
 
         list.forEach(officer => {
 
@@ -286,7 +389,7 @@ class OfficersEngine {
        VIEW OFFICER (drawer)
     ========================== */
 
-    view(id) {
+    async view(id) {
 
         const officer = this.officers.find(o => o.id === id);
 
@@ -296,14 +399,18 @@ class OfficersEngine {
 
         document.getElementById("drawerName").innerText = officer.name;
         document.getElementById("drawerRank").innerText = officer.rank;
-        document.getElementById("drawerBadge").innerText = officer.badge;
+        document.getElementById("drawerBadge").innerText =
+            officer.badge + " · " + officer.officerId;
         document.getElementById("drawerDivision").innerText = officer.division;
         document.getElementById("drawerStatus").innerText = officer.status;
 
         document.getElementById("drawerPhoto").src =
             officer.photo || "https://via.placeholder.com/100";
 
-        const timeline = this.getTimeline(id);
+        document.getElementById("officerDrawer")
+            .classList.remove("hidden");
+
+        const timeline = await this.getTimeline(id);
 
         const container = document.getElementById("drawerTimeline");
 
@@ -322,8 +429,8 @@ class OfficersEngine {
                 div.className = "timelineItem";
 
                 div.innerHTML = `
-                    <small>${t.time}</small><br>
-                    <span>${t.text}</span>
+                    <small>${new Date(t.created_at).toLocaleString()}</small><br>
+                    <span>${t.action}</span>
                     <hr>
                 `;
 
@@ -332,9 +439,6 @@ class OfficersEngine {
             });
 
         }
-
-        document.getElementById("officerDrawer")
-            .classList.remove("hidden");
 
     }
 
@@ -355,6 +459,8 @@ let currentOfficerId = null;
 ============================ */
 
 document.addEventListener("DOMContentLoaded", () => {
+
+    Officers.loadLookups();
 
     Officers.load();
 
@@ -384,27 +490,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (modal && confirmBtn) {
 
-        confirmBtn.onclick = () => {
+        confirmBtn.onclick = async () => {
 
-            const name = document.getElementById("offName").value;
-            const division = document.getElementById("offDivision").value;
-            const photo = document.getElementById("offPhoto").value;
-            const rank = document.getElementById("offRank").value;
+            const ok = await Officers.createOfficer();
 
-            if (!name || !division) {
-
-                UI?.error("Please fill required fields");
-
-                return;
-
-            }
-
-            Officers.createOfficer({
-                name,
-                division,
-                photo,
-                rank
-            });
+            if (!ok) return;
 
             modal.classList.add("hidden");
 
