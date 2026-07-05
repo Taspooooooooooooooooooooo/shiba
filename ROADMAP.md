@@ -17,9 +17,10 @@ uses UUID + public ID.
 
 ## 🔄 Milestone 2 — Workflow
 
-- [ ] **Activation system** — admin creates officer → activation code
-      (48 h) → officer sets own username/password/PIN; includes
-      admin button to issue a password-reset code
+- [x] **Activation system** — admin creates officer → activation code
+      (48 h) → officer sets own username/password/PIN via Supabase
+      Auth; 🔑 Reset Access button issues password-reset codes
+      (same-username reset via Edge Function still planned)
 - [ ] **Promotion system** — `promotion_requests` (PROMO-2026-000001),
       approval queue for Sergeant+, auto: rank change + timeline +
       notification + audit + certificate

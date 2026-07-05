@@ -101,6 +101,104 @@ function parseCloudId(value) {
 
 }
 
+/* =========================
+   ACTIVATION CODES
+   shown to the admin after creating an officer or
+   resetting access — the officer uses the code on the
+   ACTIVATE ACCOUNT page to set their own password.
+========================== */
+
+function ensureActivationModal() {
+
+    if (document.getElementById("activationModal")) return;
+
+    document.body.insertAdjacentHTML("beforeend", `
+<div id="activationModal" class="modal hidden">
+
+    <div class="modalBox">
+
+        <h2>🔑 Access Code</h2>
+
+        <p id="activationFor"></p>
+
+        <div id="activationCodeBox"
+             style="background:#15283d;border-radius:10px;padding:16px;text-align:center;font-family:monospace;font-size:22px;letter-spacing:2px"></div>
+
+        <p id="activationMeta" style="color:var(--text2);font-size:13px"></p>
+
+        <div class="modalActions">
+
+            <button id="copyActivation">Copy code</button>
+
+            <button id="closeActivation">Done</button>
+
+        </div>
+
+    </div>
+
+</div>`);
+
+    document.getElementById("closeActivation").onclick = () =>
+        document.getElementById("activationModal").classList.add("hidden");
+
+    document.getElementById("copyActivation").onclick = (e) => {
+
+        navigator.clipboard
+            .writeText(document.getElementById("activationCodeBox").innerText)
+            .then(() => {
+
+                e.target.innerText = "Copied!";
+
+                setTimeout(() => e.target.innerText = "Copy code", 1500);
+
+            });
+
+    };
+
+}
+
+function showActivationCode(forText, info) {
+
+    ensureActivationModal();
+
+    document.getElementById("activationFor").innerText = forText;
+
+    document.getElementById("activationCodeBox").innerText = info.code;
+
+    document.getElementById("activationMeta").innerText =
+        info.activation_id + " · valid until " +
+        new Date(info.expires_at).toLocaleString() +
+        ". Give this code to the officer — they enter it on the " +
+        "ACTIVATE ACCOUNT page (login screen).";
+
+    document.getElementById("activationModal").classList.remove("hidden");
+
+}
+
+async function issueActivationCode(officerUuid, role, purpose, forText) {
+
+    if (!window.db) return;
+
+    const { data, error } = await db.rpc("create_activation_code", {
+        p_officer: officerUuid,
+        p_role: role || "Officer",
+        p_purpose: purpose
+    });
+
+    if (error) {
+
+        console.warn(
+            "Activation system not ready — run lapd/SETUP-AUTH.sql (" +
+            error.message + ")");
+
+        return;
+
+    }
+
+    showActivationCode(forText, data);
+
+}
+
 async function resolveCloudPhoto(value) {
 
     const id = parseCloudId(value);
@@ -267,6 +365,12 @@ class OfficersEngine {
             "Officer Created",
             `${officerId} was successfully created`
         );
+
+        await issueActivationCode(
+            data[0].id,
+            "Officer",
+            "activate",
+            name.first + " " + name.last + " (" + officerId + ")");
 
         return true;
 
@@ -447,6 +551,28 @@ class OfficersEngine {
         await this.addTimeline(id, "Promoted to " + next.name);
 
         this.load();
+
+    }
+
+    /* =========================
+       RESET ACCESS
+       new activation code for an officer who lost
+       their password — they re-activate with it
+    ========================== */
+
+    async resetAccess(id) {
+
+        const officer = this.officers.find(o => o.id === id);
+
+        if (!officer) return;
+
+        await issueActivationCode(
+            id,
+            "Officer",
+            "reset",
+            officer.name + " (" + officer.officerId + ") — access reset");
+
+        this.addTimeline(id, "Access reset code issued");
 
     }
 

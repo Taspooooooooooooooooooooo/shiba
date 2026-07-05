@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>SHIBA PIMS | Activate Account</title>
+
+    <meta name="description" content="Activate your SHIBA PIMS account">
+    <meta name="theme-color" content="#0b1623">
+
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/login.css">
+
+    <style>
+
+        .activate-note{
+
+            color:#b8c5d6;
+
+            font-size:13px;
+
+            margin-top:14px;
+
+            text-align:center;
+
+        }
+
+        .activate-note a{
+
+            color:#2e8bff;
+
+            text-decoration:none;
+
+        }
+
+        .step-hidden{
+
+            display:none;
+
+        }
+
+        .officer-hello{
+
+            background:#2e8bff14;
+
+            border:1px solid #2e8bff;
+
+            border-radius:10px;
+
+            padding:12px;
+
+            margin-bottom:14px;
+
+            text-align:center;
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+    <main>
+
+        <section class="login-card">
+
+            <div class="logo">
+
+                <h1>SHIBA PIMS</h1>
+
+                <span>Account Activation</span>
+
+            </div>
+
+            <!-- ===================================== -->
+            <!-- STEP 1 - code check                    -->
+            <!-- ===================================== -->
+
+            <form id="codeForm">
+
+                <div class="input-group">
+
+                    <label for="actOfficerId">Officer ID</label>
+
+                    <input
+                        type="text"
+                        id="actOfficerId"
+                        placeholder="OFCR-000001 (leave empty for admin codes)"
+                        autocomplete="off">
+
+                </div>
+
+                <div class="input-group">
+
+                    <label for="actCode">Activation code</label>
+
+                    <input
+                        type="text"
+                        id="actCode"
+                        placeholder="XXXX-XXXX-XXXX"
+                        autocomplete="off"
+                        required>
+
+                </div>
+
+                <button class="loginButton" type="submit">Continue</button>
+
+            </form>
+
+            <!-- ===================================== -->
+            <!-- STEP 2 - choose credentials            -->
+            <!-- ===================================== -->
+
+            <form id="credsForm" class="step-hidden">
+
+                <div class="officer-hello" id="officerHello"></div>
+
+                <div class="input-group">
+
+                    <label for="actUsername">Username</label>
+
+                    <input
+                        type="text"
+                        id="actUsername"
+                        placeholder="e.g. matus.cech"
+                        autocomplete="username"
+                        required>
+
+                </div>
+
+                <div class="input-group">
+
+                    <label for="actPassword">Password</label>
+
+                    <input
+                        type="password"
+                        id="actPassword"
+                        placeholder="Minimum 8 characters"
+                        autocomplete="new-password"
+                        required>
+
+                </div>
+
+                <div class="input-group">
+
+                    <label for="actPassword2">Confirm password</label>
+
+                    <input
+                        type="password"
+                        id="actPassword2"
+                        placeholder="Repeat password"
+                        autocomplete="new-password"
+                        required>
+
+                </div>
+
+                <div class="input-group">
+
+                    <label for="actPin">Security PIN (4 digits)</label>
+
+                    <input
+                        type="password"
+                        id="actPin"
+                        maxlength="4"
+                        placeholder="••••"
+                        autocomplete="off"
+                        required>
+
+                </div>
+
+                <button class="loginButton" type="submit">Activate</button>
+
+            </form>
+
+            <p class="activate-note">
+
+                Already activated? <a href="index.html">Back to login</a>
+
+            </p>
+
+        </section>
+
+    </main>
+
+    <div id="toastContainer"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+    <script src="js/supabaseClient.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/activate.js"></script>
+
+</body>
+
+</html>

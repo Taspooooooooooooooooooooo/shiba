@@ -99,11 +99,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const bootStatus = document.getElementById("bootStatus");
 
     /* ----------------------------------------------------- */
-    /* Temporary Local Users                                 */
-    /* Later -> Supabase                                     */
+    /* LEGACY fallback login                                  */
+    /* Kept ONLY until the real Supabase Auth admin account   */
+    /* is confirmed working — then set this to false and      */
+    /* the hard-coded account stops existing.                 */
     /* ----------------------------------------------------- */
 
-    const users = [
+    const ALLOW_LEGACY_LOGIN = true;
+
+    const legacyUsers = [
 
         {
 
@@ -195,26 +199,73 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let currentUser = null;
 
-    loginForm.addEventListener("submit", (event) => {
+    loginForm.addEventListener("submit", async (event) => {
 
         event.preventDefault();
 
-        const user = users.find(u =>
+        currentUser = null;
 
-            u.username === username.value.trim() &&
-            u.password === password.value
+        /* real login — Supabase Auth checks the password
+           on the server, nothing is verified in the browser */
 
-        );
+        if (window.db) {
 
-        if (!user) {
+            const { data, error } = await db.auth.signInWithPassword({
+
+                email: usernameToEmail(username.value),
+
+                password: password.value
+
+            });
+
+            if (!error && data?.user) {
+
+                const meta = data.user.user_metadata || {};
+
+                currentUser = {
+
+                    username: meta.username || username.value.trim().toLowerCase(),
+
+                    role: meta.role || "Officer",
+
+                    pinHash: meta.pin_hash || null
+
+                };
+
+            }
+
+        }
+
+        /* legacy fallback (see note at the top) */
+
+        if (!currentUser && ALLOW_LEGACY_LOGIN) {
+
+            const user = legacyUsers.find(u =>
+
+                u.username === username.value.trim() &&
+                u.password === password.value
+
+            );
+
+            if (user) {
+
+                console.warn(
+                    "Legacy login used — activate the real admin account, " +
+                    "then disable ALLOW_LEGACY_LOGIN in login.js.");
+
+                currentUser = user;
+
+            }
+
+        }
+
+        if (!currentUser) {
 
             UI.error("Invalid username or password.");
 
             return;
 
         }
-
-        currentUser = user;
 
         pinModal.classList.remove("hidden");
 
@@ -226,11 +277,25 @@ document.addEventListener("DOMContentLoaded", () => {
     /* PIN Verification                                       */
     /* ----------------------------------------------------- */
 
-    verifyPin.addEventListener("click", () => {
+    verifyPin.addEventListener("click", async () => {
 
         if (!currentUser) return;
 
-        if (pinInput.value !== currentUser.pin) {
+        let pinOk;
+
+        if (currentUser.pinHash) {
+
+            /* real accounts store only the SHA-256 of the PIN */
+
+            pinOk = (await sha256Hex(pinInput.value)) === currentUser.pinHash;
+
+        } else {
+
+            pinOk = pinInput.value === currentUser.pin;
+
+        }
+
+        if (!pinOk) {
 
             UI.error("Invalid PIN.");
 

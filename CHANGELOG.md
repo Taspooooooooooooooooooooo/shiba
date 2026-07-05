@@ -2,6 +2,35 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.6.0 — 2026-07-05
+
+### Added
+- **Real authentication (Supabase Auth)** — passwords are now checked
+  on the server, never in the browser. Usernames map to internal
+  `@shiba.is-a.dev` auth addresses; the PIN second step compares a
+  SHA-256 hash stored in the account metadata.
+- **Activation system** — creating an officer automatically issues an
+  activation code (`ACT-2026-000001`, 48 h, XXXX-XXXX-XXXX). The
+  officer opens **ACTIVATE ACCOUNT** on the login page, enters their
+  Officer ID + code, and sets their own username/password/PIN — the
+  admin never sees the password. One-time setup: `lapd/SETUP-AUTH.sql`
+  (prints the bootstrap Super Administrator code) + disable
+  "Confirm email" in Supabase Auth settings.
+- **🔑 Reset Access** button in the officer drawer — issues a reset
+  code for an officer who lost their password (they re-activate with
+  a new username; true same-username reset needs a server function,
+  planned).
+- Activation codes live in an RLS-protected table — they cannot be
+  listed from the browser; SECURITY DEFINER functions are the only
+  doors in.
+
+### Changed
+- Login keeps a temporary legacy fallback (`ALLOW_LEGACY_LOGIN` in
+  login.js) until the real admin account is confirmed — then it gets
+  switched off and the hard-coded account stops existing.
+- Login page uses the shared `window.db` client (removed the old
+  duplicate `supabase.js` client).
+
 ## v0.5.0 — 2026-07-05
 
 ### Added
