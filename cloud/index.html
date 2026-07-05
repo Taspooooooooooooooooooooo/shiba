@@ -154,6 +154,7 @@
 
         }
 
+        .btn,
         .file-row button,
         .viewer-actions a,
         .viewer-actions button{
@@ -178,6 +179,7 @@
 
         }
 
+        .btn:hover,
         .file-row button:hover,
         .viewer-actions a:hover,
         .viewer-actions button:hover{
@@ -409,7 +411,67 @@
 
     function shareLink(id) {
 
-        return location.origin + location.pathname + "?f=" + id;
+        return location.origin + location.pathname + "?=" + id;
+
+    }
+
+    /* ======================================================
+       MEDIA TYPES
+       Browsers leave file.type empty for lots of formats
+       (.mov, .mkv, .flac, ...) so we also map by extension.
+    ====================================================== */
+
+    const EXT_KIND = {
+
+        /* images */
+        png: "image", jpg: "image", jpeg: "image", jfif: "image",
+        webp: "image", gif: "image", svg: "image", avif: "image",
+        bmp: "image", ico: "image", tif: "image", tiff: "image",
+        heic: "image", heif: "image",
+
+        /* video */
+        mp4: "video", mov: "video", m4v: "video", webm: "video",
+        mkv: "video", avi: "video", ogv: "video", wmv: "video",
+        mpg: "video", mpeg: "video", "3gp": "video",
+
+        /* audio */
+        mp3: "audio", wav: "audio", ogg: "audio", oga: "audio",
+        m4a: "audio", aac: "audio", flac: "audio", opus: "audio",
+        weba: "audio", wma: "audio", aiff: "audio", mid: "audio"
+
+    };
+
+    function extension(name) {
+
+        const dot = name.lastIndexOf(".");
+
+        return dot === -1 ? "" : name.slice(dot + 1).toLowerCase();
+
+    }
+
+    function mediaKind(name, mime) {
+
+        if (mime) {
+
+            if (mime.startsWith("image/")) return "image";
+            if (mime.startsWith("video/")) return "video";
+            if (mime.startsWith("audio/")) return "audio";
+
+        }
+
+        return EXT_KIND[extension(name)] || "file";
+
+    }
+
+    function guessMime(file) {
+
+        if (file.type) return file.type;
+
+        const kind = mediaKind(file.name, "");
+
+        if (kind === "file") return null;
+
+        return kind + "/" + extension(file.name);
 
     }
 
@@ -438,6 +500,52 @@
         el.className = "banner " + type;
 
         el.innerText = text;
+
+    }
+
+    /* ======================================================
+       PICK MODE (?=from<sessionId>)
+       SHIBA PIMS opened this page as a picker popup —
+       chosen file is sent back to the opener tab.
+    ====================================================== */
+
+    let PICK_SID = null;
+
+    function sendPick(id, name, path) {
+
+        if (window.opener) {
+
+            window.opener.postMessage({
+
+                type: "shiba-pick",
+
+                sid: PICK_SID,
+
+                id: id,
+
+                name: name,
+
+                share: shareLink(id),
+
+                direct: directLink(path)
+
+            }, location.origin);
+
+        }
+
+        window.close();
+
+    }
+
+    function makeUseButton(id, name, path) {
+
+        const use = document.createElement("button");
+
+        use.innerText = "✅ Use";
+
+        use.onclick = () => sendPick(id, name, path);
+
+        return use;
 
     }
 
@@ -480,19 +588,24 @@
 
         const preview = document.getElementById("viewerPreview");
 
-        const mime = data.mime || "";
+        const kind = mediaKind(data.name, data.mime || "");
 
-        if (mime.startsWith("image/")) {
+        if (kind === "image") {
 
             preview.innerHTML = `<img src="${url}" alt="${data.name}">`;
 
-        } else if (mime.startsWith("video/")) {
+        } else if (kind === "video") {
 
             preview.innerHTML = `<video src="${url}" controls></video>`;
 
-        } else if (mime.startsWith("audio/")) {
+        } else if (kind === "audio") {
 
             preview.innerHTML = `<audio src="${url}" controls></audio>`;
+
+        } else {
+
+            preview.innerHTML =
+                `<p style="font-size:60px;margin:20px 0">📄</p>`;
 
         }
 
@@ -571,7 +684,7 @@
                 name: file.name,
                 path: path,
                 size: file.size,
-                mime: file.type || null
+                mime: guessMime(file)
             }]);
 
         if (dbError) {
@@ -603,6 +716,12 @@
         direct.onclick = (e) => copyText(directLink(path), e.target);
 
         actions.append(share, direct);
+
+        if (PICK_SID) {
+
+            actions.append(makeUseButton(id, file.name, path));
+
+        }
 
         row.appendChild(actions);
 
@@ -686,7 +805,15 @@
 
             };
 
-            row.append(share, direct, del);
+            if (PICK_SID) {
+
+                row.append(makeUseButton(f.id, f.name, f.path), share, direct);
+
+            } else {
+
+                row.append(share, direct, del);
+
+            }
 
             list.appendChild(row);
 
@@ -702,9 +829,22 @@
 
         const params = new URLSearchParams(location.search);
 
-        /* supports ?f=ID and the bare ?=ID style */
+        /* supports ?f=ID, the bare ?=ID style, and
+           ?=from<sessionId> which starts picker mode */
 
-        const fileId = params.get("f") || params.get("") || null;
+        const raw = params.get("f") || params.get("") || null;
+
+        let fileId = null;
+
+        if (raw && raw.startsWith("from")) {
+
+            PICK_SID = raw;
+
+        } else if (raw) {
+
+            fileId = raw;
+
+        }
 
         if (fileId) {
 
@@ -712,7 +852,11 @@
 
         }
 
-        const loggedIn = sessionStorage.getItem("loggedIn") === "true";
+        /* same account as SHIBA PIMS — one login for both services */
+
+        const loggedIn =
+            localStorage.getItem("loggedIn") === "true" ||
+            sessionStorage.getItem("loggedIn") === "true";
 
         const uploadCard = document.getElementById("uploadCard");
 
@@ -726,15 +870,61 @@
 
             recentCard.style.display = "none";
 
-            showBanner(document.getElementById("uploadBanner"), "info",
-                "Log in to SHIBA PIMS to upload files. Shared links work without login.");
-
             const banner = document.getElementById("uploadBanner");
 
+            showBanner(banner, "info",
+                "Shared links work without login. To upload files, sign in with your SHIBA PIMS account — one account for all SHIBA services.");
+
             banner.innerHTML +=
-                ' <a class="backlink" href="../lapd/index.html">Go to login →</a>';
+                '<div style="margin-top:12px"><button class="btn" id="pimsLogin">🔐 Login with PIMS account</button></div>';
+
+            document.getElementById("pimsLogin").onclick = () => {
+
+                /* OAuth-style login popup with its own session id */
+
+                const sid = "from" + generateFileId() + generateFileId();
+
+                window.__ssoSid = sid;
+
+                window.open(
+                    "../lapd/?=" + sid,
+                    "shibaLogin",
+                    "width=460,height=680,popup=yes");
+
+            };
+
+            /* the popup reports back here after login */
+
+            window.addEventListener("message", (e) => {
+
+                if (e.origin !== location.origin) return;
+
+                if (e.data?.type !== "shiba-sso") return;
+
+                if (e.data.sid !== window.__ssoSid) return;
+
+                location.reload();
+
+            });
 
             return;
+
+        }
+
+        const who =
+            localStorage.getItem("username") ||
+            sessionStorage.getItem("username") || "officer";
+
+        if (PICK_SID) {
+
+            showBanner(document.getElementById("uploadBanner"), "info",
+                "📸 Picking a photo for SHIBA PIMS — upload a new file or press ✅ Use on an existing one.");
+
+        } else {
+
+            showBanner(document.getElementById("uploadBanner"), "info",
+                "Logged in as " + who +
+                " (SHIBA PIMS account) — anyone with a share link can view the file.");
 
         }
 

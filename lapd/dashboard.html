@@ -167,7 +167,7 @@
 
 <script>
 
-if(sessionStorage.getItem("loggedIn")!="true"){
+if(localStorage.getItem("loggedIn")!="true"){
 
     window.location.href="index.html";
 
@@ -175,9 +175,11 @@ if(sessionStorage.getItem("loggedIn")!="true"){
 
 document.getElementById("welcomeUser").innerHTML=
 
-sessionStorage.getItem("username")+"<br>"+sessionStorage.getItem("role");
+localStorage.getItem("username")+"<br>"+localStorage.getItem("role");
 
 document.getElementById("logoutButton").onclick=function(){
+
+    localStorage.clear();
 
     sessionStorage.clear();
 

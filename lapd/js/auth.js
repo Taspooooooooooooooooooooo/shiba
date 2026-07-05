@@ -23,7 +23,7 @@ class AuthManager{
 
         this.user = user;
 
-        sessionStorage.setItem(
+        localStorage.setItem(
             "PIMS_USER",
             JSON.stringify(user)
         );
@@ -31,6 +31,8 @@ class AuthManager{
     }
 
     logout(){
+
+        localStorage.clear();
 
         sessionStorage.clear();
 
@@ -40,7 +42,7 @@ class AuthManager{
 
     getUser(){
 
-        const data = sessionStorage.getItem("PIMS_USER");
+        const data = localStorage.getItem("PIMS_USER");
 
         if(!data){
 

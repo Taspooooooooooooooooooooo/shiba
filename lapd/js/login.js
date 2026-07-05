@@ -7,6 +7,68 @@
 document.addEventListener("DOMContentLoaded", () => {
 
     /* ----------------------------------------------------- */
+    /* SSO popup mode                                         */
+    /* /lapd/?=from<sessionId> — another SHIBA service        */
+    /* opened this page as a login popup. After login we      */
+    /* message the opener tab and close, like OAuth.          */
+    /* ----------------------------------------------------- */
+
+    const ssoToken =
+        new URLSearchParams(location.search).get("") || "";
+
+    const isSSO = ssoToken.startsWith("from");
+
+    function finishSSO() {
+
+        if (window.opener) {
+
+            window.opener.postMessage({
+
+                type: "shiba-sso",
+
+                sid: ssoToken,
+
+                username: localStorage.getItem("username"),
+
+                role: localStorage.getItem("role")
+
+            }, location.origin);
+
+            window.close();
+
+            return;
+
+        }
+
+        /* opened without a popup — fall back to the app */
+
+        window.location.href = "dashboard.html";
+
+    }
+
+    /* already logged in somewhere else? finish instantly */
+
+    if (isSSO && localStorage.getItem("loggedIn") === "true") {
+
+        finishSSO();
+
+        return;
+
+    }
+
+    if (isSSO) {
+
+        const sub = document.querySelector(".logo span");
+
+        if (sub) {
+
+            sub.innerText = "Sign in to continue to SHIBA CLOUD";
+
+        }
+
+    }
+
+    /* ----------------------------------------------------- */
     /* Elements                                               */
     /* ----------------------------------------------------- */
 
@@ -217,13 +279,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 clearInterval(loading);
 
-                sessionStorage.setItem("loggedIn", "true");
+                /* localStorage so the login is shared by every
+                   SHIBA service (PIMS + CLOUD) and survives tabs */
 
-                sessionStorage.setItem("username", currentUser.username);
+                localStorage.setItem("loggedIn", "true");
 
-                sessionStorage.setItem("role", currentUser.role);
+                localStorage.setItem("username", currentUser.username);
 
-                window.location.href = "dashboard.html";
+                localStorage.setItem("role", currentUser.role);
+
+                if (isSSO) {
+
+                    finishSSO();
+
+                } else {
+
+                    window.location.href = "dashboard.html";
+
+                }
 
             }
 

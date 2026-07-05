@@ -26,6 +26,66 @@ function splitName(fullName) {
 
 }
 
+/* =========================
+   SHIBA CLOUD LINKS
+   A share link from OUR cloud (/cloud/?=ID or ?f=ID) is
+   resolved to the direct file URL through the shared
+   database — no other hosts are accepted.
+========================== */
+
+function parseCloudId(value) {
+
+    if (!value) return null;
+
+    let url;
+
+    try {
+
+        url = new URL(value, location.href);
+
+    } catch {
+
+        return null;
+
+    }
+
+    const ourHost =
+        url.host === location.host ||
+        url.host === "shiba.is-a.dev" ||
+        url.host.endsWith(".shiba.is-a.dev");
+
+    if (!ourHost) return null;
+
+    if (!url.pathname.includes("/cloud")) return null;
+
+    const params = new URLSearchParams(url.search);
+
+    const id = params.get("f") || params.get("") || null;
+
+    if (!id || id.startsWith("from")) return null;
+
+    return id;
+
+}
+
+async function resolveCloudPhoto(value) {
+
+    const id = parseCloudId(value);
+
+    if (!id || !window.db) return value || null;
+
+    const { data } = await db
+        .from("cloud_files")
+        .select("path")
+        .eq("id", id)
+        .maybeSingle();
+
+    if (!data) return value;
+
+    return db.storage.from("cloud").getPublicUrl(data.path).data.publicUrl;
+
+}
+
 class OfficersEngine {
 
     constructor() {
@@ -134,6 +194,10 @@ class OfficersEngine {
         const division = this.divisions.find(d =>
             d.name.toLowerCase() === divisionName.trim().toLowerCase());
 
+        /* SHIBA CLOUD share links become direct file URLs */
+
+        const photoUrl = photo ? await resolveCloudPhoto(photo) : null;
+
         const { data, error } = await db
             .from("officers")
             .insert([{
@@ -141,7 +205,7 @@ class OfficersEngine {
                 first_name: name.first,
                 last_name: name.last,
                 badge_number: badge,
-                photo_url: photo,
+                photo_url: photoUrl,
                 division_id: division?.id || null,
                 rank_id: rank?.id || null,
                 user_id: null,
@@ -404,8 +468,10 @@ class OfficersEngine {
         document.getElementById("drawerDivision").innerText = officer.division;
         document.getElementById("drawerStatus").innerText = officer.status;
 
+        const photoUrl = await resolveCloudPhoto(officer.photo);
+
         document.getElementById("drawerPhoto").src =
-            officer.photo || "https://via.placeholder.com/100";
+            photoUrl || "https://via.placeholder.com/100";
 
         document.getElementById("officerDrawer")
             .classList.remove("hidden");
@@ -503,6 +569,47 @@ document.addEventListener("DOMContentLoaded", () => {
             document.getElementById("offPhoto").value = "";
 
         };
+
+    }
+
+    /* PICK PHOTO FROM SHIBA CLOUD */
+
+    const pickBtn = document.getElementById("pickFromCloud");
+
+    if (pickBtn) {
+
+        pickBtn.onclick = () => {
+
+            /* picker popup with its own session id */
+
+            const sid = "from" +
+                Math.random().toString(36).slice(2) +
+                Math.random().toString(36).slice(2);
+
+            window.__cloudPickSid = sid;
+
+            window.open(
+                "../cloud/?=" + sid,
+                "shibaCloudPick",
+                "width=760,height=820,popup=yes");
+
+        };
+
+        window.addEventListener("message", (e) => {
+
+            if (e.origin !== location.origin) return;
+
+            if (e.data?.type !== "shiba-pick") return;
+
+            if (e.data.sid !== window.__cloudPickSid) return;
+
+            const input = document.getElementById("offPhoto");
+
+            if (input) input.value = e.data.share;
+
+            UI?.success("Photo selected from SHIBA CLOUD: " + e.data.name);
+
+        });
 
     }
 

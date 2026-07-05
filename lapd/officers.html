@@ -26,7 +26,17 @@
 
         <input id="offDivision" placeholder="Division (e.g. Metro)">
 
-        <input id="offPhoto" placeholder="Photo URL (optional)">
+        <div style="display:flex;gap:8px">
+
+            <input id="offPhoto" placeholder="Photo URL or ☁️ Cloud link (optional)" style="flex:1">
+
+            <button
+                type="button"
+                id="pickFromCloud"
+                title="Pick from SHIBA CLOUD"
+                style="padding:12px;border:none;border-radius:10px;background:#15283d;color:white;cursor:pointer">☁️</button>
+
+        </div>
 
         <select id="offRank">
 
@@ -229,6 +239,12 @@
 <script src="js/officers.js"></script>
 
 <script>
+
+if(localStorage.getItem("loggedIn")!="true"){
+
+    window.location.href="index.html";
+
+}
 
 document.getElementById("layoutTop").innerHTML = AppLayout.createTopbar();
 document.getElementById("layoutFooter").innerHTML = AppLayout.createFooter();

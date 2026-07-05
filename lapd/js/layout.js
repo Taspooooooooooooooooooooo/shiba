@@ -7,9 +7,9 @@ const AppLayout = {
 
     createTopbar() {
 
-        const username = sessionStorage.getItem("username") || "Guest";
+        const username = localStorage.getItem("username") || "Guest";
 
-        const role = sessionStorage.getItem("role") || "";
+        const role = localStorage.getItem("role") || "";
 
         return `
 

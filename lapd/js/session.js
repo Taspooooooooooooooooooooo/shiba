@@ -48,7 +48,7 @@ class SessionManager {
 
     checkSession() {
 
-        const loggedIn = sessionStorage.getItem("loggedIn");
+        const loggedIn = localStorage.getItem("loggedIn");
 
         if (!loggedIn) return;
 
@@ -63,6 +63,8 @@ class SessionManager {
     }
 
     logout() {
+
+        localStorage.clear();
 
         sessionStorage.clear();
 
