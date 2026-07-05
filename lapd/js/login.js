@@ -99,29 +99,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const bootStatus = document.getElementById("bootStatus");
 
     /* ----------------------------------------------------- */
-    /* LEGACY fallback login                                  */
-    /* Kept ONLY until the real Supabase Auth admin account   */
-    /* is confirmed working — then set this to false and      */
-    /* the hard-coded account stops existing.                 */
+    /* LEGACY fallback login — DISABLED 2026-07-05            */
+    /* The real Supabase Auth admin account is active.        */
+    /* If you ever get locked out: run the last line of       */
+    /* lapd/SETUP-AUTH.sql for a fresh admin activation code. */
     /* ----------------------------------------------------- */
 
-    const ALLOW_LEGACY_LOGIN = true;
+    const ALLOW_LEGACY_LOGIN = false;
 
-    const legacyUsers = [
-
-        {
-
-            username: "vladko",
-
-            password: "vladinko",
-
-            pin: "5080",
-
-            role: "Super Administrator"
-
-        }
-
-    ];
+    const legacyUsers = [];
 
     /* ----------------------------------------------------- */
     /* Boot Screen                                            */

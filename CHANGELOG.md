@@ -2,6 +2,24 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.6.1 — 2026-07-05
+
+### Added
+- Proper full-screen **PIN verification** screen (was unstyled and
+  appeared in the corner) — now a centered card, labelled "Step 2 of 2".
+- **Loading screen on activation** — staged "Creating your account…"
+  overlay after activating, matching the login experience.
+
+### Changed
+- Activation page is now vertically centered.
+- **Legacy hard-coded login DISABLED** — the real Supabase Auth admin
+  account is live; `ALLOW_LEGACY_LOGIN = false`. The old `vladko`
+  bypass no longer exists; login is fully server-authenticated.
+
+### Fixed
+- `lapd/SETUP-PATCH-1.sql`: activation codes now cascade-delete with
+  their officer (a used code previously blocked officer deletion).
+
 ## v0.6.0 — 2026-07-05
 
 ### Added

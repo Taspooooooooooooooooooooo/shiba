@@ -814,6 +814,200 @@ background:#2e8bff33;
 }
 
 /* ============================
+   PIN VERIFICATION (step 2 of 2)
+============================ */
+
+#pinModal{
+
+position:fixed;
+
+top:0;
+left:0;
+right:0;
+bottom:0;
+
+background:rgba(0,0,0,0.7);
+
+display:flex;
+
+justify-content:center;
+
+align-items:center;
+
+backdrop-filter:blur(8px);
+
+z-index:999999;
+
+}
+
+.pin-card{
+
+background:#0f1c2b;
+
+padding:35px 30px;
+
+border-radius:18px;
+
+width:360px;
+
+max-width:90vw;
+
+text-align:center;
+
+border:1px solid var(--border);
+
+box-shadow:var(--shadow);
+
+display:flex;
+
+flex-direction:column;
+
+gap:14px;
+
+animation:pinPop 0.25s ease;
+
+}
+
+@keyframes pinPop{
+
+from{
+
+transform:scale(0.92);
+
+opacity:0;
+
+}
+
+to{
+
+transform:scale(1);
+
+opacity:1;
+
+}
+
+}
+
+.pin-card h2{
+
+color:var(--text);
+
+}
+
+.pin-card p{
+
+color:var(--text2);
+
+font-size:14px;
+
+}
+
+.pin-card input{
+
+padding:14px;
+
+border-radius:12px;
+
+border:1px solid var(--border);
+
+background:#15283d;
+
+color:var(--text);
+
+outline:none;
+
+text-align:center;
+
+font-size:26px;
+
+letter-spacing:12px;
+
+}
+
+.pin-card input:focus{
+
+border-color:var(--primary);
+
+}
+
+.pin-card button{
+
+padding:13px;
+
+border:none;
+
+border-radius:12px;
+
+background:var(--primary);
+
+color:white;
+
+cursor:pointer;
+
+font-size:15px;
+
+transition:0.2s;
+
+}
+
+.pin-card button:hover{
+
+background:var(--primaryHover);
+
+}
+
+/* ============================
+   LOADING OVERLAY (login +
+   activation) — spinner
+============================ */
+
+#loadingOverlay{
+
+z-index:999999;
+
+}
+
+#loadingOverlay h2{
+
+color:var(--text);
+
+}
+
+#loadingOverlay p{
+
+color:var(--text2);
+
+}
+
+.loader{
+
+width:58px;
+
+height:58px;
+
+border:5px solid rgba(255,255,255,0.12);
+
+border-top:5px solid var(--primary);
+
+border-radius:50%;
+
+animation:loaderSpin 0.85s linear infinite;
+
+margin-bottom:20px;
+
+}
+
+@keyframes loaderSpin{
+
+100%{
+
+transform:rotate(360deg);
+
+}
+
+}
+
+/* ============================
    ACTIVATE ACCOUNT LINK
 ============================ */
 

@@ -202,13 +202,43 @@ document.addEventListener("DOMContentLoaded", () => {
 
         localStorage.setItem("role", checkedInfo.role);
 
-        UI.success("Account activated. Welcome, " + username + "!");
+        /* activation loading screen, then straight to the app */
 
-        setTimeout(() => {
+        document.getElementById("loadingOverlay").classList.remove("hidden");
 
-            window.location.href = "dashboard.html";
+        const loadingText = document.getElementById("loadingText");
 
-        }, 1200);
+        const messages = [
+
+            "Creating your account...",
+            "Securing credentials...",
+            "Linking officer profile...",
+            "Preparing dashboard...",
+            "Welcome to SHIBA PIMS, " + username + "!"
+
+        ];
+
+        let step = 0;
+
+        const loading = setInterval(() => {
+
+            loadingText.innerText = messages[step];
+
+            step++;
+
+            if (step >= messages.length) {
+
+                clearInterval(loading);
+
+                setTimeout(() => {
+
+                    window.location.href = "dashboard.html";
+
+                }, 700);
+
+            }
+
+        }, 650);
 
     });
 

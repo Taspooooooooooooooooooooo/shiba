@@ -16,6 +16,20 @@
 
     <style>
 
+        main{
+
+            min-height:100vh;
+
+            display:flex;
+
+            justify-content:center;
+
+            align-items:center;
+
+            padding:20px;
+
+        }
+
         .activate-note{
 
             color:#b8c5d6;
@@ -187,6 +201,20 @@
     </main>
 
     <div id="toastContainer"></div>
+
+    <!-- ===================================================== -->
+    <!-- Loading Overlay (activation success)                   -->
+    <!-- ===================================================== -->
+
+    <div id="loadingOverlay" class="hidden">
+
+        <div class="loader"></div>
+
+        <h2>Activating account...</h2>
+
+        <p id="loadingText">Creating your account...</p>
+
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 
