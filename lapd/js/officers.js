@@ -15,6 +15,39 @@ function generateOfficerId() {
 
 }
 
+function generateBadgeNumber() {
+
+    return "BDG-" + Math.floor(10000 + Math.random() * 90000);
+
+}
+
+/* =========================
+   ID ENGINE
+   Sequential public IDs (OFCR-000001, ...) come from the
+   database — see lapd/SETUP-ID-ENGINE.sql. Atomic, so two
+   officers created at once can never collide. Falls back
+   to the old style until the SQL has been run once.
+========================== */
+
+async function nextPublicId(type, fallback) {
+
+    if (window.db) {
+
+        const { data, error } = await db
+            .rpc("next_public_id", { id_type: type });
+
+        if (!error && data) return data;
+
+        console.warn(
+            "ID engine not ready — run lapd/SETUP-ID-ENGINE.sql (" +
+            (error?.message || "no data") + ")");
+
+    }
+
+    return fallback();
+
+}
+
 function splitName(fullName) {
 
     const parts = fullName.trim().split(" ");
@@ -180,9 +213,9 @@ class OfficersEngine {
 
         const name = splitName(fullName);
 
-        const officerId = generateOfficerId();
+        const officerId = await nextPublicId("OFFICER", generateOfficerId);
 
-        const badge = "BDG-" + Math.floor(10000 + Math.random() * 90000);
+        const badge = await nextPublicId("BADGE", generateBadgeNumber);
 
         if (this.ranks.length === 0 && this.divisions.length === 0) {
             await this.loadLookups();
@@ -234,6 +267,104 @@ class OfficersEngine {
             "Officer Created",
             `${officerId} was successfully created`
         );
+
+        return true;
+
+    }
+
+    /* =========================
+       EDIT OFFICER
+       opens the modal pre-filled;
+       saving goes to updateOfficer
+    ========================== */
+
+    edit(id) {
+
+        const officer = this.officers.find(o => o.id === id);
+
+        const modal = document.getElementById("officerModal");
+
+        if (!officer || !modal) return;
+
+        document.getElementById("offName").value = officer.name;
+
+        document.getElementById("offDivision").value =
+            officer.division === "—" ? "" : officer.division;
+
+        document.getElementById("offPhoto").value = officer.photo || "";
+
+        const rankSelect = document.getElementById("offRank");
+
+        if ([...rankSelect.options].some(o => o.value === officer.rank)) {
+
+            rankSelect.value = officer.rank;
+
+        }
+
+        editingOfficerId = id;
+
+        document.getElementById("officerModalTitle").innerText =
+            "👮 Edit Officer";
+
+        document.getElementById("createOfficerConfirm").innerText = "Save";
+
+        modal.classList.remove("hidden");
+
+    }
+
+    async updateOfficer(id) {
+
+        const fullName = document.getElementById("offName").value;
+        const photo = document.getElementById("offPhoto")?.value || null;
+        const divisionName = document.getElementById("offDivision")?.value || "";
+        const rankName = document.getElementById("offRank")?.value || "";
+
+        if (!fullName.trim()) {
+            UI?.error("Name is required!");
+            return false;
+        }
+
+        if (!window.db) {
+            UI?.error("No database connection");
+            return false;
+        }
+
+        const name = splitName(fullName);
+
+        if (this.ranks.length === 0 && this.divisions.length === 0) {
+            await this.loadLookups();
+        }
+
+        const rank = this.ranks.find(r =>
+            r.name.toLowerCase() === rankName.toLowerCase());
+
+        const division = this.divisions.find(d =>
+            d.name.toLowerCase() === divisionName.trim().toLowerCase());
+
+        const photoUrl = photo ? await resolveCloudPhoto(photo) : null;
+
+        const { error } = await db
+            .from("officers")
+            .update({
+                first_name: name.first,
+                last_name: name.last,
+                photo_url: photoUrl,
+                division_id: division?.id || null,
+                rank_id: rank?.id || null
+            })
+            .eq("id", id);
+
+        if (error) {
+            console.error("UPDATE OFFICER ERROR:", error);
+            UI?.error("Error updating officer!");
+            return false;
+        }
+
+        await this.addTimeline(id, "Officer profile updated");
+
+        await this.load();
+
+        UI?.success("Officer updated");
 
         return true;
 
@@ -416,6 +547,7 @@ class OfficersEngine {
                 <td>${officer.lastActive}</td>
                 <td>
                     <button onclick="Officers.view('${officer.id}')">View</button>
+                    <button onclick="Officers.edit('${officer.id}')">Edit</button>
                     <button onclick="Officers.promote('${officer.id}')">Promote</button>
                     <button onclick="Officers.deleteOfficer('${officer.id}')">Delete</button>
                 </td>
@@ -518,6 +650,10 @@ window.Officers = Officers;
 
 let currentOfficerId = null;
 
+/* set while the modal is editing an existing officer */
+
+let editingOfficerId = null;
+
 /* ============================
    PAGE WIRING
    (only runs on pages that
@@ -538,19 +674,38 @@ document.addEventListener("DOMContentLoaded", () => {
     const closeBtn = document.getElementById("closeModal");
     const confirmBtn = document.getElementById("createOfficerConfirm");
 
+    function closeOfficerModal() {
+
+        modal.classList.add("hidden");
+
+        editingOfficerId = null;
+
+        document.getElementById("officerModalTitle").innerText =
+            "👮 Create Officer";
+
+        document.getElementById("createOfficerConfirm").innerText = "Create";
+
+        document.getElementById("offName").value = "";
+        document.getElementById("offDivision").value = "";
+        document.getElementById("offPhoto").value = "";
+
+    }
+
     if (modal && openBtn) {
 
         openBtn.onclick = () => {
+
+            closeOfficerModal();
+
             modal.classList.remove("hidden");
+
         };
 
     }
 
     if (modal && closeBtn) {
 
-        closeBtn.onclick = () => {
-            modal.classList.add("hidden");
-        };
+        closeBtn.onclick = closeOfficerModal;
 
     }
 
@@ -558,15 +713,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
         confirmBtn.onclick = async () => {
 
-            const ok = await Officers.createOfficer();
+            const ok = editingOfficerId
+                ? await Officers.updateOfficer(editingOfficerId)
+                : await Officers.createOfficer();
 
             if (!ok) return;
 
-            modal.classList.add("hidden");
-
-            document.getElementById("offName").value = "";
-            document.getElementById("offDivision").value = "";
-            document.getElementById("offPhoto").value = "";
+            closeOfficerModal();
 
         };
 
