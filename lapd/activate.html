@@ -98,18 +98,6 @@
 
                 <div class="input-group">
 
-                    <label for="actOfficerId">Officer ID</label>
-
-                    <input
-                        type="text"
-                        id="actOfficerId"
-                        placeholder="OFCR-000001 (leave empty for admin codes)"
-                        autocomplete="off">
-
-                </div>
-
-                <div class="input-group">
-
                     <label for="actCode">Activation code</label>
 
                     <input
@@ -121,7 +109,29 @@
 
                 </div>
 
+                <div id="advancedSettings" class="step-hidden">
+
+                    <div class="input-group">
+
+                        <label for="actOfficerId">Officer ID — optional double-check</label>
+
+                        <input
+                            type="text"
+                            id="actOfficerId"
+                            placeholder="OFCR-000001"
+                            autocomplete="off">
+
+                    </div>
+
+                </div>
+
                 <button class="loginButton" type="submit">Continue</button>
+
+                <p class="activate-note">
+
+                    <a href="#" id="advancedToggle">⚙ Advanced settings</a>
+
+                </p>
 
             </form>
 

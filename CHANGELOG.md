@@ -2,6 +2,13 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.6.2 — 2026-07-05
+
+### Changed
+- Activation asks only for the **activation code** — the Officer ID
+  field moved behind an "⚙ Advanced settings" toggle as an optional
+  double-check (`lapd/SETUP-PATCH-2.sql` relaxes the server check).
+
 ## v0.6.1 — 2026-07-05
 
 ### Added

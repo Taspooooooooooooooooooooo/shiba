@@ -17,6 +17,27 @@ document.addEventListener("DOMContentLoaded", () => {
     let checkedInfo = null;
 
     /* ----------------------------------------------------- */
+    /* Advanced settings (optional Officer ID double-check)   */
+    /* ----------------------------------------------------- */
+
+    const advancedToggle = document.getElementById("advancedToggle");
+
+    advancedToggle.addEventListener("click", (event) => {
+
+        event.preventDefault();
+
+        const advanced = document.getElementById("advancedSettings");
+
+        advanced.classList.toggle("step-hidden");
+
+        advancedToggle.innerText =
+            advanced.classList.contains("step-hidden")
+                ? "⚙ Advanced settings"
+                : "⚙ Hide advanced settings";
+
+    });
+
+    /* ----------------------------------------------------- */
     /* STEP 1 — verify the code                               */
     /* ----------------------------------------------------- */
 
