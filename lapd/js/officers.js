@@ -965,6 +965,15 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     }
 
+    /* quick action from the dashboard: ?create=1 opens the modal */
+
+    if (new URLSearchParams(location.search).get("create") === "1"
+        && Officers.perms.create && modal && openBtn) {
+
+        openBtn.click();
+
+    }
+
     /* CLOSE DRAWER */
 
     const closeDrawer = document.getElementById("closeDrawer");

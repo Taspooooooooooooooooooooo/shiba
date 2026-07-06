@@ -89,63 +89,89 @@
 
     </section>
 
+    <!-- QUICK ACTIONS -->
+    <section class="card quickActions">
+
+        <button id="qaCreateOfficer" onclick="location.href='officers.html?create=1'">＋ Create Officer</button>
+
+        <button onclick="location.href='officers.html'">🔍 Search Officers</button>
+
+        <button onclick="location.href='../cloud/'">☁️ Upload File</button>
+
+    </section>
+
+    <!-- LIVE WIDGETS -->
     <section class="grid">
 
         <div class="card">
 
-            <h3>Open Cases</h3>
+            <h3>👮 Officers</h3>
 
-            <h1 id="casesCount">
-
-                0
-
-            </h1>
+            <h1 id="statOfficers">…</h1>
 
         </div>
 
         <div class="card">
 
-            <h3>Reports</h3>
+            <h3>🟢 On Duty</h3>
 
-            <h1>
-
-                0
-
-            </h1>
+            <h1 id="statOnDuty">…</h1>
 
         </div>
 
         <div class="card">
 
-            <h3>Officers</h3>
+            <h3>📁 Open Cases</h3>
 
-            <h1>
-
-                0
-
-            </h1>
+            <h1 id="statCases">…</h1>
 
         </div>
 
         <div class="card">
 
-            <h3>Notifications</h3>
+            <h3>📄 Reports</h3>
 
-            <h1>
+            <h1 id="statReports">…</h1>
 
-                0
+        </div>
 
-            </h1>
+        <div class="card">
+
+            <h3>☁️ Cloud Files</h3>
+
+            <h1 id="statCloud">…</h1>
+
+        </div>
+
+        <div class="card">
+
+            <h3>🔔 Unread</h3>
+
+            <h1 id="statNotifs">…</h1>
 
         </div>
 
     </section>
 
+    <!-- WEEKLY ACTIVITY -->
     <section class="card">
 
         <h2>
 
-            Live Activity
+            📊 Weekly Activity
+
+        </h2>
+
+        <div id="weeklyChart" class="chartBars"></div>
+
+    </section>
+
+    <!-- LIVE AUDIT FEED -->
+    <section class="card">
+
+        <h2>
+
+            ⚡ Live Activity
 
         </h2>
 
@@ -153,7 +179,7 @@
 
             <p>
 
-                No recent activity.
+                Loading...
 
             </p>
 
@@ -174,6 +200,7 @@
 <script src="js/core/notificationService.js"></script>
 
 <script src="js/commandPalette.js"></script>
+<script src="js/dashboard.js"></script>
 
 <script>
 

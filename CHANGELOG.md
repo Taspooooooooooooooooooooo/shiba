@@ -2,6 +2,19 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.8.0 — 2026-07-06 · Phase 1: Live Dashboard
+
+### Added
+- **Live widgets** — Officers, On Duty, Open Cases, Reports, Cloud
+  Files, and your Unread notifications: real database numbers,
+  refreshed every 30 seconds.
+- **⚡ Live Activity feed** — the newest audit entries (who did what,
+  when, with the AUDIT id) right on the dashboard.
+- **📊 Weekly Activity chart** — events per day for the last 7 days,
+  labelled in your language.
+- **Quick Actions** — ＋ Create Officer (jumps straight into the
+  modal, permission-gated), 🔍 Search Officers, ☁️ Upload File.
+
 ## v0.7.0 — 2026-07-06 · Phase 0: Foundation
 
 ### Added
