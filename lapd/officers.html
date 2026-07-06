@@ -20,36 +20,75 @@
 
         <h2 id="officerModalTitle">👮 Create Officer</h2>
 
-        <p>Fill in officer details</p>
+        <p id="wizardStepLabel">Step 1 of 5 — Full name</p>
 
-        <input id="offName" placeholder="Full Name">
+        <div class="wizStep active" id="wizName">
 
-        <input id="offDivision" placeholder="Division (e.g. Metro)">
+            <label class="wizLabel">What is the officer's full name?</label>
 
-        <div style="display:flex;gap:8px">
-
-            <input id="offPhoto" placeholder="Photo URL or ☁️ Cloud link (optional)" style="flex:1">
-
-            <button
-                type="button"
-                id="pickFromCloud"
-                title="Pick from SHIBA CLOUD"
-                style="padding:12px;border:none;border-radius:10px;background:#15283d;color:white;cursor:pointer">☁️</button>
+            <input id="offName" placeholder="e.g. John Smith" autocomplete="off">
 
         </div>
 
-        <select id="offRank">
+        <div class="wizStep" id="wizDivision">
 
-            <option>Officer</option>
-            <option>Officer II</option>
-            <option>Corporal</option>
-            <option>Sergeant I</option>
+            <label class="wizLabel">Which division will they join? (optional)</label>
 
-        </select>
+            <input id="offDivision" list="divisionList" placeholder="e.g. Metro" autocomplete="off">
+
+            <datalist id="divisionList"></datalist>
+
+        </div>
+
+        <div class="wizStep" id="wizRank">
+
+            <label class="wizLabel">Starting rank</label>
+
+            <select id="offRank">
+
+                <option>Officer</option>
+
+            </select>
+
+        </div>
+
+        <div class="wizStep" id="wizPhoto">
+
+            <label class="wizLabel">Photo (optional)</label>
+
+            <div style="display:flex;gap:8px">
+
+                <input id="offPhoto" placeholder="Photo URL or ☁️ Cloud link" style="flex:1">
+
+                <button
+                    type="button"
+                    id="pickFromCloud"
+                    title="Pick from SHIBA CLOUD"
+                    style="padding:12px;border:none;border-radius:10px;background:#15283d;color:white;cursor:pointer">☁️</button>
+
+            </div>
+
+        </div>
+
+        <div class="wizStep" id="wizSummary">
+
+            <label class="wizLabel">Check everything before creating:</label>
+
+            <div id="wizSummaryBox"></div>
+
+        </div>
+
+        <div class="wizStep" id="wizSuccess">
+
+            <div id="wizSuccessBox"></div>
+
+        </div>
 
         <div class="modalActions">
 
-            <button id="createOfficerConfirm">Create</button>
+            <button id="wizBack" type="button" style="display:none">‹ Back</button>
+
+            <button id="createOfficerConfirm">Continue</button>
 
             <button id="closeModal">Cancel</button>
 

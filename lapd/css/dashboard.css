@@ -423,3 +423,112 @@ margin-left:70px;
     font-size:12px;
 
 }
+
+/* ---------- ACTION BAR + FILTERS (officers page) ---------- */
+
+.actionBar{
+
+    display:flex;
+
+    gap:12px;
+
+    flex-wrap:wrap;
+
+}
+
+.actionBar button{
+
+    padding:12px 18px;
+
+    border:none;
+
+    border-radius:12px;
+
+    background:#15283d;
+
+    color:white;
+
+    cursor:pointer;
+
+    font-size:14px;
+
+    transition:0.2s;
+
+}
+
+.actionBar button:hover{
+
+    background:#2e8bff33;
+
+}
+
+.content input,
+.content select{
+
+    background:#15283d;
+
+    border:1px solid rgba(255,255,255,.08);
+
+    color:white;
+
+    padding:11px 14px;
+
+    border-radius:10px;
+
+    outline:none;
+
+    font-size:14px;
+
+    margin-right:10px;
+
+    transition:0.2s;
+
+}
+
+.content input:focus{
+
+    border-color:#2e8bff;
+
+}
+
+.content input::placeholder{
+
+    color:#5a6b80;
+
+}
+
+#searchInput{
+
+    min-width:260px;
+
+}
+
+/* ---------- TABLE ROW BUTTONS ---------- */
+
+.table button{
+
+    padding:7px 13px;
+
+    margin:2px 4px 2px 0;
+
+    border:none;
+
+    border-radius:8px;
+
+    background:#15283d;
+
+    color:white;
+
+    cursor:pointer;
+
+    font-size:13px;
+
+    transition:0.2s;
+
+}
+
+.table button:hover{
+
+    background:#2e8bff33;
+
+}

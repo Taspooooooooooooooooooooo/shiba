@@ -2,6 +2,22 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.8.1 — 2026-07-06
+
+### Added
+- **Create Officer wizard** — account-setup style: Name → Division →
+  Rank → Photo → Summary → Create → ✅ Success, with the activation
+  code (and copy button) right in the success screen. Back button on
+  every step; Edit mode still shows all fields at once.
+- Rank dropdown and division suggestions now come from the database
+  (all 10 ranks, all 7 divisions).
+
+### Changed
+- Officers page textures: themed action-bar buttons, table row
+  buttons, search bar, and filter dropdowns (no more default white
+  browser controls).
+- Chief of Police **Vladko Shiba (OFCR-000001)** reports for duty 🚔
+
 ## v0.8.0 — 2026-07-06 · Phase 1: Live Dashboard
 
 ### Added

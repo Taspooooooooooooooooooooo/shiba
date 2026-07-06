@@ -660,6 +660,78 @@ outline:none;
 
 }
 
+/* ============================
+   CREATE OFFICER WIZARD
+============================ */
+
+.wizStep{
+
+display:none;
+
+}
+
+.wizStep.active{
+
+display:flex;
+
+flex-direction:column;
+
+gap:10px;
+
+}
+
+.wizLabel{
+
+color:var(--text2);
+
+font-size:13px;
+
+}
+
+#wizardStepLabel{
+
+color:var(--text2);
+
+font-size:13px;
+
+margin-top:-6px;
+
+}
+
+.wizRow{
+
+display:flex;
+
+justify-content:space-between;
+
+align-items:center;
+
+gap:14px;
+
+padding:10px 4px;
+
+border-bottom:1px solid var(--border);
+
+}
+
+.wizRow:last-child{
+
+border-bottom:none;
+
+}
+
+.wizRow span{
+
+color:var(--text2);
+
+}
+
+#wizBack{
+
+background:#15283d !important;
+
+}
+
 .modalActions{
 
 display:flex;
