@@ -2,6 +2,18 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.10.1 — 2026-07-06
+
+### Fixed
+- **SHIBA CLOUD uploads while logged in** — after real Supabase Auth
+  shipped (v0.6), logged-in users became the `authenticated` role, but
+  the cloud storage rules only permitted `anon`, so every upload failed
+  with "new row violates row-level security policy". Cloud storage
+  operations (upload / delete / public URL) now run through a dedicated
+  anonymous storage client that the existing rules allow. Viewing
+  shared files was never affected. (Phase 3 RLS hardening will replace
+  this with proper authenticated-role storage policies.)
+
 ## v0.10.0 — 2026-07-06 · Phase 2 Sprints 2.1 + 2.2
 
 ### Added

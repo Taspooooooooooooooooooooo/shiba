@@ -385,6 +385,20 @@
     const SETUP_HINT =
         "Storage is not set up yet — run cloud/SETUP.sql in the Supabase SQL Editor once.";
 
+    /* Storage operations use an ANON client (no auth session).
+       The cloud bucket's storage policies allow the anon role;
+       the shared window.db carries the logged-in Supabase Auth
+       token, which the current policies do NOT permit for
+       upload/delete. Routing storage through this keeps uploads
+       working for logged-in officers. (Phase 3 RLS hardening
+       will switch these to proper authenticated policies.) */
+
+    const dbStorage = window.supabase.createClient(
+        "https://vtqyqzuhifzqzqszhtwq.supabase.co",
+        "sb_publishable_NunfAEMxNJA39nzFxtn42g_hsmzxcv8",
+        { auth: { persistSession: false, autoRefreshToken: false } }
+    ).storage;
+
     function generateFileId() {
 
         const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -477,7 +491,7 @@
 
     function directLink(path) {
 
-        return db.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+        return dbStorage.from(BUCKET).getPublicUrl(path).data.publicUrl;
 
     }
 
@@ -658,7 +672,7 @@
 
         const path = id + "/" + file.name;
 
-        const { error } = await db.storage
+        const { error } = await dbStorage
             .from(BUCKET)
             .upload(path, file);
 
@@ -797,7 +811,7 @@
 
             del.onclick = async () => {
 
-                await db.storage.from(BUCKET).remove([f.path]);
+                await dbStorage.from(BUCKET).remove([f.path]);
 
                 await db.from("cloud_files").delete().eq("id", f.id);
 
