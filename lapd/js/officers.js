@@ -21,32 +21,7 @@ function generateBadgeNumber() {
 
 }
 
-/* =========================
-   ID ENGINE
-   Sequential public IDs (OFCR-000001, ...) come from the
-   database — see lapd/SETUP-ID-ENGINE.sql. Atomic, so two
-   officers created at once can never collide. Falls back
-   to the old style until the SQL has been run once.
-========================== */
-
-async function nextPublicId(type, fallback) {
-
-    if (window.db) {
-
-        const { data, error } = await db
-            .rpc("next_public_id", { id_type: type });
-
-        if (!error && data) return data;
-
-        console.warn(
-            "ID engine not ready — run lapd/SETUP-ID-ENGINE.sql (" +
-            (error?.message || "no data") + ")");
-
-    }
-
-    return fallback();
-
-}
+/* sequential public IDs come from IdService (js/core/) */
 
 function splitName(fullName) {
 
@@ -225,6 +200,32 @@ class OfficersEngine {
         this.ranks = [];
         this.divisions = [];
 
+        /* filled by initPerms() before the first render */
+
+        this.perms = {
+            create: false,
+            edit: false,
+            delete: false,
+            promote: false,
+            reset: false
+        };
+
+    }
+
+    /* =========================
+       PERMISSIONS (core service)
+    ========================== */
+
+    async initPerms() {
+
+        this.perms = {
+            create: await PermissionService.can("officers.create"),
+            edit: await PermissionService.can("officers.edit"),
+            delete: await PermissionService.can("officers.delete"),
+            promote: await PermissionService.can("officers.promote"),
+            reset: await PermissionService.can("officers.reset_access")
+        };
+
     }
 
     /* =========================
@@ -258,6 +259,7 @@ class OfficersEngine {
             division: row.divisions?.name || "—",
             status: row.status || "Off Duty",
             photo: row.photo_url,
+            userId: row.user_id || null,
             lastActive: row.updated_at
                 ? new Date(row.updated_at).toLocaleDateString()
                 : "—"
@@ -311,9 +313,9 @@ class OfficersEngine {
 
         const name = splitName(fullName);
 
-        const officerId = await nextPublicId("OFFICER", generateOfficerId);
+        const officerId = await IdService.next("OFFICER", generateOfficerId);
 
-        const badge = await nextPublicId("BADGE", generateBadgeNumber);
+        const badge = await IdService.next("BADGE", generateBadgeNumber);
 
         if (this.ranks.length === 0 && this.divisions.length === 0) {
             await this.loadLookups();
@@ -356,15 +358,21 @@ class OfficersEngine {
 
         await this.addTimeline(data[0].id, "Officer created");
 
+        AuditService.log({
+            action: "OFFICER_CREATED",
+            target: officerId + " " + name.first + " " + name.last,
+            details: "badge " + badge,
+            officerId: data[0].id
+        });
+
+        NotificationService.send({
+            title: "Officer Created",
+            message: officerId + " (" + name.first + " " + name.last + ")"
+        });
+
         await this.load();
 
         UI?.success(officerId + " was successfully created");
-
-        window.Notifications?.send?.(
-            "system",
-            "Officer Created",
-            `${officerId} was successfully created`
-        );
 
         await issueActivationCode(
             data[0].id,
@@ -466,6 +474,14 @@ class OfficersEngine {
 
         await this.addTimeline(id, "Officer profile updated");
 
+        const edited = this.officers.find(o => o.id === id);
+
+        AuditService.log({
+            action: "OFFICER_UPDATED",
+            target: (edited?.officerId || id) + " " + name.first + " " + name.last,
+            officerId: id
+        });
+
         await this.load();
 
         UI?.success("Officer updated");
@@ -482,11 +498,19 @@ class OfficersEngine {
 
         if (!window.db) return;
 
-        /* timeline rows reference the officer, remove them first */
+        const officer = this.officers.find(o => o.id === id);
+
+        /* timeline rows reference the officer, remove them first;
+           audit rows stay but drop their link (see SETUP-PATCH-3) */
 
         await db
             .from("officer_timeline")
             .delete()
+            .eq("officer_id", id);
+
+        await db
+            .from("audit_logs")
+            .update({ officer_id: null })
             .eq("officer_id", id);
 
         const { error } = await db
@@ -499,6 +523,15 @@ class OfficersEngine {
             UI?.error("Error deleting officer!");
             return;
         }
+
+        /* the officer row is gone — the audit text keeps the story */
+
+        AuditService.log({
+            action: "OFFICER_DELETED",
+            target: officer
+                ? officer.officerId + " " + officer.name
+                : id
+        });
 
         this.load();
 
@@ -550,6 +583,24 @@ class OfficersEngine {
 
         await this.addTimeline(id, "Promoted to " + next.name);
 
+        AuditService.log({
+            action: "OFFICER_PROMOTED",
+            target: officer.officerId + " " + officer.name,
+            details: (officer.rank || "—") + " → " + next.name,
+            officerId: id
+        });
+
+        if (officer.userId) {
+
+            NotificationService.send({
+                to: officer.userId,
+                title: "Promotion",
+                message: "Congratulations! You have been promoted to " +
+                    next.name + "."
+            });
+
+        }
+
         this.load();
 
     }
@@ -574,46 +625,27 @@ class OfficersEngine {
 
         this.addTimeline(id, "Access reset code issued");
 
+        AuditService.log({
+            action: "ACCESS_RESET_CODE_ISSUED",
+            target: officer.officerId + " " + officer.name,
+            officerId: id
+        });
+
     }
 
     /* =========================
-       TIMELINE (officer_timeline)
+       TIMELINE — delegates to the core TimelineService
     ========================== */
 
-    async addTimeline(officerId, text) {
+    addTimeline(officerId, text) {
 
-        if (!window.db) return;
-
-        const { error } = await db
-            .from("officer_timeline")
-            .insert([{
-                officer_id: officerId,
-                action: text,
-                details: ""
-            }]);
-
-        if (error) {
-            console.error("TIMELINE ERROR:", error);
-        }
+        return TimelineService.add(officerId, text);
 
     }
 
-    async getTimeline(officerId) {
+    getTimeline(officerId) {
 
-        if (!window.db) return [];
-
-        const { data, error } = await db
-            .from("officer_timeline")
-            .select("*")
-            .eq("officer_id", officerId)
-            .order("created_at", { ascending: false });
-
-        if (error) {
-            console.error("TIMELINE ERROR:", error);
-            return [];
-        }
-
-        return data || [];
+        return TimelineService.list(officerId);
 
     }
 
@@ -663,6 +695,24 @@ class OfficersEngine {
 
             const row = document.createElement("tr");
 
+            let actions =
+                `<button onclick="Officers.view('${officer.id}')">View</button>`;
+
+            if (this.perms.edit) {
+                actions +=
+                    `<button onclick="Officers.edit('${officer.id}')">Edit</button>`;
+            }
+
+            if (this.perms.promote) {
+                actions +=
+                    `<button onclick="Officers.promote('${officer.id}')">Promote</button>`;
+            }
+
+            if (this.perms.delete) {
+                actions +=
+                    `<button onclick="Officers.deleteOfficer('${officer.id}')">Delete</button>`;
+            }
+
             row.innerHTML = `
 
                 <td>${this.getStatus(officer.status)}</td>
@@ -671,12 +721,7 @@ class OfficersEngine {
                 <td>${officer.rank}</td>
                 <td>${officer.division}</td>
                 <td>${officer.lastActive}</td>
-                <td>
-                    <button onclick="Officers.view('${officer.id}')">View</button>
-                    <button onclick="Officers.edit('${officer.id}')">Edit</button>
-                    <button onclick="Officers.promote('${officer.id}')">Promote</button>
-                    <button onclick="Officers.deleteOfficer('${officer.id}')">Delete</button>
-                </td>
+                <td>${actions}</td>
 
             `;
 
@@ -786,11 +831,39 @@ let editingOfficerId = null;
    actually have these elements)
 ============================ */
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+
+    await Officers.initPerms();
 
     Officers.loadLookups();
 
     Officers.load();
+
+    /* hide controls the current role is not allowed to use */
+
+    if (!Officers.perms.create) {
+
+        const createBtn = document.getElementById("createOfficerBtn");
+
+        if (createBtn) createBtn.style.display = "none";
+
+    }
+
+    if (!Officers.perms.promote) {
+
+        const b = document.getElementById("drawerPromoteBtn");
+
+        if (b) b.style.display = "none";
+
+    }
+
+    if (!Officers.perms.reset) {
+
+        const b = document.getElementById("drawerResetBtn");
+
+        if (b) b.style.display = "none";
+
+    }
 
     /* MODAL CONTROL */
 

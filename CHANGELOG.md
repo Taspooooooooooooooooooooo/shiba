@@ -2,6 +2,30 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.7.0 — 2026-07-06 · Phase 0: Foundation
+
+### Added
+- **Core services** in `js/core/` — the engine every future module
+  uses: `idService` (public IDs), `permissionService`
+  (`can(user, "officers.create")` with a rank matrix),
+  `auditService` (audit_logs), `timelineService` (officer_timeline),
+  `notificationService` (notifications table + NOTIF ids).
+- **Real audit trail** — creating, editing, promoting, deleting
+  officers, issuing reset codes, and activating accounts all write
+  `AUDIT-2026-…` entries with actor, target, and details.
+- **Notifications** — system entries on officer creation; promoted
+  officers with accounts get a personal "Congratulations" message.
+- **Permission gating** — plain Officers see a view-only officer
+  list; Create/Edit/Promote/Delete/Reset appear only for roles that
+  are allowed to use them (client-side UX gating; server-side RLS
+  comes in Phase 3).
+- `lapd/SETUP-PATCH-3.sql` — audit history survives deletions
+  (foreign keys switch to ON DELETE SET NULL).
+
+### Changed
+- ROADMAP.md consolidated from the BOSS planning documents into one
+  phase plan (Phase 0 Foundation → Phase 9 v1.0).
+
 ## v0.6.2 — 2026-07-05
 
 ### Changed

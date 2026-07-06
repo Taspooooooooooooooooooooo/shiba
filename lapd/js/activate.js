@@ -215,6 +215,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
         }
 
+        AuditService.log({
+            action: "ACCOUNT_ACTIVATED",
+            target: username + " (" + checkedInfo.officer_name + ")",
+            officerId: checkedInfo.officer_uuid || null
+        });
+
         /* logged in — mirror the session for all SHIBA pages */
 
         localStorage.setItem("loggedIn", "true");

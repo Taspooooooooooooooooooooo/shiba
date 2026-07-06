@@ -94,9 +94,9 @@
 
             <h4>Quick Actions</h4>
 
-            <button onclick="Officers.promote(currentOfficerId)">🏅 Promote</button>
+            <button id="drawerPromoteBtn" onclick="Officers.promote(currentOfficerId)">🏅 Promote</button>
 
-            <button onclick="Officers.resetAccess(currentOfficerId)">🔑 Reset Access</button>
+            <button id="drawerResetBtn" onclick="Officers.resetAccess(currentOfficerId)">🔑 Reset Access</button>
 
             <button>📂 Cases</button>
 
@@ -233,6 +233,13 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 
 <script src="js/supabaseClient.js"></script>
+
+<script src="js/core/idService.js"></script>
+<script src="js/core/permissionService.js"></script>
+<script src="js/core/auditService.js"></script>
+<script src="js/core/timelineService.js"></script>
+<script src="js/core/notificationService.js"></script>
+
 <script src="js/auth.js"></script>
 <script src="js/session.js"></script>
 <script src="js/ui.js"></script>
