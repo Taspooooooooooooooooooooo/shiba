@@ -10,7 +10,10 @@ const Personnel = {
 
     officer: null,
 
-    loaded: { timeline: false, audit: false, cases: false },
+    loaded: {
+        timeline: false, audit: false, cases: false,
+        career: false, stats: false, inbox: false, notes: false, perms: false
+    },
 
     /* ----------------------------------------------------- */
     /* header + general tab                                   */
@@ -230,6 +233,382 @@ const Personnel = {
     },
 
     /* ----------------------------------------------------- */
+    /* career (rank changes from the timeline)                */
+    /* ----------------------------------------------------- */
+
+    async renderCareer() {
+
+        if (this.loaded.career) return;
+
+        this.loaded.career = true;
+
+        const box = document.getElementById("pfCareer");
+
+        const events = await TimelineService.list(this.officer.id, 200);
+
+        /* joined + every promotion, oldest first */
+
+        const steps = events
+            .filter(e => /promot|created|rank/i.test(e.action))
+            .reverse();
+
+        box.innerHTML =
+            `<p class="muted" style="margin-bottom:14px">Current rank: ` +
+            `<b style="color:var(--text)">${this.officer.rank}</b></p>`;
+
+        if (!steps.length) {
+
+            box.innerHTML += "<p class='muted'>No career events yet.</p>";
+
+            return;
+
+        }
+
+        const ladder = document.createElement("div");
+
+        ladder.className = "career";
+
+        steps.forEach((e, i) => {
+
+            const node = document.createElement("div");
+
+            node.className = "careerStep";
+
+            const date = new Date(e.created_at);
+
+            const next = steps[i + 1]
+                ? new Date(steps[i + 1].created_at)
+                : new Date();
+
+            const days = Math.max(0,
+                Math.round((next - date) / 86400000));
+
+            node.innerHTML = `
+                <span class="dot"></span>
+                <div>
+                    <strong>${e.action}</strong>
+                    <small>${date.toLocaleDateString()} · ${days} day${days === 1 ? "" : "s"} at this stage</small>
+                    ${e.details ? "<span class='muted'>" + e.details + "</span>" : ""}
+                </div>
+            `;
+
+            ladder.appendChild(node);
+
+        });
+
+        box.appendChild(ladder);
+
+    },
+
+    /* ----------------------------------------------------- */
+    /* statistics                                             */
+    /* ----------------------------------------------------- */
+
+    async renderStats() {
+
+        if (this.loaded.stats) return;
+
+        this.loaded.stats = true;
+
+        const box = document.getElementById("pfStats");
+
+        const id = this.officer.id;
+
+        const countOr = async (table, orExpr) => {
+
+            const { count, error } = await db
+                .from(table)
+                .select("*", { count: "exact", head: true })
+                .or(orExpr);
+
+            return error ? "—" : (count || 0);
+
+        };
+
+        const countEq = async (table, col, value) => {
+
+            const { count, error } = await db
+                .from(table)
+                .select("*", { count: "exact", head: true })
+                .eq(col, value);
+
+            return error ? "—" : (count || 0);
+
+        };
+
+        const timeline = await TimelineService.list(id, 500);
+
+        const promotions = timeline
+            .filter(e => /promot/i.test(e.action)).length;
+
+        const stats = [
+            ["📁 Cases", await countOr("cases",
+                "assigned_to.eq." + id + ",created_by.eq." + id)],
+            ["📄 Reports", await countEq("reports", "officer_id", id)],
+            ["🎖 Promotions", promotions],
+            ["📜 Timeline Events", timeline.length],
+            ["📋 Audit Events", (await AuditService.list(500, id)).length],
+            ["🏅 Certificates", "—"]
+        ];
+
+        box.innerHTML = "";
+
+        stats.forEach(([label, value]) => {
+
+            const card = document.createElement("div");
+
+            card.className = "card";
+
+            card.innerHTML = `<h3>${label}</h3><h1>${value}</h1>`;
+
+            box.appendChild(card);
+
+        });
+
+    },
+
+    /* ----------------------------------------------------- */
+    /* inbox (this officer's notifications)                   */
+    /* ----------------------------------------------------- */
+
+    async renderInbox() {
+
+        if (this.loaded.inbox) return;
+
+        this.loaded.inbox = true;
+
+        const box = document.getElementById("pfInbox");
+
+        if (!this.officer.userId) {
+
+            box.innerHTML =
+                "<p class='muted'>This officer has not activated an " +
+                "account yet, so they have no inbox.</p>";
+
+            return;
+
+        }
+
+        const items = await NotificationService.list(this.officer.userId, 50);
+
+        box.innerHTML = "";
+
+        if (!items.length) {
+
+            box.innerHTML = "<p class='muted'>No messages.</p>";
+
+            return;
+
+        }
+
+        items.forEach(n => {
+
+            const row = document.createElement("div");
+
+            row.className = "inboxItem" + (n.is_read ? "" : " unread");
+
+            row.innerHTML = `
+                <div class="inboxHead">
+                    <strong>${n.title || "Notification"}</strong>
+                    <small>${new Date(n.created_at).toLocaleString()}</small>
+                </div>
+                <p>${n.message || ""}</p>
+                <small class="muted">${n.notification_id || ""}</small>
+            `;
+
+            if (!n.is_read) {
+
+                row.onclick = async () => {
+
+                    await NotificationService.markRead(n.id);
+
+                    row.classList.remove("unread");
+
+                };
+
+            }
+
+            box.appendChild(row);
+
+        });
+
+    },
+
+    /* ----------------------------------------------------- */
+    /* leadership notes                                       */
+    /* ----------------------------------------------------- */
+
+    async renderNotes() {
+
+        if (this.loaded.notes) return;
+
+        this.loaded.notes = true;
+
+        const box = document.getElementById("pfNotes");
+
+        const canWrite = await PermissionService.can("notes.write");
+
+        const compose = document.getElementById("pfNotesCompose");
+
+        if (canWrite && compose) {
+
+            compose.classList.remove("step-hidden");
+
+            document.getElementById("pfNoteAdd").onclick = () =>
+                this.addNote();
+
+        }
+
+        const { data, error } = await db
+            .from("leadership_notes")
+            .select("*")
+            .eq("officer_id", this.officer.id)
+            .order("created_at", { ascending: false });
+
+        if (error) {
+
+            box.innerHTML =
+                "<p class='muted'>Leadership notes need a one-time setup " +
+                "— run lapd/SETUP-PATCH-4.sql in the Supabase SQL Editor.</p>";
+
+            return;
+
+        }
+
+        box.innerHTML = "";
+
+        if (!data.length) {
+
+            box.innerHTML = "<p class='muted'>No leadership notes yet.</p>";
+
+            return;
+
+        }
+
+        data.forEach(n => {
+
+            const row = document.createElement("div");
+
+            row.className = "noteItem";
+
+            row.innerHTML = `
+                <p>${n.note}</p>
+                <small class="muted">— ${n.author_name || "Leadership"}` +
+                `${n.author_role ? " (" + n.author_role + ")" : ""} · ` +
+                `${new Date(n.created_at).toLocaleString()}</small>
+            `;
+
+            box.appendChild(row);
+
+        });
+
+    },
+
+    async addNote() {
+
+        const input = document.getElementById("pfNoteInput");
+
+        const text = input.value.trim();
+
+        if (!text) return;
+
+        const author = localStorage.getItem("username") || "Leadership";
+
+        const role = localStorage.getItem("role") || "";
+
+        const { error } = await db
+            .from("leadership_notes")
+            .insert([{
+                officer_id: this.officer.id,
+                author_name: author,
+                author_role: role,
+                note: text
+            }]);
+
+        if (error) {
+
+            UI?.error("Could not save note (run SETUP-PATCH-4.sql).");
+
+            return;
+
+        }
+
+        AuditService.log({
+            action: "LEADERSHIP_NOTE_ADDED",
+            target: this.officer.officerId + " " + this.officer.name,
+            officerId: this.officer.id
+        });
+
+        TimelineService.add(this.officer.id, "Leadership note added");
+
+        input.value = "";
+
+        this.loaded.notes = false;
+
+        this.renderNotes();
+
+        UI?.success("Note added");
+
+    },
+
+    /* ----------------------------------------------------- */
+    /* permissions (what this rank grants)                    */
+    /* ----------------------------------------------------- */
+
+    async renderPerms() {
+
+        if (this.loaded.perms) return;
+
+        this.loaded.perms = true;
+
+        const box = document.getElementById("pfPerms");
+
+        const tier = PermissionService.tierForRank(this.officer.rank);
+
+        const perms = PermissionService.permsForRole(tier);
+
+        const label = perms.includes("*")
+            ? ["Full system access (all permissions)"]
+            : perms;
+
+        box.innerHTML =
+            `<p class="muted" style="margin-bottom:12px">Rank ` +
+            `<b style="color:var(--text)">${this.officer.rank}</b> ` +
+            `(permission tier: ${tier})</p>`;
+
+        const list = document.createElement("div");
+
+        list.className = "permGrid";
+
+        label.forEach(p => {
+
+            const item = document.createElement("div");
+
+            item.className = "permItem";
+
+            item.textContent = "✓ " + p;
+
+            list.appendChild(item);
+
+        });
+
+        box.appendChild(list);
+
+        const note = document.createElement("p");
+
+        note.className = "muted";
+
+        note.style.marginTop = "14px";
+
+        note.textContent =
+            "Temporary, division, and custom permissions arrive in " +
+            "Phase 3 (Permission System).";
+
+        box.appendChild(note);
+
+    },
+
+    /* ----------------------------------------------------- */
     /* init                                                   */
     /* ----------------------------------------------------- */
 
@@ -440,6 +819,16 @@ const Personnel = {
                 if (btn.dataset.tab === "tabAudit") this.renderAudit();
 
                 if (btn.dataset.tab === "tabCases") this.renderCases();
+
+                if (btn.dataset.tab === "tabCareer") this.renderCareer();
+
+                if (btn.dataset.tab === "tabStats") this.renderStats();
+
+                if (btn.dataset.tab === "tabInbox") this.renderInbox();
+
+                if (btn.dataset.tab === "tabNotes") this.renderNotes();
+
+                if (btn.dataset.tab === "tabPerms") this.renderPerms();
 
             };
 

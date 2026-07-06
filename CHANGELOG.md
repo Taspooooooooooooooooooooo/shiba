@@ -2,6 +2,25 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.11.0 — 2026-07-06 · 🎖 Officer Management Edition (Phase 2 complete)
+
+### Added — Personnel File tabs
+- **🎖 Career** — rank-change ladder built from the timeline, with the
+  date and days spent at each stage.
+- **📊 Statistics** — real counts: cases, reports, promotions, timeline
+  events, audit events (certificates arrive in Phase 4).
+- **🔔 Inbox** — the officer's notifications, with click-to-mark-read.
+- **📝 Leadership Notes** — senior officers (Lieutenant+) leave notes
+  the officer can only read; each note is audited and timelined.
+  Needs `lapd/SETUP-PATCH-4.sql` (shows a friendly hint until run).
+- **🛡 Permissions** — what the officer's rank grants (rank→tier
+  mapping); temporary/division/custom permissions come in Phase 3.
+
+### Phase 2 — Officer Management — is complete
+Create wizard, activation, full audited edit, archive, search,
+filters, and the full Personnel File. Certificates and Cases tabs
+remain placeholders until their phases (4 and 5).
+
 ## v0.10.1 — 2026-07-06
 
 ### Fixed

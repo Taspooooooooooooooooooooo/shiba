@@ -66,19 +66,71 @@
 
             <button data-tab="tabGeneral" class="active">📄 General</button>
 
+            <button data-tab="tabCareer">🎖 Career</button>
+
+            <button data-tab="tabStats">📊 Statistics</button>
+
+            <button data-tab="tabInbox">🔔 Inbox</button>
+
+            <button data-tab="tabNotes">📝 Notes</button>
+
+            <button data-tab="tabPerms">🛡 Permissions</button>
+
             <button data-tab="tabTimeline">📜 Timeline</button>
 
             <button data-tab="tabAudit">📋 Audit</button>
 
             <button data-tab="tabCases">📁 Cases</button>
 
-            <button data-tab="tabCerts">🎖 Certificates</button>
+            <button data-tab="tabCerts">🏅 Certificates</button>
 
         </div>
 
         <div class="tabPanel active" id="tabGeneral">
 
             <div class="fieldGrid" id="pfGeneral"></div>
+
+        </div>
+
+        <div class="tabPanel" id="tabCareer">
+
+            <div id="pfCareer"><p class="muted">Loading...</p></div>
+
+        </div>
+
+        <div class="tabPanel" id="tabStats">
+
+            <div class="grid" id="pfStats"></div>
+
+        </div>
+
+        <div class="tabPanel" id="tabInbox">
+
+            <div id="pfInbox"><p class="muted">Loading...</p></div>
+
+        </div>
+
+        <div class="tabPanel" id="tabNotes">
+
+            <div id="pfNotesCompose" class="step-hidden" style="margin-bottom:16px">
+
+                <textarea
+                    id="pfNoteInput"
+                    rows="3"
+                    placeholder="Add a leadership note (the officer can read it, not edit it)..."
+                    style="width:100%;background:#15283d;border:none;border-radius:10px;color:white;padding:12px;outline:none;resize:vertical;font-family:inherit"></textarea>
+
+                <button id="pfNoteAdd" style="margin-top:8px;padding:10px 16px;border:none;border-radius:10px;background:var(--primary);color:white;cursor:pointer">Add note</button>
+
+            </div>
+
+            <div id="pfNotes"><p class="muted">Loading...</p></div>
+
+        </div>
+
+        <div class="tabPanel" id="tabPerms">
+
+            <div id="pfPerms"><p class="muted">Loading...</p></div>
 
         </div>
 

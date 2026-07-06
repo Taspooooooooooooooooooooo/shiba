@@ -52,7 +52,7 @@ repeating code:
 - [ ] Recent timeline feed + weekly graph
 - [ ] Quick Actions (Create Officer, Create Case, Start Shift, Search)
 
-## 🟣 PHASE 2 — Personnel File (IN PROGRESS)
+## 🟣 PHASE 2 — Officer Management (COMPLETE ✅)
 
 The heart of the system — one full page per officer:
 
@@ -64,8 +64,8 @@ The heart of the system — one full page per officer:
       working Status/Rank filters, Archive (Retired) instead of Delete
 - [x] Sprint 2.2 — Edit everything with field-level audit diffs +
       timeline + notification; wizard Contact step (phone/email)
-- [ ] Remaining tabs (later sprints): Career progression · Leadership
-      Notes · Permissions · Inbox · Statistics · Bodycam · Shifts
+- [x] Personnel File tabs: Career · Statistics · Inbox · Leadership
+      Notes · Permissions (Bodycam/Shifts tabs land with their phases)
 - [ ] Career Progression visual (rank ladder with dates, certificates,
       approver, days-at-rank; shows demotions too)
 - [ ] Leadership notes (read-only for the officer)

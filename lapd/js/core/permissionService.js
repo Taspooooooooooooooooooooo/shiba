@@ -45,6 +45,7 @@ const PermissionService = {
             "cases.*",
             "promotion.approve",
             "bodycam.delete",
+            "notes.write",
             "cloud.upload"
         ],
 
@@ -54,6 +55,7 @@ const PermissionService = {
             "cases.*",
             "promotion.approve",
             "bodycam.*",
+            "notes.write",
             "cloud.upload"
         ],
 
@@ -62,6 +64,37 @@ const PermissionService = {
         "Chief": [ "*" ],
 
         "Super Administrator": [ "*" ]
+
+    },
+
+    /* granular officer ranks map to a permission tier */
+
+    RANK_TIER: {
+        "Cadet": "Cadet",
+        "Officer": "Officer",
+        "Officer II": "Officer",
+        "Officer III": "Officer",
+        "Senior Officer": "Officer",
+        "Corporal": "Officer",
+        "Sergeant I": "Sergeant",
+        "Sergeant II": "Sergeant",
+        "Lieutenant": "Lieutenant",
+        "Captain": "Captain",
+        "Commander": "Commander",
+        "Deputy Chief": "Chief",
+        "Chief of Police": "Chief",
+        "Chief": "Chief"
+    },
+
+    tierForRank(rank) {
+
+        return this.RANK_TIER[rank] || "Officer";
+
+    },
+
+    permsForRole(role) {
+
+        return this.MATRIX[role] || [];
 
     },
 
