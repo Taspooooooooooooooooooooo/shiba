@@ -230,6 +230,7 @@ class OfficersEngine {
             create: await PermissionService.can("officers.create"),
             edit: await PermissionService.can("officers.edit"),
             delete: await PermissionService.can("officers.delete"),
+            archive: await PermissionService.can("officers.archive"),
             promote: await PermissionService.can("officers.promote"),
             reset: await PermissionService.can("officers.reset_access")
         };
@@ -267,6 +268,9 @@ class OfficersEngine {
             division: row.divisions?.name || "—",
             status: row.status || "Off Duty",
             photo: row.photo_url,
+            phone: row.phone || "",
+            email: row.email || "",
+            notes: row.notes || "",
             userId: row.user_id || null,
             lastActive: row.updated_at
                 ? new Date(row.updated_at).toLocaleDateString()
@@ -306,6 +310,8 @@ class OfficersEngine {
 
         const fullName = document.getElementById("offName").value;
         const photo = document.getElementById("offPhoto")?.value || null;
+        const phone = document.getElementById("offPhone")?.value.trim() || null;
+        const email = document.getElementById("offEmail")?.value.trim() || null;
         const divisionName = document.getElementById("offDivision")?.value || "";
         const rankName = document.getElementById("offRank")?.value || "";
 
@@ -347,6 +353,8 @@ class OfficersEngine {
                 last_name: name.last,
                 badge_number: badge,
                 photo_url: photoUrl,
+                phone: phone,
+                email: email,
                 division_id: division?.id || null,
                 rank_id: rank?.id || null,
                 user_id: null,
@@ -409,6 +417,10 @@ class OfficersEngine {
 
         document.getElementById("offName").value = officer.name;
 
+        document.getElementById("offPhone").value = officer.phone || "";
+
+        document.getElementById("offEmail").value = officer.email || "";
+
         document.getElementById("offDivision").value =
             officer.division === "—" ? "" : officer.division;
 
@@ -435,12 +447,34 @@ class OfficersEngine {
 
     async updateOfficer(id) {
 
-        const fullName = document.getElementById("offName").value;
-        const photo = document.getElementById("offPhoto")?.value || null;
-        const divisionName = document.getElementById("offDivision")?.value || "";
-        const rankName = document.getElementById("offRank")?.value || "";
+        /* modal edit — collects the wizard fields */
 
-        if (!fullName.trim()) {
+        return this.updateOfficerData(id, {
+            name: document.getElementById("offName").value,
+            phone: document.getElementById("offPhone")?.value,
+            email: document.getElementById("offEmail")?.value,
+            division: document.getElementById("offDivision")?.value || "",
+            rank: document.getElementById("offRank")?.value || "",
+            photo: document.getElementById("offPhoto")?.value || ""
+        });
+
+    }
+
+    /* =========================
+       UPDATE OFFICER (core)
+       Edits ANY field. The audit trail records exactly
+       which fields changed and from what to what; the
+       timeline gets an entry; the officer gets notified.
+       Undefined fields keep their current value.
+    ========================== */
+
+    async updateOfficerData(id, values) {
+
+        const officer = this.officers.find(o => o.id === id);
+
+        if (!officer) return false;
+
+        if (!values.name || !values.name.trim()) {
             UI?.error("Name is required!");
             return false;
         }
@@ -450,28 +484,51 @@ class OfficersEngine {
             return false;
         }
 
-        const name = splitName(fullName);
-
         if (this.ranks.length === 0 && this.divisions.length === 0) {
             await this.loadLookups();
         }
 
+        /* undefined = keep the current value */
+
+        const pick = (value, current) =>
+            value === undefined ? (current || "") : value;
+
+        const nameValue = values.name.trim();
+        const phoneValue = pick(values.phone, officer.phone).trim();
+        const emailValue = pick(values.email, officer.email).trim();
+        const divisionValue = pick(values.division,
+            officer.division === "—" ? "" : officer.division).trim();
+        const rankValue = pick(values.rank,
+            officer.rank === "—" ? "" : officer.rank).trim();
+        const statusValue =
+            (pick(values.status, officer.status).trim()) || officer.status;
+        const photoInput = pick(values.photo, officer.photo || "").trim();
+        const notesValue = pick(values.notes, officer.notes).trim();
+
         const rank = this.ranks.find(r =>
-            r.name.toLowerCase() === rankName.toLowerCase());
+            r.name.toLowerCase() === rankValue.toLowerCase());
 
         const division = this.divisions.find(d =>
-            d.name.toLowerCase() === divisionName.trim().toLowerCase());
+            d.name.toLowerCase() === divisionValue.toLowerCase());
 
-        const photoUrl = photo ? await resolveCloudPhoto(photo) : null;
+        const name = splitName(nameValue);
+
+        const photoUrl = photoInput
+            ? await resolveCloudPhoto(photoInput)
+            : null;
 
         const { error } = await db
             .from("officers")
             .update({
                 first_name: name.first,
                 last_name: name.last,
-                photo_url: photoUrl,
+                phone: phoneValue || null,
+                email: emailValue || null,
                 division_id: division?.id || null,
-                rank_id: rank?.id || null
+                rank_id: rank?.id || null,
+                status: statusValue,
+                photo_url: photoUrl,
+                notes: notesValue || null
             })
             .eq("id", id);
 
@@ -481,15 +538,56 @@ class OfficersEngine {
             return false;
         }
 
-        await this.addTimeline(id, "Officer profile updated");
+        /* field-level diff for the audit trail */
 
-        const edited = this.officers.find(o => o.id === id);
+        const changes = [];
+
+        const diff = (label, oldValue, newValue) => {
+
+            const a = (oldValue || "").toString().trim();
+
+            const b = (newValue || "").toString().trim();
+
+            if (a !== b) {
+                changes.push(label + ": " + (a || "—") + " → " + (b || "—"));
+            }
+
+        };
+
+        diff("name", officer.name, nameValue);
+        diff("phone", officer.phone, phoneValue);
+        diff("email", officer.email, emailValue);
+        diff("division",
+            officer.division === "—" ? "" : officer.division,
+            division?.name || "");
+        diff("rank",
+            officer.rank === "—" ? "" : officer.rank,
+            rank?.name || "");
+        diff("status", officer.status, statusValue);
+        diff("photo", officer.photo || "", photoUrl || "");
+        diff("notes", officer.notes, notesValue);
+
+        const detail = changes.length ? changes.join("; ") : "no changes";
+
+        await this.addTimeline(id, "Profile updated", detail);
 
         AuditService.log({
             action: "OFFICER_UPDATED",
-            target: (edited?.officerId || id) + " " + name.first + " " + name.last,
+            target: officer.officerId + " " + nameValue,
+            details: detail,
             officerId: id
         });
+
+        if (officer.userId && changes.length) {
+
+            NotificationService.send({
+                to: officer.userId,
+                title: "Profile Updated",
+                message: "Your personnel file was updated (" +
+                    changes.map(c => c.split(":")[0]).join(", ") + ")."
+            });
+
+        }
 
         await this.load();
 
@@ -500,7 +598,63 @@ class OfficersEngine {
     }
 
     /* =========================
+       ARCHIVE OFFICER
+       Police never delete history — an officer who leaves
+       is archived: status changes, but every case, timeline
+       entry, certificate, and audit record stays forever.
+    ========================== */
+
+    async archiveOfficer(id) {
+
+        const officer = this.officers.find(o => o.id === id);
+
+        if (!officer || !window.db) return;
+
+        if (!confirm(
+            "Archive " + officer.name + " (" + officer.officerId + ")?\n\n" +
+            "They will be marked as Retired and hidden from the active " +
+            "list. All history stays.")) return;
+
+        const { error } = await db
+            .from("officers")
+            .update({ status: "Retired" })
+            .eq("id", id);
+
+        if (error) {
+            console.error("ARCHIVE OFFICER ERROR:", error);
+            UI?.error("Error archiving officer!");
+            return;
+        }
+
+        await this.addTimeline(id, "Officer archived (Retired)");
+
+        AuditService.log({
+            action: "OFFICER_ARCHIVED",
+            target: officer.officerId + " " + officer.name,
+            details: officer.status + " → Retired",
+            officerId: id
+        });
+
+        if (officer.userId) {
+
+            NotificationService.send({
+                to: officer.userId,
+                title: "Status Change",
+                message: "Your status was changed to Retired. " +
+                    "Thank you for your service."
+            });
+
+        }
+
+        UI?.success(officer.name + " archived");
+
+        this.load();
+
+    }
+
+    /* =========================
        DELETE OFFICER
+       (kept for maintenance only — the UI uses Archive)
     ========================== */
 
     async deleteOfficer(id) {
@@ -646,9 +800,9 @@ class OfficersEngine {
        TIMELINE — delegates to the core TimelineService
     ========================== */
 
-    addTimeline(officerId, text) {
+    addTimeline(officerId, text, details) {
 
-        return TimelineService.add(officerId, text);
+        return TimelineService.add(officerId, text, details || "");
 
     }
 
@@ -664,15 +818,38 @@ class OfficersEngine {
 
     search(query) {
 
-        const q = query.toLowerCase();
+        const q = (query || "").toLowerCase().trim();
 
-        return this.officers.filter(o =>
-            o.name.toLowerCase().includes(q) ||
-            o.badge.toLowerCase().includes(q) ||
-            o.officerId.toLowerCase().includes(q) ||
-            o.rank.toLowerCase().includes(q) ||
-            o.division.toLowerCase().includes(q)
-        );
+        if (!q) return this.officers;
+
+        /* partial ID matching: "OFCR-152" or "152" also finds
+           OFCR-000152 / BDG-000152 */
+
+        const digits = (q.match(/\d+/) || [null])[0];
+
+        return this.officers.filter(o => {
+
+            const haystack = [
+                o.name, o.badge, o.officerId, o.rank,
+                o.division, o.status, o.phone, o.email
+            ].join(" ").toLowerCase();
+
+            if (haystack.includes(q)) return true;
+
+            if (digits) {
+
+                const officerDigits = (o.officerId.match(/\d+/) || [""])[0];
+
+                const badgeDigits = (o.badge.match(/\d+/) || [""])[0];
+
+                if (officerDigits.endsWith(digits) ||
+                    badgeDigits.endsWith(digits)) return true;
+
+            }
+
+            return false;
+
+        });
 
     }
 
@@ -709,7 +886,7 @@ class OfficersEngine {
 
             if (this.perms.edit) {
                 actions +=
-                    `<button onclick="Officers.edit('${officer.id}')">Edit</button>`;
+                    `<button onclick="location.href='personnel.html?id=${officer.id}&edit=1'">Edit</button>`;
             }
 
             if (this.perms.promote) {
@@ -717,9 +894,10 @@ class OfficersEngine {
                     `<button onclick="Officers.promote('${officer.id}')">Promote</button>`;
             }
 
-            if (this.perms.delete) {
+            if (this.perms.archive && officer.status !== "Retired"
+                && officer.status !== "Terminated") {
                 actions +=
-                    `<button onclick="Officers.deleteOfficer('${officer.id}')">Delete</button>`;
+                    `<button onclick="Officers.archiveOfficer('${officer.id}')">Archive</button>`;
             }
 
             row.innerHTML = `
@@ -742,7 +920,15 @@ class OfficersEngine {
 
     renderList() {
 
-        this.render(this.officers);
+        if (window.__applyOfficerFilters) {
+
+            window.__applyOfficerFilters();
+
+        } else {
+
+            this.render(this.officers);
+
+        }
 
     }
 
@@ -756,6 +942,8 @@ class OfficersEngine {
         if (status === "Off Duty") return "⚫ Off Duty";
         if (status === "Training") return "🔵 Training";
         if (status === "Suspended") return "🔴 Suspended";
+        if (status === "Retired") return "🌙 Retired";
+        if (status === "Terminated") return "❌ Terminated";
 
         return "⚪ Unknown";
 
@@ -841,16 +1029,22 @@ let editingOfficerId = null;
 ============================ */
 
 const WIZ_STEPS =
-    ["wizName", "wizDivision", "wizRank", "wizPhoto", "wizSummary", "wizSuccess"];
+    ["wizName", "wizContact", "wizDivision", "wizRank", "wizPhoto",
+     "wizSummary", "wizSuccess"];
 
 const WIZ_LABELS = [
-    "Step 1 of 5 — Full name",
-    "Step 2 of 5 — Division",
-    "Step 3 of 5 — Rank",
-    "Step 4 of 5 — Photo",
-    "Step 5 of 5 — Summary",
+    "Step 1 of 6 — Full name",
+    "Step 2 of 6 — Contact",
+    "Step 3 of 6 — Division",
+    "Step 4 of 6 — Rank",
+    "Step 5 of 6 — Photo",
+    "Step 6 of 6 — Summary",
     ""
 ];
+
+const WIZ_SUMMARY_INDEX = 5;
+
+const WIZ_SUCCESS_INDEX = 6;
 
 let wizardStep = 0;
 
@@ -880,7 +1074,8 @@ function wizShowStep(index) {
 
     if (back) {
 
-        back.style.display = (index > 0 && index < 5) ? "" : "none";
+        back.style.display =
+            (index > 0 && index < WIZ_SUCCESS_INDEX) ? "" : "none";
 
     }
 
@@ -889,8 +1084,8 @@ function wizShowStep(index) {
     if (confirm) {
 
         confirm.innerText =
-            index === 4 ? "Create" :
-            index === 5 ? "Done" : "Continue";
+            index === WIZ_SUMMARY_INDEX ? "Create" :
+            index === WIZ_SUCCESS_INDEX ? "Done" : "Continue";
 
     }
 
@@ -898,7 +1093,7 @@ function wizShowStep(index) {
 
     if (cancel) {
 
-        cancel.style.display = index === 5 ? "none" : "";
+        cancel.style.display = index === WIZ_SUCCESS_INDEX ? "none" : "";
 
     }
 
@@ -906,7 +1101,7 @@ function wizShowStep(index) {
 
 function wizSetEditMode() {
 
-    ["wizName", "wizDivision", "wizRank", "wizPhoto"].forEach(id =>
+    ["wizName", "wizContact", "wizDivision", "wizRank", "wizPhoto"].forEach(id =>
         document.getElementById(id)?.classList.add("active"));
 
     ["wizSummary", "wizSuccess"].forEach(id =>
@@ -940,6 +1135,8 @@ function wizBuildSummary() {
 
     const rows = [
         ["👮 Name", document.getElementById("offName").value.trim() || "—"],
+        ["📞 Phone", document.getElementById("offPhone").value.trim() || "—"],
+        ["✉️ Email", document.getElementById("offEmail").value.trim() || "—"],
         ["🏢 Division", document.getElementById("offDivision").value.trim() || "—"],
         ["🎖 Rank", document.getElementById("offRank").value],
         ["📷 Photo", document.getElementById("offPhoto").value.trim() ? "✓ set" : "—"]
@@ -1081,6 +1278,22 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         }
 
+        const rankFilter = document.getElementById("rankFilter");
+
+        if (rankFilter) {
+
+            Officers.ranks.forEach(r => {
+
+                const option = document.createElement("option");
+
+                option.textContent = r.name;
+
+                rankFilter.appendChild(option);
+
+            });
+
+        }
+
     });
 
     Officers.load();
@@ -1129,6 +1342,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             "👮 Create Officer";
 
         document.getElementById("offName").value = "";
+        document.getElementById("offPhone").value = "";
+        document.getElementById("offEmail").value = "";
         document.getElementById("offDivision").value = "";
         document.getElementById("offPhoto").value = "";
 
@@ -1162,7 +1377,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         backBtn.onclick = () => {
 
-            if (wizardStep > 0 && wizardStep < 5) {
+            if (wizardStep > 0 && wizardStep < WIZ_SUCCESS_INDEX) {
 
                 wizShowStep(wizardStep - 1);
 
@@ -1199,9 +1414,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             }
 
-            if (wizardStep < 4) {
+            if (wizardStep < WIZ_SUMMARY_INDEX) {
 
-                if (wizardStep === 3) wizBuildSummary();
+                if (wizardStep === WIZ_SUMMARY_INDEX - 1) wizBuildSummary();
 
                 wizShowStep(wizardStep + 1);
 
@@ -1209,7 +1424,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             }
 
-            if (wizardStep === 4) {
+            if (wizardStep === WIZ_SUMMARY_INDEX) {
 
                 confirmBtn.disabled = true;
 
@@ -1221,7 +1436,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 if (!result?.ok) {
 
-                    wizShowStep(4);
+                    wizShowStep(WIZ_SUMMARY_INDEX);
 
                     return;
 
@@ -1229,7 +1444,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 await wizBuildSuccess(result);
 
-                wizShowStep(5);
+                wizShowStep(WIZ_SUCCESS_INDEX);
 
                 return;
 
@@ -1310,17 +1525,55 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     }
 
-    /* SEARCH */
+    /* SEARCH + FILTERS (archived officers hidden by default) */
 
     const searchInput = document.getElementById("searchInput");
 
+    const statusFilter = document.getElementById("statusFilter");
+
+    const rankFilter = document.getElementById("rankFilter");
+
     if (searchInput) {
 
-        searchInput.addEventListener("input", () => {
+        window.__applyOfficerFilters = () => {
 
-            Officers.render(Officers.search(searchInput.value));
+            let list = Officers.search(searchInput.value);
 
-        });
+            const status = statusFilter?.value || "All Status";
+
+            if (status === "Archived") {
+
+                list = list.filter(o =>
+                    o.status === "Retired" || o.status === "Terminated");
+
+            } else if (status !== "All Status") {
+
+                list = list.filter(o => o.status === status);
+
+            } else {
+
+                list = list.filter(o =>
+                    o.status !== "Retired" && o.status !== "Terminated");
+
+            }
+
+            const rank = rankFilter?.value || "All Ranks";
+
+            if (rank !== "All Ranks") {
+
+                list = list.filter(o => o.rank === rank);
+
+            }
+
+            Officers.render(list);
+
+        };
+
+        searchInput.addEventListener("input", window.__applyOfficerFilters);
+
+        statusFilter?.addEventListener("change", window.__applyOfficerFilters);
+
+        rankFilter?.addEventListener("change", window.__applyOfficerFilters);
 
     }
 

@@ -60,8 +60,12 @@ The heart of the system — one full page per officer:
       photo/rank/status pill, permission-gated Promote + Reset Access,
       tabs General · Timeline · Audit · Cases · Certificates
       (placeholder), account link, opening audit-logged
-- [ ] Remaining tabs: Career · Bodycam · Shifts · Statistics ·
-      Leadership Notes · Permissions · Inbox
+- [x] Sprint 2.1 — smart search (partial-ID, phone/email/status),
+      working Status/Rank filters, Archive (Retired) instead of Delete
+- [x] Sprint 2.2 — Edit everything with field-level audit diffs +
+      timeline + notification; wizard Contact step (phone/email)
+- [ ] Remaining tabs (later sprints): Career progression · Leadership
+      Notes · Permissions · Inbox · Statistics · Bodycam · Shifts
 - [ ] Career Progression visual (rank ladder with dates, certificates,
       approver, days-at-rank; shows demotions too)
 - [ ] Leadership notes (read-only for the officer)

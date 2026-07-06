@@ -43,6 +43,8 @@
 
                 <div class="profileActions">
 
+                    <button id="pfEditBtn">✏️ Edit</button>
+
                     <button id="pfPromoteBtn">🏅 Promote</button>
 
                     <button id="pfResetBtn">🔑 Reset Access</button>
@@ -107,6 +109,68 @@
                 QR-verifiable document.
 
             </p>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- EDIT PERSONNEL MODAL -->
+<div id="pfEditModal" class="modal hidden">
+
+    <div class="modalBox">
+
+        <h2>✏️ Edit Personnel</h2>
+
+        <p style="color:#b8c5d6;font-size:13px">
+            Every change is audited: what changed, from what, to what.
+        </p>
+
+        <input id="peName" placeholder="Full name">
+
+        <div style="display:flex;gap:8px">
+
+            <input id="pePhone" placeholder="Phone" style="flex:1">
+
+            <input id="peEmail" placeholder="Email" style="flex:1">
+
+        </div>
+
+        <input id="peDivision" list="peDivList" placeholder="Division">
+
+        <datalist id="peDivList"></datalist>
+
+        <select id="peRank"></select>
+
+        <select id="peStatus">
+
+            <option>On Duty</option>
+            <option>Off Duty</option>
+            <option>Training</option>
+            <option>Suspended</option>
+            <option>Retired</option>
+            <option>Terminated</option>
+
+        </select>
+
+        <div style="display:flex;gap:8px">
+
+            <input id="pePhoto" placeholder="Photo URL or ☁️ Cloud link" style="flex:1">
+
+        </div>
+
+        <textarea
+            id="peNotes"
+            placeholder="Internal notes"
+            rows="3"
+            style="background:#15283d;border:none;border-radius:10px;color:white;padding:12px;outline:none;resize:vertical;font-family:inherit"></textarea>
+
+        <div class="modalActions">
+
+            <button id="peSave">Save</button>
+
+            <button id="peCancel">Cancel</button>
 
         </div>
 

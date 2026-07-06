@@ -67,7 +67,10 @@ const Personnel = {
             ["Rank", o.rank],
             ["Division", o.division],
             ["Status", o.status],
+            ["Phone", o.phone || "—"],
+            ["Email", o.email || "—"],
             ["Account", account],
+            ["Notes", o.notes || "—"],
             ["Joined", raw.hire_date || (raw.created_at
                 ? new Date(raw.created_at).toLocaleDateString() : "—")],
             ["Last update", raw.updated_at
@@ -291,9 +294,119 @@ const Personnel = {
 
         const resetBtn = document.getElementById("pfResetBtn");
 
+        const editBtn = document.getElementById("pfEditBtn");
+
         if (!Officers.perms.promote) promoteBtn.style.display = "none";
 
         if (!Officers.perms.reset) resetBtn.style.display = "none";
+
+        if (!Officers.perms.edit) editBtn.style.display = "none";
+
+        /* ✏️ EDIT EVERYTHING — every change is audited field by field */
+
+        const editModal = document.getElementById("pfEditModal");
+
+        const rankSelect = document.getElementById("peRank");
+
+        rankSelect.innerHTML = "";
+
+        Officers.ranks.forEach(r => {
+
+            const option = document.createElement("option");
+
+            option.textContent = r.name;
+
+            rankSelect.appendChild(option);
+
+        });
+
+        const divList = document.getElementById("peDivList");
+
+        Officers.divisions.forEach(d => {
+
+            const option = document.createElement("option");
+
+            option.value = d.name;
+
+            divList.appendChild(option);
+
+        });
+
+        const openEditor = () => {
+
+            const o = this.officer;
+
+            document.getElementById("peName").value = o.name;
+
+            document.getElementById("pePhone").value = o.phone || "";
+
+            document.getElementById("peEmail").value = o.email || "";
+
+            document.getElementById("peDivision").value =
+                o.division === "—" ? "" : o.division;
+
+            if ([...rankSelect.options].some(x => x.value === o.rank)) {
+
+                rankSelect.value = o.rank;
+
+            }
+
+            document.getElementById("peStatus").value = o.status;
+
+            document.getElementById("pePhoto").value = o.photo || "";
+
+            document.getElementById("peNotes").value = o.notes || "";
+
+            editModal.classList.remove("hidden");
+
+        };
+
+        editBtn.onclick = openEditor;
+
+        document.getElementById("peCancel").onclick = () =>
+            editModal.classList.add("hidden");
+
+        document.getElementById("peSave").onclick = async () => {
+
+            const saveBtn = document.getElementById("peSave");
+
+            saveBtn.disabled = true;
+
+            saveBtn.innerText = "Saving...";
+
+            const ok = await Officers.updateOfficerData(id, {
+                name: document.getElementById("peName").value,
+                phone: document.getElementById("pePhone").value,
+                email: document.getElementById("peEmail").value,
+                division: document.getElementById("peDivision").value,
+                rank: document.getElementById("peRank").value,
+                status: document.getElementById("peStatus").value,
+                photo: document.getElementById("pePhoto").value,
+                notes: document.getElementById("peNotes").value
+            });
+
+            saveBtn.disabled = false;
+
+            saveBtn.innerText = "Save";
+
+            if (ok) {
+
+                editModal.classList.add("hidden");
+
+                setTimeout(() => location.reload(), 700);
+
+            }
+
+        };
+
+        /* arrived via an Edit button? open the editor now */
+
+        if (new URLSearchParams(location.search).get("edit") === "1"
+            && Officers.perms.edit) {
+
+            openEditor();
+
+        }
 
         promoteBtn.onclick = async () => {
 

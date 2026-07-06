@@ -30,6 +30,16 @@
 
         </div>
 
+        <div class="wizStep" id="wizContact">
+
+            <label class="wizLabel">Contact (optional)</label>
+
+            <input id="offPhone" placeholder="Phone" autocomplete="off">
+
+            <input id="offEmail" placeholder="Email" autocomplete="off">
+
+        </div>
+
         <div class="wizStep" id="wizDivision">
 
             <label class="wizLabel">Which division will they join? (optional)</label>
@@ -199,23 +209,19 @@
     <!-- FILTER BAR -->
     <div class="card">
 
-        <input id="searchInput" placeholder="Search officers...">
+        <input id="searchInput" placeholder="Search name, ID, badge, phone, email...">
 
-        <select>
+        <select id="statusFilter">
             <option>All Status</option>
             <option>On Duty</option>
             <option>Off Duty</option>
             <option>Training</option>
             <option>Suspended</option>
+            <option>Archived</option>
         </select>
 
-        <select>
+        <select id="rankFilter">
             <option>All Ranks</option>
-            <option>Officer</option>
-            <option>Corporal</option>
-            <option>Sergeant</option>
-            <option>Lieutenant</option>
-            <option>Captain</option>
         </select>
 
     </div>

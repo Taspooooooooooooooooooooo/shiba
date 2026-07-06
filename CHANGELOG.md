@@ -2,6 +2,29 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.10.0 — 2026-07-06 · Phase 2 Sprints 2.1 + 2.2
+
+### Added
+- **✏️ Edit Personnel** — an Edit button on the Personnel File (and the
+  officers table) opens a full editor for *every* field: name, phone,
+  email, division, rank, status, photo, internal notes. Each save
+  records a **field-level audit diff** ("phone: — → +421 900 000 001;
+  email: — → chief@…"), a timeline entry, and a notification to the
+  officer's account.
+- **📇 Contact step** in the Create Officer wizard (phone + email),
+  matching the planned create form. Wizard is now 6 steps.
+- **🗄️ Archive Officer** replaces Delete — police keep history. An
+  officer who leaves is marked **Retired** (audited + notified); every
+  case, timeline entry, certificate, and audit record stays forever.
+
+### Changed
+- **Smart search** — searches name, ID, badge, rank, division, phone,
+  email, and status; partial-ID matching means `OFCR-152` finds
+  `OFCR-000152`.
+- **Working filters** — the Status and Rank dropdowns now filter the
+  list (ranks loaded from the database); archived officers are hidden
+  by default and shown under the "Archived" status filter.
+
 ## v0.9.0 — 2026-07-06 · Phase 2: Personnel File
 
 ### Added
