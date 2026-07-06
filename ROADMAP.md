@@ -52,13 +52,16 @@ repeating code:
 - [ ] Recent timeline feed + weekly graph
 - [ ] Quick Actions (Create Officer, Create Case, Start Shift, Search)
 
-## 🟣 PHASE 2 — Personnel File
+## 🟣 PHASE 2 — Personnel File (IN PROGRESS)
 
 The heart of the system — one full page per officer:
 
-- [ ] Tabs: General · Career · Certificates · Cases · Bodycam ·
-      Shifts · Statistics · Leadership Notes · Permissions · Inbox ·
-      Timeline · Audit
+- [x] Personnel File v1 (`personnel.html?id=…`): profile header with
+      photo/rank/status pill, permission-gated Promote + Reset Access,
+      tabs General · Timeline · Audit · Cases · Certificates
+      (placeholder), account link, opening audit-logged
+- [ ] Remaining tabs: Career · Bodycam · Shifts · Statistics ·
+      Leadership Notes · Permissions · Inbox
 - [ ] Career Progression visual (rank ladder with dates, certificates,
       approver, days-at-rank; shows demotions too)
 - [ ] Leadership notes (read-only for the officer)

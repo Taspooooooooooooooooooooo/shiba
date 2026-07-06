@@ -2,6 +2,22 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.9.0 — 2026-07-06 · Phase 2: Personnel File
+
+### Added
+- **📂 Personnel File** (`personnel.html`) — one page per officer:
+  profile header (photo, rank, badge, On-Duty pill), permission-gated
+  Promote / Reset Access, and tabs:
+  - **General** — full details grid incl. the linked @account
+  - **Timeline** — complete career history
+  - **Audit** — every logged action involving this officer
+  - **Cases** — ready for Phase 5
+  - **Certificates** — placeholder for Phase 4
+- Officer names in the table are now links to their Personnel File;
+  the drawer got a "📂 Personnel File" button.
+- Opening a personnel file is itself audit-logged
+  (`PERSONNEL_FILE_OPENED`) — sensitive data access is traceable.
+
 ## v0.8.1 — 2026-07-06
 
 ### Added

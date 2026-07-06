@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>SHIBA PIMS | Personnel File</title>
+
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/dashboard.css">
+
+</head>
+
+<body>
+
+<!-- LAYOUT -->
+<div id="layoutTop"></div>
+
+<div class="content">
+
+    <!-- PROFILE HEADER -->
+    <div class="card" id="profileCard">
+
+        <div class="profileHeader">
+
+            <img id="pfPhoto" src="" alt="photo">
+
+            <div class="profileMain">
+
+                <h1 id="pfName">Loading...</h1>
+
+                <p id="pfSubtitle">—</p>
+
+                <p id="pfIds">—</p>
+
+            </div>
+
+            <div class="profileSide">
+
+                <span class="statusPill" id="pfStatus">—</span>
+
+                <div class="profileActions">
+
+                    <button id="pfPromoteBtn">🏅 Promote</button>
+
+                    <button id="pfResetBtn">🔑 Reset Access</button>
+
+                    <button onclick="location.href='officers.html'">‹ Officers</button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- TABS -->
+    <div class="card">
+
+        <div class="tabs" id="pfTabs">
+
+            <button data-tab="tabGeneral" class="active">📄 General</button>
+
+            <button data-tab="tabTimeline">📜 Timeline</button>
+
+            <button data-tab="tabAudit">📋 Audit</button>
+
+            <button data-tab="tabCases">📁 Cases</button>
+
+            <button data-tab="tabCerts">🎖 Certificates</button>
+
+        </div>
+
+        <div class="tabPanel active" id="tabGeneral">
+
+            <div class="fieldGrid" id="pfGeneral"></div>
+
+        </div>
+
+        <div class="tabPanel" id="tabTimeline">
+
+            <div id="pfTimeline"><p class="muted">Loading...</p></div>
+
+        </div>
+
+        <div class="tabPanel" id="tabAudit">
+
+            <div id="pfAudit"><p class="muted">Loading...</p></div>
+
+        </div>
+
+        <div class="tabPanel" id="tabCases">
+
+            <div id="pfCases"><p class="muted">Loading...</p></div>
+
+        </div>
+
+        <div class="tabPanel" id="tabCerts">
+
+            <p class="muted">
+
+                🎖 Certificates arrive in Phase 4 — every promotion, award,
+                training, and commendation will live here as an official,
+                QR-verifiable document.
+
+            </p>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- FOOTER -->
+<div id="layoutFooter"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+<script src="js/supabaseClient.js"></script>
+
+<script src="js/core/idService.js"></script>
+<script src="js/core/permissionService.js"></script>
+<script src="js/core/auditService.js"></script>
+<script src="js/core/timelineService.js"></script>
+<script src="js/core/notificationService.js"></script>
+
+<script src="js/auth.js"></script>
+<script src="js/session.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/layout.js"></script>
+<script src="js/commandPalette.js"></script>
+<script src="js/officers.js"></script>
+<script src="js/personnel.js"></script>
+
+<script>
+
+if(localStorage.getItem("loggedIn")!="true"){
+
+    window.location.href="index.html";
+
+}
+
+document.getElementById("layoutTop").innerHTML = AppLayout.createTopbar();
+document.getElementById("layoutFooter").innerHTML = AppLayout.createFooter();
+
+</script>
+
+</body>
+
+</html>

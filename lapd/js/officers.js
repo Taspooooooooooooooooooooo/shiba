@@ -725,7 +725,7 @@ class OfficersEngine {
             row.innerHTML = `
 
                 <td>${this.getStatus(officer.status)}</td>
-                <td>${officer.name}</td>
+                <td><a class="offLink" href="personnel.html?id=${officer.id}">${officer.name}</a></td>
                 <td>${officer.badge}</td>
                 <td>${officer.rank}</td>
                 <td>${officer.division}</td>
