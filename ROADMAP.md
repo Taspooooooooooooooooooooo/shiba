@@ -111,6 +111,47 @@ certificate with an approval workflow:
       Training, Firearm Qualification, Probation, Termination
 - [ ] Promotion queue ("Certificates Waiting For Approval")
 
+### 🔐 Secure QR Verification (user request, 2026-07-07)
+
+A QR that **only our site can validate** — a forged or screenshotted
+one fails.
+
+- [ ] Every certificate / ID card QR encodes a **unique verification
+      token** stored in the database (not just a plain URL), so the
+      code means nothing without our records.
+- [ ] In-app **QR scanner** page (device camera) that decodes a code,
+      pulls the token, and checks it against the DB → shows
+      **✅ Valid** (officer/certificate details) or **❌ Invalid /
+      forged / revoked**.
+- [ ] Tokens can be **revoked** and every scan is **audit-logged**
+      (who scanned what, when).
+- *My additions:* tamper check (token must match the certificate it
+  claims); optional **public verify page** (no login) so a citizen can
+  confirm a real certificate — this becomes the Phase 9 Public
+  Verification Portal; scanner rejects any QR whose token isn't in our
+  database, which is what makes it "only work for us."
+
+### 📝 Applications & Requests (user request, 2026-07-07)
+
+Officers apply for things; the right rank reviews and decides.
+
+- [ ] Application **types**: SWAT, K9, Detective, Traffic, Transfer,
+      Training, Special Permission (each with its own form questions).
+- [ ] An officer opens e.g. **SWAT Application**, fills it in, submits;
+      it gets `APP-2026-…` and status **Submitted**.
+- [ ] Reviewers (**Sergeant+** or a `applications.review` permission)
+      see a **queue** of pending applications; they **Accept / Deny /
+      Request Changes** with a reason.
+- [ ] The decision **notifies the officer** (inbox + notification),
+      writes their **timeline** and the **audit** log.
+- *My additions:* status flow (Draft → Submitted → Under Review →
+  Accepted/Denied); each application **type** sets who may apply
+  (min rank) and who may review (permission); an **accepted** SWAT
+  application can auto-assign the SWAT division or a temporary
+  permission (ties into Phase 3b permissions); an **Applications tab**
+  on the Personnel File shows the officer's full application history.
+  This reuses the same request→approval engine as Promotions.
+
 ## 🟢 PHASE 5 — Cases
 
 - [ ] Case file: `CASE-2026-…`, status, priority, evidence, notes,
