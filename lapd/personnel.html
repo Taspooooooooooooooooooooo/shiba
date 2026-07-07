@@ -43,6 +43,8 @@
 
                 <div class="profileActions">
 
+                    <button id="pfIdCardBtn">🪪 Identity Card</button>
+
                     <button id="pfEditBtn">✏️ Edit</button>
 
                     <button id="pfPromoteBtn">🏅 Promote</button>
@@ -168,6 +170,77 @@
 
 </div>
 
+<!-- IDENTITY CARD MODAL -->
+<div id="idCardModal" class="modal hidden">
+
+    <div class="idCardWrap">
+
+        <div class="idCard" id="idCard">
+
+            <div class="idCardHeader">
+
+                <div>
+
+                    <h3>SHIBA POLICE DEPARTMENT</h3>
+
+                    <span>Official Identification</span>
+
+                </div>
+
+                <div class="idCardShield">🛡</div>
+
+            </div>
+
+            <div class="idCardBody">
+
+                <img id="idCardPhoto" src="" alt="photo">
+
+                <div class="idCardFields">
+
+                    <h2 id="idCardName">—</h2>
+
+                    <p class="idCardRank" id="idCardRank">—</p>
+
+                    <div class="idCardGrid">
+
+                        <div><small>Officer ID</small><b id="idCardOfficer">—</b></div>
+
+                        <div><small>Badge</small><b id="idCardBadge">—</b></div>
+
+                        <div><small>Division</small><b id="idCardDivision">—</b></div>
+
+                        <div><small>Status</small><b id="idCardStatus">—</b></div>
+
+                    </div>
+
+                </div>
+
+                <div class="idCardQr" id="idCardQr"></div>
+
+            </div>
+
+            <div class="idCardFooter">
+
+                <span id="idCardIssued">Issued by SHIBA PIMS</span>
+
+                <span>shiba.is-a.dev/lapd</span>
+
+            </div>
+
+        </div>
+
+        <div class="idCardActions">
+
+            <button id="idCardPrint">🖨 Print</button>
+
+            <button id="idCardClose">Close</button>
+
+        </div>
+
+    </div>
+
+</div>
+
 <!-- EDIT PERSONNEL MODAL -->
 <div id="pfEditModal" class="modal hidden">
 
@@ -234,6 +307,7 @@
 <div id="layoutFooter"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 
 <script src="js/supabaseClient.js"></script>
 

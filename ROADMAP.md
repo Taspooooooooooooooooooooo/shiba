@@ -74,7 +74,20 @@ The heart of the system — one full page per officer:
       dynamic modules (like M365 Admin / Discord) instead of separate
       HTML pages. Evaluate here, before the biggest page is built.
 
-## 🔴 PHASE 3 — Full Permission System
+## 🟠 PHASE 3 — Authentication & Identity (IN PROGRESS)
+
+Officer Profile (permanent record) vs User Account (login) as two
+distinct things, plus everything that keeps identity secure:
+
+- [x] 🪪 Digital Identity Card with scannable QR (print-ready)
+- [ ] Account Settings page (profile-vs-account, change password)
+- [ ] Sessions / device list + terminate
+- [ ] Account lock after failed logins (audit + Chief alert)
+- [ ] Password reset tokens (Lieutenant+ generate)
+- [ ] Live presence counts on the dashboard
+- [ ] *(Duty Authentication — Start Shift — lives in Phase 6 Shifts)*
+
+## 🔴 PHASE 3b — Full Permission System
 
 - [ ] Rank permissions matrix (Cadet → Chief) stored in the database
 - [ ] **Temporary permissions** ("Manage Shifts, expires 10.08.2026")

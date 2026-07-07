@@ -609,6 +609,70 @@ const Personnel = {
     },
 
     /* ----------------------------------------------------- */
+    /* identity card                                          */
+    /* ----------------------------------------------------- */
+
+    async openIdCard() {
+
+        const o = this.officer;
+
+        document.getElementById("idCardName").textContent = o.name;
+
+        document.getElementById("idCardRank").textContent =
+            o.rank + (o.division !== "—" ? " · " + o.division : "");
+
+        document.getElementById("idCardOfficer").textContent = o.officerId;
+
+        document.getElementById("idCardBadge").textContent = o.badge;
+
+        document.getElementById("idCardDivision").textContent = o.division;
+
+        document.getElementById("idCardStatus").textContent = o.status;
+
+        const photo = document.getElementById("idCardPhoto");
+
+        photo.src = (await resolveCloudPhoto(o.photo)) ||
+            "https://via.placeholder.com/120";
+
+        document.getElementById("idCardIssued").textContent =
+            "Issued " + new Date().toLocaleDateString();
+
+        /* QR encodes the officer's identity/verify link */
+
+        const qrBox = document.getElementById("idCardQr");
+
+        qrBox.innerHTML = "";
+
+        try {
+
+            const url = location.origin +
+                "/lapd/personnel.html?id=" + o.id;
+
+            const qr = qrcode(0, "M");
+
+            qr.addData(url);
+
+            qr.make();
+
+            qrBox.innerHTML = qr.createSvgTag({ cellSize: 3, margin: 0 });
+
+        } catch (e) {
+
+            qrBox.innerHTML = "<small class='muted'>QR unavailable</small>";
+
+        }
+
+        document.getElementById("idCardModal").classList.remove("hidden");
+
+        AuditService.log({
+            action: "IDENTITY_CARD_VIEWED",
+            target: o.officerId + " " + o.name,
+            officerId: o.id
+        });
+
+    },
+
+    /* ----------------------------------------------------- */
     /* init                                                   */
     /* ----------------------------------------------------- */
 
@@ -796,6 +860,16 @@ const Personnel = {
         };
 
         resetBtn.onclick = () => Officers.resetAccess(id);
+
+        /* 🪪 IDENTITY CARD */
+
+        document.getElementById("pfIdCardBtn").onclick = () =>
+            this.openIdCard();
+
+        document.getElementById("idCardClose").onclick = () =>
+            document.getElementById("idCardModal").classList.add("hidden");
+
+        document.getElementById("idCardPrint").onclick = () => window.print();
 
         /* tabs */
 

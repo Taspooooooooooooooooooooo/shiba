@@ -2,6 +2,15 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.12.0 — 2026-07-07 · Phase 3 begins — Authentication & Identity
+
+### Added
+- **🪪 Digital Identity Card** — every Personnel File can now open an
+  official SHIBA PD credential: photo, name, rank, badge, Officer ID,
+  division, status, and a **scannable QR code** (generated in the
+  browser) that links to the officer's file. Print-ready layout.
+  Opening a card is audit-logged (`IDENTITY_CARD_VIEWED`).
+
 ## v0.11.0 — 2026-07-06 · 🎖 Officer Management Edition (Phase 2 complete)
 
 ### Added — Personnel File tabs
