@@ -191,6 +191,32 @@ document.addEventListener("DOMContentLoaded", () => {
 
         currentUser = null;
 
+        const uname = username.value.trim();
+
+        /* account lock — refuse locked accounts before trying
+           the password (needs SETUP-PATCH-5; ignored if absent) */
+
+        if (window.db) {
+
+            try {
+
+                const { data: lock } = await db
+                    .rpc("account_lock_status", { p_username: uname });
+
+                if (lock?.locked) {
+
+                    UI.error("Account locked. Try again in " +
+                        lock.minutes + " minute" +
+                        (lock.minutes === 1 ? "" : "s") + ".");
+
+                    return;
+
+                }
+
+            } catch (e) { /* patch not run — skip lock */ }
+
+        }
+
         /* real login — Supabase Auth checks the password
            on the server, nothing is verified in the browser */
 
@@ -210,13 +236,63 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 currentUser = {
 
-                    username: meta.username || username.value.trim().toLowerCase(),
+                    username: meta.username || uname.toLowerCase(),
 
                     role: meta.role || "Officer",
 
-                    pinHash: meta.pin_hash || null
+                    pinHash: meta.pin_hash || null,
+
+                    userId: data.user.id
 
                 };
+
+                /* good login — clear any failed-attempt counter */
+
+                try {
+                    await db.rpc("reset_failed_logins", {
+                        p_user: data.user.id
+                    });
+                } catch (e) { /* ignore */ }
+
+            } else if (error) {
+
+                /* wrong password — count it; lock at 5 */
+
+                try {
+
+                    const { data: fail } = await db
+                        .rpc("register_failed_login", { p_username: uname });
+
+                    if (fail?.locked) {
+
+                        AuditService?.log?.({
+                            action: "ACCOUNT_LOCKED",
+                            target: uname,
+                            details: "5 failed login attempts"
+                        });
+
+                        NotificationService?.send?.({
+                            title: "Account Locked",
+                            message: "Account " + uname + " was locked after " +
+                                "5 failed login attempts."
+                        });
+
+                        UI.error("Account locked for 15 minutes after too " +
+                            "many failed attempts.");
+
+                        return;
+
+                    } else if (fail?.exists && fail.remaining <= 2) {
+
+                        UI.error("Invalid password. " + fail.remaining +
+                            " attempt" + (fail.remaining === 1 ? "" : "s") +
+                            " left before lock.");
+
+                        return;
+
+                    }
+
+                } catch (e) { /* patch not run — skip */ }
 
             }
 

@@ -57,7 +57,7 @@ const AppLayout = {
 
     <a href="#">💬 Messages</a>
 
-    <a href="#">⚙ Settings</a>
+    <a href="settings.html">⚙ Settings</a>
 
 </nav>
 

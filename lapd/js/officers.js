@@ -794,6 +794,19 @@ class OfficersEngine {
             officerId: id
         });
 
+        /* let the officer know in their inbox */
+
+        if (officer.userId) {
+
+            NotificationService.send({
+                to: officer.userId,
+                title: "Account Access Reset",
+                message: "A reset code was issued for your account. Use it " +
+                    "on the Activate Account page to set a new password."
+            });
+
+        }
+
     }
 
     /* =========================

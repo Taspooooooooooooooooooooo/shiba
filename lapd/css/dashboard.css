@@ -1224,3 +1224,79 @@ margin-left:70px;
     .idCard{ margin:40px auto; box-shadow:none; }
 
 }
+
+/* ---------- SETTINGS BUTTONS ---------- */
+
+.primaryBtn{
+
+    padding:11px 18px;
+
+    border:none;
+
+    border-radius:10px;
+
+    background:var(--primary);
+
+    color:white;
+
+    cursor:pointer;
+
+    font-size:14px;
+
+    transition:0.2s;
+
+}
+
+.primaryBtn:hover{
+
+    background:var(--primaryHover);
+
+}
+
+#signOutOthersBtn{
+
+    padding:11px 18px;
+
+    border:none;
+
+    border-radius:10px;
+
+    background:#15283d;
+
+    color:white;
+
+    cursor:pointer;
+
+    transition:0.2s;
+
+}
+
+#signOutOthersBtn:hover{
+
+    background:#2e8bff33;
+
+}
+
+.dangerBtn{
+
+    padding:11px 18px;
+
+    border:none;
+
+    border-radius:10px;
+
+    background:#3d1520;
+
+    color:white;
+
+    cursor:pointer;
+
+    transition:0.2s;
+
+}
+
+.dangerBtn:hover{
+
+    background:var(--danger);
+
+}

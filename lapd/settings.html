@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>SHIBA PIMS | Settings</title>
+
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/dashboard.css">
+
+</head>
+
+<body>
+
+<div id="layoutTop"></div>
+
+<div class="content">
+
+    <div class="card">
+
+        <h1>⚙️ Account Settings</h1>
+
+        <p>Your login account and your officer identity are two separate
+           things — manage the account here.</p>
+
+    </div>
+
+    <!-- IDENTITY OVERVIEW -->
+    <div class="grid">
+
+        <div class="card">
+
+            <h2>👤 User Account</h2>
+
+            <div class="fieldGrid" id="setAccount"></div>
+
+        </div>
+
+        <div class="card">
+
+            <h2>👮 Officer Profile</h2>
+
+            <div class="fieldGrid" id="setOfficer"></div>
+
+            <div id="setOfficerLink" style="margin-top:14px"></div>
+
+        </div>
+
+    </div>
+
+    <!-- SECURITY -->
+    <div class="card">
+
+        <h2>🔐 Security</h2>
+
+        <div class="grid" style="margin-top:12px">
+
+            <div>
+
+                <h4 style="margin-bottom:10px">Change password</h4>
+
+                <input type="password" id="newPassword" placeholder="New password (min 8)" autocomplete="new-password">
+
+                <input type="password" id="newPassword2" placeholder="Confirm new password" autocomplete="new-password" style="margin-top:8px">
+
+                <button id="changePasswordBtn" class="primaryBtn" style="margin-top:10px">Update password</button>
+
+            </div>
+
+            <div>
+
+                <h4 style="margin-bottom:10px">Change security PIN</h4>
+
+                <input type="password" id="newPin" maxlength="4" placeholder="New 4-digit PIN" autocomplete="off">
+
+                <button id="changePinBtn" class="primaryBtn" style="margin-top:10px">Update PIN</button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- SESSIONS -->
+    <div class="card">
+
+        <h2>📱 This Session</h2>
+
+        <div class="fieldGrid" id="setSession"></div>
+
+        <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
+
+            <button id="signOutOthersBtn">Sign out other devices</button>
+
+            <button id="signOutAllBtn" class="dangerBtn">Sign out everywhere</button>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div id="layoutFooter"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+<script src="js/supabaseClient.js"></script>
+
+<script src="js/core/idService.js"></script>
+<script src="js/core/permissionService.js"></script>
+<script src="js/core/auditService.js"></script>
+<script src="js/core/timelineService.js"></script>
+<script src="js/core/notificationService.js"></script>
+
+<script src="js/auth.js"></script>
+<script src="js/session.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/layout.js"></script>
+<script src="js/commandPalette.js"></script>
+<script src="js/settings.js"></script>
+
+<script>
+
+if(localStorage.getItem("loggedIn")!="true"){
+
+    window.location.href="index.html";
+
+}
+
+document.getElementById("layoutTop").innerHTML = AppLayout.createTopbar();
+document.getElementById("layoutFooter").innerHTML = AppLayout.createFooter();
+
+</script>
+
+</body>
+
+</html>

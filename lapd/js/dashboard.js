@@ -232,6 +232,47 @@ const Dashboard = {
     },
 
     /* ----------------------------------------------------- */
+    /* live presence — who's using SHIBA PIMS right now       */
+    /* (Supabase Realtime presence; everyone on a PIMS page   */
+    /* joins the same channel)                                */
+    /* ----------------------------------------------------- */
+
+    startPresence() {
+
+        if (!window.db || this.presence) return;
+
+        const me =
+            localStorage.getItem("username") ||
+            ("officer-" + Math.random().toString(36).slice(2, 8));
+
+        this.presence = db.channel("pims-presence", {
+            config: { presence: { key: me } }
+        });
+
+        this.presence.on("presence", { event: "sync" }, () => {
+
+            const state = this.presence.presenceState();
+
+            this.setStat("statOnline", Object.keys(state).length);
+
+        });
+
+        this.presence.subscribe(async (status) => {
+
+            if (status === "SUBSCRIBED") {
+
+                await this.presence.track({
+                    username: me,
+                    at: new Date().toISOString()
+                });
+
+            }
+
+        });
+
+    },
+
+    /* ----------------------------------------------------- */
     /* refresh cycle                                          */
     /* ----------------------------------------------------- */
 
@@ -261,6 +302,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         document.getElementById("qaCreateOfficer"));
 
     Dashboard.load();
+
+    Dashboard.startPresence();
 
     /* stays live — refresh every 30 seconds */
 

@@ -2,6 +2,25 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.13.0 — 2026-07-07 · Phase 3 complete — Authentication & Identity
+
+### Added
+- **⚙️ Account Settings** (`settings.html`) — makes the Account-vs-Profile
+  split real: your **User Account** (username, role, login email, last
+  sign-in, PIN status) beside your linked **Officer Profile**. Change
+  your password and 4-digit PIN (via Supabase Auth); both are audited.
+  Settings sidebar link now works.
+- **📱 Sessions** — see your current device, and **Sign out other
+  devices** or **Sign out everywhere** (Supabase session scopes).
+- **🔒 Account Lock** — 5 wrong passwords locks an account for 15
+  minutes; the login page warns on the last attempts, logs
+  `ACCOUNT_LOCKED`, and raises a system notification. Needs
+  `lapd/SETUP-PATCH-5.sql` (login works normally until it's run).
+- **🟢 Live presence** — a "Online Now" dashboard widget counting who's
+  actually using SHIBA PIMS right now (Supabase Realtime).
+- **📧 Password reset → inbox** — issuing a Reset Access code now also
+  drops a message in the officer's inbox.
+
 ## v0.12.0 — 2026-07-07 · Phase 3 begins — Authentication & Identity
 
 ### Added
