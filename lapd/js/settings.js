@@ -144,6 +144,37 @@ const Settings = {
 
         this.field(ses, "Session status", this.user ? "Active" : "Local only");
 
+        /* PERMISSION SIMULATOR — admins only */
+
+        const realRole = await PermissionService.realRole();
+
+        if (PermissionService.isAdminRole(realRole)) {
+
+            const card = document.getElementById("simulatorCard");
+
+            card.classList.remove("hidden");
+
+            const select = document.getElementById("simRole");
+
+            select.innerHTML = "";
+
+            ["Cadet", "Officer", "Senior Officer", "Sergeant",
+             "Lieutenant", "Captain", "Commander", "Chief"]
+                .forEach(r => {
+
+                    const opt = document.createElement("option");
+
+                    opt.textContent = r;
+
+                    select.appendChild(opt);
+
+                });
+
+            document.getElementById("simStart").onclick = () =>
+                PermissionService.startSimulation(select.value);
+
+        }
+
     },
 
     /* ----------------------------------------------------- */

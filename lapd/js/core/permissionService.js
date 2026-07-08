@@ -1,17 +1,84 @@
 /* ==========================================================
    SHIBA PIMS — Core Service
-   PermissionService — every action in the app asks
-   "can(user, action)?" instead of checking ranks by hand.
+   PermissionService — the single place that decides
+   "can this user do this action?". Every module asks
+   PermissionService.can("case.assign") instead of checking
+   ranks by hand.
 
-   Phase 0: role matrix below (client-side gating / UX).
-   Phase 3: database-driven + temporary + division
-   permissions + RLS server enforcement.
+   Phase 4 Part 1: comprehensive rank matrix + catalogue +
+   require() guard + Permission Simulator (Preview As).
+   Later parts: DB-driven rules, groups/templates, temporary
+   + division + resource permissions, delegation, policy
+   engine, and RLS server enforcement.
 ========================================================== */
 
 const PermissionService = {
 
-    /* action naming: "<module>.<action>"                    */
-    /* "*" = everything, "officers.*" = whole module         */
+    /* -----------------------------------------------------
+       Permission catalogue — every action the system knows,
+       grouped by module (used by the permission viewer).
+    ----------------------------------------------------- */
+
+    CATALOG: {
+
+        "Officers": [
+            ["officers.view", "View officers"],
+            ["officers.create", "Create officers"],
+            ["officers.edit", "Edit officers"],
+            ["officers.promote", "Promote officers"],
+            ["officers.reset_access", "Reset officer access"],
+            ["officers.archive", "Archive officers"]
+        ],
+
+        "Cases": [
+            ["cases.view", "View cases"],
+            ["cases.create", "Create cases"],
+            ["cases.assign", "Assign cases"],
+            ["cases.close", "Close cases"]
+        ],
+
+        "Certificates & Promotions": [
+            ["certificates.issue", "Issue certificates"],
+            ["certificates.approve", "Approve certificates"],
+            ["promotion.approve", "Approve promotions"]
+        ],
+
+        "Bodycam": [
+            ["bodycam.view", "View bodycam"],
+            ["bodycam.upload", "Upload bodycam"],
+            ["bodycam.download", "Download bodycam"],
+            ["bodycam.delete", "Delete bodycam"]
+        ],
+
+        "Reports": [
+            ["reports.create", "Create reports"],
+            ["reports.approve", "Approve reports"]
+        ],
+
+        "Leadership & Admin": [
+            ["notes.write", "Write leadership notes"],
+            ["applications.review", "Review applications"],
+            ["permissions.grant", "Grant permissions"],
+            ["admin.panel", "Access admin panel"]
+        ]
+
+    },
+
+    /* flat list of every concrete action (from the catalogue) */
+
+    allActions() {
+
+        return Object.values(this.CATALOG)
+            .flat()
+            .map(entry => entry[0]);
+
+    },
+
+    /* -----------------------------------------------------
+       Rank matrix — which role is granted what.
+       "*" = everything; "officers.*" = the whole module.
+       (existing action names preserved so nothing breaks)
+    ----------------------------------------------------- */
 
     MATRIX: {
 
@@ -23,8 +90,25 @@ const PermissionService = {
         "Officer": [
             "profile.view",
             "officers.view",
+            "cases.view",
             "cases.create",
             "cases.edit.own",
+            "bodycam.view",
+            "bodycam.upload",
+            "reports.create",
+            "cloud.upload"
+        ],
+
+        "Senior Officer": [
+            "profile.view",
+            "officers.view",
+            "cases.view",
+            "cases.create",
+            "cases.edit.own",
+            "bodycam.view",
+            "bodycam.upload",
+            "bodycam.download",
+            "reports.create",
             "cloud.upload"
         ],
 
@@ -36,6 +120,11 @@ const PermissionService = {
             "officers.promote",
             "officers.reset_access",
             "cases.*",
+            "bodycam.view",
+            "bodycam.upload",
+            "bodycam.download",
+            "certificates.issue",
+            "reports.create",
             "cloud.upload"
         ],
 
@@ -43,9 +132,16 @@ const PermissionService = {
             "profile.view",
             "officers.*",
             "cases.*",
+            "certificates.issue",
+            "certificates.approve",
             "promotion.approve",
+            "bodycam.view",
+            "bodycam.upload",
+            "bodycam.download",
             "bodycam.delete",
+            "reports.*",
             "notes.write",
+            "applications.review",
             "cloud.upload"
         ],
 
@@ -53,9 +149,12 @@ const PermissionService = {
             "profile.view",
             "officers.*",
             "cases.*",
+            "certificates.*",
             "promotion.approve",
             "bodycam.*",
+            "reports.*",
             "notes.write",
+            "applications.review",
             "cloud.upload"
         ],
 
@@ -74,7 +173,7 @@ const PermissionService = {
         "Officer": "Officer",
         "Officer II": "Officer",
         "Officer III": "Officer",
-        "Senior Officer": "Officer",
+        "Senior Officer": "Senior Officer",
         "Corporal": "Officer",
         "Sergeant I": "Sergeant",
         "Sergeant II": "Sergeant",
@@ -98,14 +197,27 @@ const PermissionService = {
 
     },
 
+    /* is this role an admin-level (full access) role? */
+
+    isAdminRole(role) {
+
+        return (this.MATRIX[role] || []).includes("*");
+
+    },
+
+    /* -----------------------------------------------------
+       Current role
+    ----------------------------------------------------- */
+
     _role: null,
 
-    /* current user's role — auth metadata first,
-       localStorage mirror as fallback */
+    _realRole: null,
 
-    async role() {
+    /* the account's true role (auth metadata, then localStorage) */
 
-        if (this._role) return this._role;
+    async realRole() {
+
+        if (this._realRole) return this._realRole;
 
         if (window.db) {
 
@@ -115,9 +227,9 @@ const PermissionService = {
 
                 if (data?.user?.user_metadata?.role) {
 
-                    this._role = data.user.user_metadata.role;
+                    this._realRole = data.user.user_metadata.role;
 
-                    return this._role;
+                    return this._realRole;
 
                 }
 
@@ -125,9 +237,28 @@ const PermissionService = {
 
         }
 
-        this._role = localStorage.getItem("role") || "Officer";
+        this._realRole = localStorage.getItem("role") || "Officer";
 
-        return this._role;
+        return this._realRole;
+
+    },
+
+    /* the effective role — a Permission Simulator preview
+       overrides it, but ONLY when the real account is admin */
+
+    async role() {
+
+        const sim = sessionStorage.getItem("pims_sim_role");
+
+        if (sim) {
+
+            const real = await this.realRole();
+
+            if (this.isAdminRole(real)) return sim;
+
+        }
+
+        return this.realRole();
 
     },
 
@@ -159,8 +290,35 @@ const PermissionService = {
 
     },
 
-    /* gate an element: hides it if the action is not allowed
-       PermissionService.gate("officers.delete", button)     */
+    /* guard an action: returns true if allowed, otherwise
+       shows a "no permission" toast and audits the attempt.
+         if (!(await PermissionService.require("bodycam.delete"))) return; */
+
+    async require(action) {
+
+        if (await this.can(action)) return true;
+
+        if (typeof UI !== "undefined") {
+
+            UI.error("You don't have permission to do that.");
+
+        }
+
+        try {
+
+            window.AuditService?.log?.({
+                action: "PERMISSION_DENIED",
+                target: action,
+                details: "role " + (await this.role())
+            });
+
+        } catch (e) { /* auditing is best-effort */ }
+
+        return false;
+
+    },
+
+    /* hide an element the current role may not use */
 
     async gate(action, element) {
 
@@ -172,8 +330,86 @@ const PermissionService = {
 
         }
 
+    },
+
+    /* -----------------------------------------------------
+       Permission Simulator — "Preview As"
+       An admin can view the whole app as another role to
+       check exactly what that role sees. Client-side only:
+       it changes what the UI shows, never the real account.
+    ----------------------------------------------------- */
+
+    isSimulating() {
+
+        return !!sessionStorage.getItem("pims_sim_role");
+
+    },
+
+    async startSimulation(role) {
+
+        const real = await this.realRole();
+
+        if (!this.isAdminRole(real)) {
+
+            if (typeof UI !== "undefined") {
+
+                UI.error("Only administrators can preview as another role.");
+
+            }
+
+            return false;
+
+        }
+
+        sessionStorage.setItem("pims_sim_role", role);
+
+        location.reload();
+
+        return true;
+
+    },
+
+    stopSimulation() {
+
+        sessionStorage.removeItem("pims_sim_role");
+
+        location.reload();
+
+    },
+
+    /* floating banner shown on every page while previewing */
+
+    renderSimBanner() {
+
+        if (!this.isSimulating()) return;
+
+        if (document.getElementById("simBanner")) return;
+
+        const role = sessionStorage.getItem("pims_sim_role");
+
+        const bar = document.createElement("div");
+
+        bar.id = "simBanner";
+
+        bar.innerHTML =
+            "👁 Previewing as <b>" + role + "</b> — you are seeing what " +
+            "this role sees. <button id='simExit'>Exit preview</button>";
+
+        document.body.appendChild(bar);
+
+        document.getElementById("simExit").onclick = () =>
+            this.stopSimulation();
+
     }
 
 };
+
+/* show the preview banner automatically wherever this loads */
+
+document.addEventListener("DOMContentLoaded", () => {
+
+    PermissionService.renderSimBanner();
+
+});
 
 window.PermissionService = PermissionService;

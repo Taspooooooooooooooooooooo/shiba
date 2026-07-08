@@ -1300,3 +1300,67 @@ margin-left:70px;
     background:var(--danger);
 
 }
+
+/* ---------- PERMISSION DENIED ITEM ---------- */
+
+.permItem.denied{
+
+    background:#3d152033;
+
+    border-color:#ff4d4d33;
+
+    color:#e6b0b8;
+
+}
+
+/* ---------- PERMISSION SIMULATOR BANNER ---------- */
+
+#simBanner{
+
+    position:fixed;
+
+    bottom:0;
+
+    left:0;
+
+    right:0;
+
+    z-index:1000000;
+
+    background:linear-gradient(90deg,#7a4b00,#c98a1a);
+
+    color:white;
+
+    padding:12px 20px;
+
+    text-align:center;
+
+    font-size:14px;
+
+    box-shadow:0 -6px 20px rgba(0,0,0,.4);
+
+}
+
+#simBanner button{
+
+    margin-left:14px;
+
+    padding:7px 14px;
+
+    border:none;
+
+    border-radius:8px;
+
+    background:rgba(0,0,0,.35);
+
+    color:white;
+
+    cursor:pointer;
+
+}
+
+#simBanner button:hover{
+
+    background:rgba(0,0,0,.55);
+
+}

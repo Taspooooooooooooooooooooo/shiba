@@ -565,34 +565,49 @@ const Personnel = {
 
         const tier = PermissionService.tierForRank(this.officer.rank);
 
-        const perms = PermissionService.permsForRole(tier);
+        const granted = PermissionService.permsForRole(tier);
 
-        const label = perms.includes("*")
-            ? ["Full system access (all permissions)"]
-            : perms;
+        const has = (action) =>
+            granted.some(g => PermissionService.matches(g, action));
 
         box.innerHTML =
-            `<p class="muted" style="margin-bottom:12px">Rank ` +
+            `<p class="muted" style="margin-bottom:14px">Rank ` +
             `<b style="color:var(--text)">${this.officer.rank}</b> ` +
             `(permission tier: ${tier})</p>`;
 
-        const list = document.createElement("div");
+        /* full catalogue, grouped by module, with ✓ / ✕ */
 
-        list.className = "permGrid";
+        Object.entries(PermissionService.CATALOG).forEach(([group, perms]) => {
 
-        label.forEach(p => {
+            const heading = document.createElement("h4");
 
-            const item = document.createElement("div");
+            heading.textContent = group;
 
-            item.className = "permItem";
+            heading.style.margin = "14px 0 8px";
 
-            item.textContent = "✓ " + p;
+            box.appendChild(heading);
 
-            list.appendChild(item);
+            const list = document.createElement("div");
+
+            list.className = "permGrid";
+
+            perms.forEach(([action, label]) => {
+
+                const ok = has(action);
+
+                const item = document.createElement("div");
+
+                item.className = "permItem" + (ok ? "" : " denied");
+
+                item.textContent = (ok ? "✓ " : "✕ ") + label;
+
+                list.appendChild(item);
+
+            });
+
+            box.appendChild(list);
 
         });
-
-        box.appendChild(list);
 
         const note = document.createElement("p");
 
@@ -601,8 +616,8 @@ const Personnel = {
         note.style.marginTop = "14px";
 
         note.textContent =
-            "Temporary, division, and custom permissions arrive in " +
-            "Phase 3 (Permission System).";
+            "Temporary, division, and custom permissions arrive in later " +
+            "parts of Phase 4.";
 
         box.appendChild(note);
 

@@ -2,6 +2,24 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.14.0 — 2026-07-07 · Phase 4 Part 1 — Permission Foundation
+
+### Added
+- **Comprehensive rank matrix** — the full permission list (officers,
+  cases, certificates, bodycam, reports, leadership/admin) flowing
+  through the single `PermissionService.can()`.
+- **`require(action)` guard** — the "blocked → show message + audit"
+  flow in one call (logs `PERMISSION_DENIED`).
+- **🔒 Permission Simulator** — admins can **Preview as** any rank from
+  Settings; the whole UI switches to what that role sees (with a
+  floating "Previewing as…" banner), the real account untouched. Great
+  for testing exactly what each rank gets.
+- **Permission Viewer** — the Personnel File tab now lists every
+  permission grouped by module with ✓ / ✕ for the officer's rank.
+
+Client-side for now; database-driven rules, groups, temporary/division
+permissions, and the Policy Engine come in Parts 2–5.
+
 ## v0.13.0 — 2026-07-07 · Phase 3 complete — Authentication & Identity
 
 ### Added

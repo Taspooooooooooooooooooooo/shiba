@@ -88,16 +88,27 @@ distinct things, plus everything that keeps identity secure:
 - [ ] *(Duty Authentication — Start Shift — lives in Phase 6 Shifts)*
 - [ ] *(2FA / security keys — future)*
 
-## 🔴 PHASE 3b — Full Permission System
+## 🔴 PHASE 4 — Permission & Authorization System (IN PROGRESS)
 
-- [ ] Rank permissions matrix (Cadet → Chief) stored in the database
-- [ ] **Temporary permissions** ("Manage Shifts, expires 10.08.2026")
-- [ ] Division permissions (Metro sees Metro; Administration sees all)
-- [ ] Grant/revoke UI + every grant audit-logged
-- [ ] Supabase **RLS policies** — server-side enforcement (end of the
-      anon free-for-all)
+The brain of PIMS — one place decides "who can do what, when, where,
+and why", built in focused parts:
 
-## 🟡 PHASE 4 — Certificates & Promotions
+- [x] **Part 1 — Permissions**: comprehensive rank matrix through a
+      single `PermissionService.can()`, `require()` guard (deny + audit),
+      grouped Permission Viewer, and the **Permission Simulator**
+      ("Preview as role"). Client-side.
+- [ ] **Part 2 — Permission Groups & Templates** (Training Officer =
+      a bundle; roles auto-get their template)
+- [ ] **Part 3 — Temporary permissions & Delegation & Emergency
+      Override** (expiring grants, "Chief on holiday" delegation, 2-hour
+      emergency access) + permission history
+- [ ] **Part 4 — Division, Resource & Ownership permissions** (Traffic
+      can't see SWAT; the case owner can edit; locked after approval)
+- [ ] **Part 5 — Policy Engine** (central rules like "only Captain+ can
+      delete bodycam within 30 days") + move rules to the database +
+      Supabase **RLS** server enforcement
+
+## 🟡 PHASE 5 — Certificates & Promotions
 
 Nothing changes rank with a button — everything is an official
 certificate with an approval workflow:
