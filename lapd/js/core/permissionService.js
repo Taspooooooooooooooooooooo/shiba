@@ -272,17 +272,20 @@ const PermissionService = {
 
     _realRole: null,
 
-    _myGroups: null,
+    _myOfficer: undefined,
 
-    /* the current user's assigned permission groups (from their
-       linked officer record). Loaded once; [] if unavailable
-       or the column doesn't exist yet (graceful). */
+    _myGrants: null,
 
-    async myGroups() {
+    /* the current user's linked officer record (id +
+       permission_groups). Loaded once; null if not signed in
+       or not linked. select("*") so a missing column can't
+       break the query before its patch is run. */
 
-        if (this._myGroups) return this._myGroups;
+    async myOfficer() {
 
-        this._myGroups = [];
+        if (this._myOfficer !== undefined) return this._myOfficer;
+
+        this._myOfficer = null;
 
         if (window.db) {
 
@@ -292,25 +295,70 @@ const PermissionService = {
 
                 if (data?.user) {
 
-                    const { data: officer, error } = await db
+                    const { data: officer } = await db
                         .from("officers")
-                        .select("permission_groups")
+                        .select("*")
                         .eq("user_id", data.user.id)
                         .maybeSingle();
 
-                    if (!error && officer?.permission_groups) {
-
-                        this._myGroups = officer.permission_groups;
-
-                    }
+                    this._myOfficer = officer || null;
 
                 }
 
-            } catch (e) { /* column/table missing — no groups */ }
+            } catch (e) { /* no officer link */ }
 
         }
 
-        return this._myGroups;
+        return this._myOfficer;
+
+    },
+
+    /* the current user's assigned permission groups */
+
+    async myGroups() {
+
+        const officer = await this.myOfficer();
+
+        return officer?.permission_groups || [];
+
+    },
+
+    /* active (non-expired, non-revoked) temporary permission
+       grants for the current user — returns the granted
+       action strings. [] if the table doesn't exist yet. */
+
+    async myGrants() {
+
+        if (this._myGrants) return this._myGrants;
+
+        this._myGrants = [];
+
+        const officer = await this.myOfficer();
+
+        if (officer && window.db) {
+
+            try {
+
+                const nowIso = new Date().toISOString();
+
+                const { data, error } = await db
+                    .from("permission_grants")
+                    .select("permission, expires_at, revoked_at")
+                    .eq("officer_id", officer.id)
+                    .is("revoked_at", null)
+                    .gt("expires_at", nowIso);
+
+                if (!error && data) {
+
+                    this._myGrants = data.map(g => g.permission);
+
+                }
+
+            } catch (e) { /* table missing — no grants */ }
+
+        }
+
+        return this._myGrants;
 
     },
 
@@ -389,14 +437,19 @@ const PermissionService = {
 
         if (granted.some(g => this.matches(g, action))) return true;
 
-        /* assigned permission groups add rights on top of the rank —
-           but not while previewing another role in the Simulator */
+        /* assigned permission groups + active temporary grants add
+           rights on top of the rank — but not while previewing
+           another role in the Simulator */
 
         if (!this.isSimulating()) {
 
             const extra = this.permissionsForGroups(await this.myGroups());
 
             if (extra.some(g => this.matches(g, action))) return true;
+
+            const grants = await this.myGrants();
+
+            if (grants.some(g => this.matches(g, action))) return true;
 
         }
 

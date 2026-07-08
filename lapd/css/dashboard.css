@@ -1450,3 +1450,118 @@ margin-left:70px;
     font-size:13px;
 
 }
+
+/* ---------- TEMPORARY PERMISSION GRANTS ---------- */
+
+.grantForm{
+
+    display:flex;
+
+    gap:8px;
+
+    flex-wrap:wrap;
+
+    align-items:center;
+
+    margin-bottom:14px;
+
+}
+
+.grantForm select,
+.grantForm input{
+
+    background:#15283d;
+
+    border:1px solid rgba(255,255,255,.08);
+
+    color:white;
+
+    padding:9px 12px;
+
+    border-radius:9px;
+
+    outline:none;
+
+    font-size:13px;
+
+}
+
+.grantForm #tgReason{
+
+    flex:1;
+
+    min-width:140px;
+
+}
+
+.grantItem{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    gap:12px;
+
+    padding:11px 14px;
+
+    border-radius:10px;
+
+    background:#15283d55;
+
+    border:1px solid rgba(255,255,255,.06);
+
+    margin-bottom:8px;
+
+    opacity:.6;
+
+}
+
+.grantItem.active{
+
+    opacity:1;
+
+    border-left:3px solid #2ecc71;
+
+}
+
+.grantItem strong{
+
+    margin-right:8px;
+
+}
+
+.grantItem small{
+
+    display:block;
+
+    color:#8fa6c4;
+
+    margin-top:3px;
+
+}
+
+.grantKind{
+
+    font-size:11px;
+
+    padding:2px 8px;
+
+    border-radius:999px;
+
+    background:#2e8bff33;
+
+    color:#8fbaff;
+
+}
+
+.grantItem .dangerBtn{
+
+    padding:7px 13px;
+
+    font-size:13px;
+
+    flex-shrink:0;
+
+}

@@ -672,6 +672,18 @@ const Personnel = {
 
         box.appendChild(groupsWrap);
 
+        /* -------- Temporary Permissions (Part 3) -------- */
+
+        const tempWrap = document.createElement("div");
+
+        tempWrap.id = "pfTempPerms";
+
+        tempWrap.style.marginTop = "22px";
+
+        box.appendChild(tempWrap);
+
+        await this.renderTempPerms(canManage);
+
         const note = document.createElement("p");
 
         note.className = "muted";
@@ -679,7 +691,7 @@ const Personnel = {
         note.style.marginTop = "14px";
 
         note.textContent =
-            "Temporary, division, and custom permissions arrive in later " +
+            "Division, resource, and ownership permissions arrive in later " +
             "parts of Phase 4.";
 
         box.appendChild(note);
@@ -727,6 +739,240 @@ const Personnel = {
         this.renderPerms();
 
         UI?.success("Permission groups saved");
+
+    },
+
+    /* ----------------------------------------------------- */
+    /* temporary permissions (grant / revoke / history)       */
+    /* ----------------------------------------------------- */
+
+    async renderTempPerms(canManage) {
+
+        const wrap = document.getElementById("pfTempPerms");
+
+        if (!wrap) return;
+
+        wrap.innerHTML =
+            "<h4 style='margin-bottom:8px'>⏳ Temporary Permissions</h4>";
+
+        /* grant form (admins) */
+
+        if (canManage) {
+
+            const actions = PermissionService.allActions();
+
+            const options = actions
+                .map(a => `<option value="${a}">${a}</option>`).join("");
+
+            const form = document.createElement("div");
+
+            form.className = "grantForm";
+
+            form.innerHTML = `
+                <select id="tgPerm">${options}</select>
+                <select id="tgKind">
+                    <option>Temporary</option>
+                    <option>Delegation</option>
+                    <option>Emergency</option>
+                </select>
+                <select id="tgDur">
+                    <option value="2">2 hours</option>
+                    <option value="24">1 day</option>
+                    <option value="168">7 days</option>
+                    <option value="720">30 days</option>
+                </select>
+                <input id="tgReason" placeholder="Reason">
+                <button id="tgGrant" class="primaryBtn">Grant</button>
+            `;
+
+            wrap.appendChild(form);
+
+            /* Emergency defaults to 2 hours */
+
+            document.getElementById("tgKind").onchange = (e) => {
+
+                if (e.target.value === "Emergency") {
+
+                    document.getElementById("tgDur").value = "2";
+
+                }
+
+            };
+
+            document.getElementById("tgGrant").onclick = () =>
+                this.grantTempPermission();
+
+        }
+
+        /* current + past grants */
+
+        const listBox = document.createElement("div");
+
+        listBox.id = "tgList";
+
+        wrap.appendChild(listBox);
+
+        const { data, error } = await db
+            .from("permission_grants")
+            .select("*")
+            .eq("officer_id", this.officer.id)
+            .order("created_at", { ascending: false });
+
+        if (error) {
+
+            listBox.innerHTML =
+                "<p class='muted'>Temporary permissions need a one-time " +
+                "setup — run lapd/SETUP-PATCH-7.sql in the Supabase SQL " +
+                "Editor.</p>";
+
+            return;
+
+        }
+
+        if (!data.length) {
+
+            listBox.innerHTML =
+                "<p class='muted'>No temporary permissions granted.</p>";
+
+            return;
+
+        }
+
+        const now = Date.now();
+
+        data.forEach(g => {
+
+            const expired = new Date(g.expires_at).getTime() < now;
+
+            const revoked = !!g.revoked_at;
+
+            const active = !expired && !revoked;
+
+            const row = document.createElement("div");
+
+            row.className = "grantItem" + (active ? " active" : "");
+
+            const status = revoked ? "Revoked"
+                : expired ? "Expired"
+                : "Active until " + new Date(g.expires_at).toLocaleString();
+
+            row.innerHTML = `
+                <div>
+                    <strong>${g.permission}</strong>
+                    <span class="grantKind">${g.kind}</span>
+                    <small>${status}${g.reason ? " · " + g.reason : ""}` +
+                    `${g.granted_by ? " · by " + g.granted_by : ""}</small>
+                </div>
+            `;
+
+            if (active && canManage) {
+
+                const btn = document.createElement("button");
+
+                btn.textContent = "Revoke";
+
+                btn.className = "dangerBtn";
+
+                btn.onclick = () => this.revokeGrant(g.id);
+
+                row.appendChild(btn);
+
+            }
+
+            listBox.appendChild(row);
+
+        });
+
+    },
+
+    async grantTempPermission() {
+
+        const permission = document.getElementById("tgPerm").value;
+
+        const kind = document.getElementById("tgKind").value;
+
+        const hours = parseInt(document.getElementById("tgDur").value, 10);
+
+        const reason = document.getElementById("tgReason").value.trim();
+
+        const expires = new Date(Date.now() + hours * 3600000).toISOString();
+
+        const grantedBy = localStorage.getItem("username") || "admin";
+
+        const { error } = await db
+            .from("permission_grants")
+            .insert([{
+                officer_id: this.officer.id,
+                permission: permission,
+                kind: kind,
+                reason: reason || null,
+                granted_by: grantedBy,
+                expires_at: expires
+            }]);
+
+        if (error) {
+
+            UI?.error("Could not grant (run SETUP-PATCH-7.sql).");
+
+            return;
+
+        }
+
+        AuditService.log({
+            action: "PERMISSION_GRANTED",
+            target: this.officer.officerId + " " + this.officer.name,
+            details: kind + ": " + permission + " until " +
+                new Date(expires).toLocaleString(),
+            officerId: this.officer.id
+        });
+
+        TimelineService.add(this.officer.id,
+            "Temporary permission granted",
+            kind + ": " + permission);
+
+        if (this.officer.userId) {
+
+            NotificationService.send({
+                to: this.officer.userId,
+                title: "Permission Granted",
+                message: "You were granted '" + permission + "' (" + kind +
+                    ") until " + new Date(expires).toLocaleString() + "."
+            });
+
+        }
+
+        UI?.success("Permission granted");
+
+        this.renderTempPerms(true);
+
+    },
+
+    async revokeGrant(id) {
+
+        const { error } = await db
+            .from("permission_grants")
+            .update({ revoked_at: new Date().toISOString() })
+            .eq("id", id);
+
+        if (error) {
+
+            UI?.error("Could not revoke.");
+
+            return;
+
+        }
+
+        AuditService.log({
+            action: "PERMISSION_REVOKED",
+            target: this.officer.officerId + " " + this.officer.name,
+            officerId: this.officer.id
+        });
+
+        TimelineService.add(this.officer.id, "Temporary permission revoked");
+
+        UI?.success("Permission revoked");
+
+        this.renderTempPerms(true);
 
     },
 

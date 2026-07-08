@@ -101,9 +101,10 @@ and why", built in focused parts:
       (Training Officer, Fleet Manager, …) assignable to an officer on
       top of their rank; rank templates + groups reference page
       (`permissions.html`). Needs `SETUP-PATCH-6.sql`.
-- [ ] **Part 3 — Temporary permissions & Delegation & Emergency
-      Override** (expiring grants, "Chief on holiday" delegation, 2-hour
-      emergency access) + permission history
+- [x] **Part 3 — Temporary permissions / Delegation / Emergency
+      Override**: one expiring-grant engine (grant + revoke + history)
+      on the Personnel File; `can()` honours active grants. Needs
+      `SETUP-PATCH-7.sql`.
 - [ ] **Part 4 — Division, Resource & Ownership permissions** (Traffic
       can't see SWAT; the case owner can edit; locked after approval)
 - [ ] **Part 5 — Policy Engine** (central rules like "only Captain+ can

@@ -2,6 +2,23 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.16.0 — 2026-07-07 · Phase 4 Part 3 — Temporary Permissions
+
+### Added
+- **Temporary permissions** — grant an officer a single permission that
+  **auto-expires**. One engine, three intents chosen when granting:
+  **Temporary** (time-boxed extra power), **Delegation** (hand an
+  approval power over while away), **Emergency** (a 2-hour override).
+- On the Personnel File → 🛡 Permissions tab, admins pick a permission,
+  a kind, a duration (2h / 1d / 7d / 30d) and a reason, then **Grant** —
+  and can **Revoke** active grants. Expired/revoked grants are shown as
+  **history**. `PermissionService.can()` counts only active grants
+  (skipped while simulating).
+- Every grant/revoke is **audited + timelined** and the officer is
+  **notified**.
+- Needs `lapd/SETUP-PATCH-7.sql` (adds `permission_grants`); degrades
+  to a hint until run.
+
 ## v0.15.0 — 2026-07-07 · Phase 4 Part 2 — Permission Groups & Templates
 
 ### Added
