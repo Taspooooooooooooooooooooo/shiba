@@ -1364,3 +1364,89 @@ margin-left:70px;
     background:rgba(0,0,0,.55);
 
 }
+
+/* ---------- PERMISSION GROUPS ---------- */
+
+.groupItem{
+
+    display:block;
+
+    background:#15283d55;
+
+    border:1px solid rgba(255,255,255,.08);
+
+    border-radius:12px;
+
+    padding:12px 14px;
+
+    cursor:default;
+
+}
+
+.groupItem.on{
+
+    border-color:#2ecc7155;
+
+    background:#12351f33;
+
+}
+
+.groupItem input{
+
+    margin-right:6px;
+
+}
+
+.groupItem small{
+
+    display:block;
+
+    color:#8fa6c4;
+
+    margin-top:3px;
+
+}
+
+.groupItem small.muted{
+
+    color:#5a6b80;
+
+    margin-top:6px;
+
+}
+
+/* ---------- RANK TEMPLATE ROWS ---------- */
+
+.templateRow{
+
+    display:flex;
+
+    gap:16px;
+
+    padding:12px 4px;
+
+    border-bottom:1px solid rgba(255,255,255,.06);
+
+}
+
+.templateRow:last-child{
+
+    border-bottom:none;
+
+}
+
+.templateRow b{
+
+    min-width:120px;
+
+    color:#8fbaff;
+
+}
+
+.templateRow span{
+
+    color:#b8c5d6;
+
+    font-size:13px;
+
+}

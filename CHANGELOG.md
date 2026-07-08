@@ -2,6 +2,21 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.15.0 — 2026-07-07 · Phase 4 Part 2 — Permission Groups & Templates
+
+### Added
+- **Permission Groups** — named bundles (🎓 Training Officer, 🚔 Fleet
+  Manager, 📦 Evidence Custodian, 🧑‍✈️ Recruiter, 📻 Dispatcher) that
+  grant a set of permissions on top of an officer's rank. Assign them
+  on the Personnel File → 🛡 Permissions tab (admins only); saving is
+  audited and timelined. `PermissionService.can()` now includes an
+  officer's group permissions.
+- **Permissions Reference** page (`permissions.html`, admin-only,
+  linked from Settings) — shows every **rank template** and every
+  **group** bundle in one place.
+- Needs `lapd/SETUP-PATCH-6.sql` (adds `officers.permission_groups`).
+  Until it's run, groups simply don't apply — no errors.
+
 ## v0.14.0 — 2026-07-07 · Phase 4 Part 1 — Permission Foundation
 
 ### Added

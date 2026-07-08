@@ -97,8 +97,10 @@ and why", built in focused parts:
       single `PermissionService.can()`, `require()` guard (deny + audit),
       grouped Permission Viewer, and the **Permission Simulator**
       ("Preview as role"). Client-side.
-- [ ] **Part 2 — Permission Groups & Templates** (Training Officer =
-      a bundle; roles auto-get their template)
+- [x] **Part 2 — Permission Groups & Templates**: named bundles
+      (Training Officer, Fleet Manager, …) assignable to an officer on
+      top of their rank; rank templates + groups reference page
+      (`permissions.html`). Needs `SETUP-PATCH-6.sql`.
 - [ ] **Part 3 — Temporary permissions & Delegation & Emergency
       Override** (expiring grants, "Chief on holiday" delegation, 2-hour
       emergency access) + permission history

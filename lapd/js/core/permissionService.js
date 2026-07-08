@@ -75,6 +75,65 @@ const PermissionService = {
     },
 
     /* -----------------------------------------------------
+       Permission GROUPS — named bundles that can be granted
+       to an officer on top of their rank (Part 2). Assigning
+       "Training Officer" gives all of its permissions at once.
+    ----------------------------------------------------- */
+
+    GROUPS: {
+
+        "training-officer": {
+            label: "🎓 Training Officer",
+            description: "Runs training and can approve reports.",
+            permissions: ["reports.approve", "notes.write", "cases.view"]
+        },
+
+        "fleet-manager": {
+            label: "🚔 Fleet Manager",
+            description: "Manages vehicles and bodycam footage.",
+            permissions: ["bodycam.view", "bodycam.download", "bodycam.delete"]
+        },
+
+        "evidence-custodian": {
+            label: "📦 Evidence Custodian",
+            description: "Handles case evidence and bodycam.",
+            permissions: ["cases.view", "cases.assign", "bodycam.view",
+                          "bodycam.download"]
+        },
+
+        "recruiter": {
+            label: "🧑‍✈️ Recruiter",
+            description: "Creates and activates new officers.",
+            permissions: ["officers.create", "officers.reset_access",
+                          "applications.review"]
+        },
+
+        "dispatcher": {
+            label: "📻 Dispatcher",
+            description: "Assigns cases and sees the roster.",
+            permissions: ["officers.view", "cases.view", "cases.assign"]
+        }
+
+    },
+
+    groupPermissions(key) {
+
+        return this.GROUPS[key]?.permissions || [];
+
+    },
+
+    permissionsForGroups(keys) {
+
+        const set = new Set();
+
+        (keys || []).forEach(k =>
+            this.groupPermissions(k).forEach(p => set.add(p)));
+
+        return [...set];
+
+    },
+
+    /* -----------------------------------------------------
        Rank matrix — which role is granted what.
        "*" = everything; "officers.*" = the whole module.
        (existing action names preserved so nothing breaks)
@@ -213,6 +272,48 @@ const PermissionService = {
 
     _realRole: null,
 
+    _myGroups: null,
+
+    /* the current user's assigned permission groups (from their
+       linked officer record). Loaded once; [] if unavailable
+       or the column doesn't exist yet (graceful). */
+
+    async myGroups() {
+
+        if (this._myGroups) return this._myGroups;
+
+        this._myGroups = [];
+
+        if (window.db) {
+
+            try {
+
+                const { data } = await db.auth.getUser();
+
+                if (data?.user) {
+
+                    const { data: officer, error } = await db
+                        .from("officers")
+                        .select("permission_groups")
+                        .eq("user_id", data.user.id)
+                        .maybeSingle();
+
+                    if (!error && officer?.permission_groups) {
+
+                        this._myGroups = officer.permission_groups;
+
+                    }
+
+                }
+
+            } catch (e) { /* column/table missing — no groups */ }
+
+        }
+
+        return this._myGroups;
+
+    },
+
     /* the account's true role (auth metadata, then localStorage) */
 
     async realRole() {
@@ -286,7 +387,20 @@ const PermissionService = {
 
         const granted = this.MATRIX[role] || [];
 
-        return granted.some(g => this.matches(g, action));
+        if (granted.some(g => this.matches(g, action))) return true;
+
+        /* assigned permission groups add rights on top of the rank —
+           but not while previewing another role in the Simulator */
+
+        if (!this.isSimulating()) {
+
+            const extra = this.permissionsForGroups(await this.myGroups());
+
+            if (extra.some(g => this.matches(g, action))) return true;
+
+        }
+
+        return false;
 
     },
 

@@ -609,6 +609,69 @@ const Personnel = {
 
         });
 
+        /* -------- Permission Groups (Part 2) -------- */
+
+        const groupsWrap = document.createElement("div");
+
+        groupsWrap.style.marginTop = "22px";
+
+        const gh = document.createElement("h4");
+
+        gh.textContent = "🧩 Permission Groups";
+
+        gh.style.marginBottom = "8px";
+
+        groupsWrap.appendChild(gh);
+
+        const assigned = this.officer.groups || [];
+
+        const canManage = await PermissionService.can("permissions.grant");
+
+        const gList = document.createElement("div");
+
+        gList.className = "permGrid";
+
+        Object.entries(PermissionService.GROUPS).forEach(([key, group]) => {
+
+            const on = assigned.includes(key);
+
+            const item = document.createElement("label");
+
+            item.className = "groupItem" + (on ? " on" : "");
+
+            const perms = group.permissions.join(", ");
+
+            item.innerHTML =
+                (canManage
+                    ? `<input type="checkbox" data-group="${key}" ${on ? "checked" : ""}> `
+                    : (on ? "✓ " : "✕ ")) +
+                `<b>${group.label}</b><br><small>${group.description}</small>` +
+                `<small class="muted">${perms}</small>`;
+
+            gList.appendChild(item);
+
+        });
+
+        groupsWrap.appendChild(gList);
+
+        if (canManage) {
+
+            const saveBtn = document.createElement("button");
+
+            saveBtn.className = "primaryBtn";
+
+            saveBtn.style.marginTop = "12px";
+
+            saveBtn.textContent = "Save groups";
+
+            saveBtn.onclick = () => this.saveGroups();
+
+            groupsWrap.appendChild(saveBtn);
+
+        }
+
+        box.appendChild(groupsWrap);
+
         const note = document.createElement("p");
 
         note.className = "muted";
@@ -620,6 +683,50 @@ const Personnel = {
             "parts of Phase 4.";
 
         box.appendChild(note);
+
+    },
+
+    /* ----------------------------------------------------- */
+    /* save permission groups (admins)                        */
+    /* ----------------------------------------------------- */
+
+    async saveGroups() {
+
+        const keys = [...document.querySelectorAll("#pfPerms input[data-group]")]
+            .filter(cb => cb.checked)
+            .map(cb => cb.dataset.group);
+
+        const { error } = await db
+            .from("officers")
+            .update({ permission_groups: keys })
+            .eq("id", this.officer.id);
+
+        if (error) {
+
+            UI?.error("Could not save groups (run SETUP-PATCH-6.sql).");
+
+            return;
+
+        }
+
+        AuditService.log({
+            action: "PERMISSION_GROUPS_UPDATED",
+            target: this.officer.officerId + " " + this.officer.name,
+            details: keys.length ? keys.join(", ") : "none",
+            officerId: this.officer.id
+        });
+
+        TimelineService.add(this.officer.id,
+            "Permission groups updated",
+            keys.length ? keys.join(", ") : "none");
+
+        this.officer.groups = keys;
+
+        this.loaded.perms = false;
+
+        this.renderPerms();
+
+        UI?.success("Permission groups saved");
 
     },
 
@@ -724,15 +831,19 @@ const Personnel = {
 
         }
 
-        /* raw row for dates */
+        /* raw row for dates + assigned permission groups
+           (select * so a missing permission_groups column can't
+           break the query before PATCH-6 is run) */
 
         const { data: raw } = await db
             .from("officers")
-            .select("hire_date, created_at, updated_at")
+            .select("*")
             .eq("id", id)
             .maybeSingle();
 
         this.raw = raw;
+
+        this.officer.groups = raw?.permission_groups || [];
 
         await this.renderHeader();
 
