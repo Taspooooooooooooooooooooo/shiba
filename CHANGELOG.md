@@ -2,6 +2,21 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.19.0 — 2026-07-07 · Version display + auto update check
+
+### Added
+- **Single source of truth for the version** (`js/version.js` +
+  `version.json`). The boot screen and footer now show the **real**
+  running version (no more hard-coded "v1.0.0").
+- **Update detector** — each page checks `version.json` (fetched fresh,
+  never cached). If your browser is running an older cached build, a
+  green **"A newer version is available — Refresh now"** banner appears,
+  so you always know when you're up to date.
+
+### Note
+- On release, bump BOTH `js/version.js` and `version.json` (they must
+  match). Documented at the top of `version.js`.
+
 ## v0.18.0 — 2026-07-07 · Phase 4 complete — Policy Engine + fixes
 
 ### Added

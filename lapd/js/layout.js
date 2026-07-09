@@ -67,7 +67,11 @@ const AppLayout = {
 
     createFooter() {
 
-        return `<footer>SHIBA PIMS © 2026</footer>`;
+        const v = window.SHIBA_VERSION
+            ? ` &middot; <span class="appVersion">v${window.SHIBA_VERSION}</span>`
+            : "";
+
+        return `<footer>SHIBA PIMS © 2026${v}</footer>`;
 
     }
 
