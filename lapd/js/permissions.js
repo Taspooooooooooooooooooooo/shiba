@@ -82,4 +82,21 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     });
 
+    /* ---- Policies ---- */
+
+    const policies = document.getElementById("policies");
+
+    Object.values(PermissionService.POLICIES).forEach(policy => {
+
+        const row = document.createElement("div");
+
+        row.className = "templateRow";
+
+        row.innerHTML =
+            `<b>${policy.label}</b><span>${policy.description}</span>`;
+
+        policies.appendChild(row);
+
+    });
+
 });

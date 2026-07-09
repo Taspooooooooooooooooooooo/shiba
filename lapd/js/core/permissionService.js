@@ -545,6 +545,96 @@ const PermissionService = {
 
     },
 
+    /* -----------------------------------------------------
+       Policy Engine (Part 5) — the capstone.
+       Some rules are more than "has permission X": they
+       combine a permission with conditions (rank + ownership
+       + time + division). Every such rule lives here, once,
+       so a policy change never means editing many files.
+
+         const r = await PermissionService.checkPolicy(
+             "bodycam.delete", { recordedAt: row.created_at });
+         if (!r.allowed) { UI.error(r.reason); return; }
+    ----------------------------------------------------- */
+
+    POLICIES: {
+
+        "officer.archive": {
+            label: "Archive an officer",
+            description: "Only Lieutenant and above may archive officers.",
+            async check() {
+                return (await PermissionService.can("officers.archive"))
+                    ? { allowed: true }
+                    : { allowed: false, reason: "Requires Lieutenant or above." };
+            }
+        },
+
+        "promotion.approve": {
+            label: "Approve a promotion",
+            description: "Only Lieutenant and above may approve promotions.",
+            async check() {
+                return (await PermissionService.can("promotion.approve"))
+                    ? { allowed: true }
+                    : { allowed: false, reason: "Requires Lieutenant or above." };
+            }
+        },
+
+        "bodycam.delete": {
+            label: "Delete bodycam footage",
+            description: "Only Captain and above, and only within 30 days " +
+                "of recording.",
+            async check(ctx) {
+                if (!(await PermissionService.can("bodycam.delete")))
+                    return { allowed: false, reason: "Requires Captain or above." };
+                if (ctx && ctx.recordedAt) {
+                    const days = (Date.now() - new Date(ctx.recordedAt))
+                        / 86400000;
+                    if (days > 30)
+                        return { allowed: false,
+                            reason: "Footage is older than 30 days." };
+                }
+                return { allowed: true };
+            }
+        },
+
+        "case.close": {
+            label: "Close a case",
+            description: "Only the assigned officer, or a Sergeant and above.",
+            async check(ctx) {
+                if (await PermissionService.can("cases.assign"))
+                    return { allowed: true };
+                if (ctx && ctx.caseRow &&
+                    await PermissionService.owns(ctx.caseRow, "assigned_to"))
+                    return { allowed: true };
+                return { allowed: false,
+                    reason: "Only the assigned officer or Sergeant+ may close it." };
+            }
+        }
+
+    },
+
+    /* run a policy → { allowed, reason } */
+
+    async checkPolicy(name, ctx) {
+
+        const policy = this.POLICIES[name];
+
+        if (!policy) return { allowed: false, reason: "Unknown policy: " + name };
+
+        try {
+
+            return await policy.check(ctx || {});
+
+        } catch (e) {
+
+            console.error("POLICY ERROR:", e);
+
+            return { allowed: false, reason: "Policy could not be evaluated." };
+
+        }
+
+    },
+
     /* guard an action: returns true if allowed, otherwise
        shows a "no permission" toast and audits the attempt.
          if (!(await PermissionService.require("bodycam.delete"))) return; */

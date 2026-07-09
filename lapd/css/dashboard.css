@@ -124,7 +124,20 @@ body{
 
     padding:30px;
 
-    width:100%;
+    /* width is auto — filling the space after the fixed sidebar.
+       (a fixed 100% here overflowed past the viewport) */
+
+}
+
+/* wide tables scroll sideways instead of stretching the page */
+
+.table{
+
+    display:block;
+
+    overflow-x:auto;
+
+    max-width:100%;
 
 }
 
@@ -269,6 +282,36 @@ left:70px;
 .content{
 
 margin-left:70px;
+
+padding:16px;
+
+}
+
+}
+
+@media(max-width:600px){
+
+.topbar{
+
+padding:0 14px;
+
+}
+
+.topbar h2{
+
+font-size:18px;
+
+}
+
+.card{
+
+padding:18px;
+
+}
+
+.grid{
+
+grid-template-columns:1fr;
 
 }
 

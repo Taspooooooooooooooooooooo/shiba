@@ -88,7 +88,7 @@ distinct things, plus everything that keeps identity secure:
 - [ ] *(Duty Authentication — Start Shift — lives in Phase 6 Shifts)*
 - [ ] *(2FA / security keys — future)*
 
-## 🔴 PHASE 4 — Permission & Authorization System (IN PROGRESS)
+## 🔴 PHASE 4 — Permission & Authorization System (COMPLETE ✅)
 
 The brain of PIMS — one place decides "who can do what, when, where,
 and why", built in focused parts:
@@ -109,9 +109,13 @@ and why", built in focused parts:
       without `division.all` (Lieutenant+/admin) see only their own
       division's roster; `owns()` / `canModifyResource()` ownership
       helpers ready for Cases & Reports. Client-side, no SQL.
-- [ ] **Part 5 — Policy Engine** (central rules like "only Captain+ can
-      delete bodycam within 30 days") + move rules to the database +
-      Supabase **RLS** server enforcement
+- [x] **Part 5 — Policy Engine**: central rules combining a permission
+      with conditions (rank + ownership + time), e.g. "only Captain+ can
+      delete bodycam within 30 days"; `checkPolicy()` + a Policies
+      reference. Client-side.
+- [ ] *Server-side hardening (separate careful pass): move policies to
+      the database + Supabase **RLS** so rules are enforced on the
+      server, not just the UI.*
 
 ## 🟡 PHASE 5 — Certificates & Promotions
 

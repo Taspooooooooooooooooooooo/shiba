@@ -59,7 +59,7 @@ body{
 
     color:var(--text);
 
-    overflow:hidden;
+    overflow-x:hidden;
 
     min-height:100vh;
 

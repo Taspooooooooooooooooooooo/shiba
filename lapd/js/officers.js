@@ -633,6 +633,18 @@ class OfficersEngine {
 
         if (!officer || !window.db) return;
 
+        /* Policy Engine (Part 5) enforces the rule centrally */
+
+        const policy = await PermissionService.checkPolicy("officer.archive");
+
+        if (!policy.allowed) {
+
+            UI?.error(policy.reason);
+
+            return;
+
+        }
+
         if (!confirm(
             "Archive " + officer.name + " (" + officer.officerId + ")?\n\n" +
             "They will be marked as Retired and hidden from the active " +
@@ -895,9 +907,10 @@ class OfficersEngine {
 
     render(list = this.officers) {
 
-        /* Part 4 — division scoping always applies to the roster */
-
-        list = this.scopeToDivision(list);
+        /* Note: division scoping helpers stay available on
+           PermissionService for future modules, but per the
+           user's preference the officer roster shows EVERYONE
+           in one place (no division filter here). */
 
         const tbody = document.getElementById("officersTable");
 

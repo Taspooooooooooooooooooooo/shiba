@@ -2,6 +2,31 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.18.0 — 2026-07-07 · Phase 4 complete — Policy Engine + fixes
+
+### Added
+- **Policy Engine** (Part 5) — the capstone. Central rules that combine
+  a permission with **conditions** (rank + ownership + time), defined
+  once: archive (Lieutenant+), promotion approval (Lieutenant+), bodycam
+  delete (Captain+ **and within 30 days**), case close (assigned officer
+  or Sergeant+). `PermissionService.checkPolicy()`; a Policies section
+  on the Permissions Reference page. Officer archive now runs through it.
+
+### Fixed
+- **Scrolling** — pages could not scroll when taller than the screen
+  (a global `overflow:hidden` on `<body>`); now scrolls normally, and
+  no more horizontal overflow that forced zooming out (worst on mobile).
+- Mobile spacing and single-column cards on small screens; wide tables
+  scroll sideways.
+
+### Changed
+- The Officers roster shows **everyone in one place** again (division
+  scoping reverted per preference; the division helpers remain for
+  future modules).
+
+**Phase 4 — the Permission & Authorization System — is complete.**
+Server-side RLS enforcement remains as a separate hardening pass.
+
 ## v0.17.0 — 2026-07-07 · Phase 4 Part 4 — Division & Ownership
 
 ### Added
