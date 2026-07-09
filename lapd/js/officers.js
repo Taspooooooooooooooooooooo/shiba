@@ -235,6 +235,29 @@ class OfficersEngine {
             reset: await PermissionService.can("officers.reset_access")
         };
 
+        /* division scope — Part 4. Officers without "division.all"
+           only see their own division's roster. */
+
+        this.divisionScope = null;
+
+        if (!(await PermissionService.seesAllDivisions())) {
+
+            const mine = await PermissionService.myDivision();
+
+            if (mine) this.divisionScope = mine;
+
+        }
+
+    }
+
+    /* apply the division scope to a list of officers */
+
+    scopeToDivision(list) {
+
+        if (!this.divisionScope) return list;
+
+        return list.filter(o => o.division === this.divisionScope);
+
     }
 
     /* =========================
@@ -871,6 +894,10 @@ class OfficersEngine {
     ========================== */
 
     render(list = this.officers) {
+
+        /* Part 4 — division scoping always applies to the roster */
+
+        list = this.scopeToDivision(list);
 
         const tbody = document.getElementById("officersTable");
 

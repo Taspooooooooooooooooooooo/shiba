@@ -105,8 +105,10 @@ and why", built in focused parts:
       Override**: one expiring-grant engine (grant + revoke + history)
       on the Personnel File; `can()` honours active grants. Needs
       `SETUP-PATCH-7.sql`.
-- [ ] **Part 4 — Division, Resource & Ownership permissions** (Traffic
-      can't see SWAT; the case owner can edit; locked after approval)
+- [x] **Part 4 — Division, Resource & Ownership permissions**: officers
+      without `division.all` (Lieutenant+/admin) see only their own
+      division's roster; `owns()` / `canModifyResource()` ownership
+      helpers ready for Cases & Reports. Client-side, no SQL.
 - [ ] **Part 5 — Policy Engine** (central rules like "only Captain+ can
       delete bodycam within 30 days") + move rules to the database +
       Supabase **RLS** server enforcement
@@ -166,31 +168,31 @@ Officers apply for things; the right rank reviews and decides.
   on the Personnel File shows the officer's full application history.
   This reuses the same request→approval engine as Promotions.
 
-## 🟢 PHASE 5 — Cases
+## 🟢 PHASE 6 — Cases
 
 - [ ] Case file: `CASE-2026-…`, status, priority, evidence, notes,
       attachments, assigned officers, timeline
 - [ ] Assignment → officer gets notification + inbox + dashboard alert
 
-## 🔵 PHASE 6 — Shifts & Bodycam
+## 🔵 PHASE 7 — Shifts & Bodycam
 
 - [ ] Shift start/end, hours, calendar, weekly/monthly stats + graphs
 - [ ] Bodycam: upload via SHIBA CLOUD, watch, evidence links,
       bookmarks, rank-gated download (Lieutenant+) / delete (Captain+)
 
-## 🟣 PHASE 7 — Reports & Notification Center
+## 🟣 PHASE 8 — Reports & Notification Center
 
 - [ ] Incident / Arrest / Use of Force / Training / Disciplinary
       reports
 - [ ] Inbox page, browser notifications, notification history —
       every notification has its own ID and URL
 
-## 🟠 PHASE 8 — Administration
+## 🟠 PHASE 9 — Administration
 
 - [ ] Admin Center: users, roles, audit browser, database health,
       statistics, import/export, backups, diagnostics
 
-## 🔥 PHASE 9 — v1.0 Polish
+## 🔥 PHASE 10 — v1.0 Polish
 
 - [ ] Security review, performance, animations, final UI pass
 - [ ] Public QR verification portal for certificates

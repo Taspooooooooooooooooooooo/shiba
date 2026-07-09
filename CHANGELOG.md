@@ -2,6 +2,23 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.17.0 — 2026-07-07 · Phase 4 Part 4 — Division & Ownership
+
+### Added
+- **Division permissions** — officers without `division.all`
+  (Lieutenant+ / admins) now only see their **own division's** roster
+  on the Officers page. "Traffic can't see SWAT."
+- **Ownership / resource helpers** — `PermissionService.owns()` and
+  `canModifyResource()` (owner may edit until locked; then an elevated
+  permission is required). Library ready for Cases & Reports.
+- **`RUN-ALL-PENDING.sql`** — one paste that applies every pending
+  database patch (audit-safety, account-lock, permission-groups,
+  temporary-permissions) in a single, safe-to-re-run script.
+
+### Fixed
+- Roadmap phase numbering (there were two "Phase 5"s): Cases → Phase 6,
+  Shifts → 7, Reports → 8, Administration → 9, Polish → 10.
+
 ## v0.16.0 — 2026-07-07 · Phase 4 Part 3 — Temporary Permissions
 
 ### Added

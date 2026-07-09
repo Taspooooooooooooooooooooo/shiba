@@ -58,6 +58,7 @@ const PermissionService = {
         "Leadership & Admin": [
             ["notes.write", "Write leadership notes"],
             ["applications.review", "Review applications"],
+            ["division.all", "See all divisions"],
             ["permissions.grant", "Grant permissions"],
             ["admin.panel", "Access admin panel"]
         ]
@@ -201,6 +202,7 @@ const PermissionService = {
             "reports.*",
             "notes.write",
             "applications.review",
+            "division.all",
             "cloud.upload"
         ],
 
@@ -214,6 +216,7 @@ const PermissionService = {
             "reports.*",
             "notes.write",
             "applications.review",
+            "division.all",
             "cloud.upload"
         ],
 
@@ -297,7 +300,7 @@ const PermissionService = {
 
                     const { data: officer } = await db
                         .from("officers")
-                        .select("*")
+                        .select("*, divisions(name)")
                         .eq("user_id", data.user.id)
                         .maybeSingle();
 
@@ -452,6 +455,91 @@ const PermissionService = {
             if (grants.some(g => this.matches(g, action))) return true;
 
         }
+
+        return false;
+
+    },
+
+    /* -----------------------------------------------------
+       Division permissions (Part 4)
+       An officer is scoped to their own division unless they
+       hold "division.all" (Lieutenant+ / admin).
+    ----------------------------------------------------- */
+
+    async myOfficerId() {
+
+        const officer = await this.myOfficer();
+
+        return officer?.id || null;
+
+    },
+
+    async myDivision() {
+
+        const officer = await this.myOfficer();
+
+        return officer?.divisions?.name || null;
+
+    },
+
+    async seesAllDivisions() {
+
+        return await this.can("division.all");
+
+    },
+
+    /* can the current user act within this division? */
+
+    async canForDivision(divisionName) {
+
+        if (await this.seesAllDivisions()) return true;
+
+        const mine = await this.myDivision();
+
+        /* no division on file → don't restrict (avoid lock-out) */
+
+        if (!mine) return true;
+
+        return mine === divisionName;
+
+    },
+
+    /* -----------------------------------------------------
+       Ownership / resource permissions (Part 4)
+       Library for future modules (Cases, Reports): the creator
+       owns the record and may edit it until it is locked (e.g.
+       approved); after that only an elevated permission may
+       change it.
+    ----------------------------------------------------- */
+
+    async owns(resource, ownerField = "created_by") {
+
+        if (!resource) return false;
+
+        const mine = await this.myOfficerId();
+
+        return !!mine && resource[ownerField] === mine;
+
+    },
+
+    /* canModifyResource(caseRow, {
+           ownerField: "created_by",
+           lockedField: "locked",     // truthy = locked
+           elevated: "cases.assign"   // who can edit anyway
+       }) */
+
+    async canModifyResource(resource, opts = {}) {
+
+        const ownerField = opts.ownerField || "created_by";
+
+        const elevated = opts.elevated || null;
+
+        const locked = opts.lockedField
+            ? !!resource?.[opts.lockedField] : false;
+
+        if (elevated && await this.can(elevated)) return true;
+
+        if (!locked && await this.owns(resource, ownerField)) return true;
 
         return false;
 
