@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>SHIBA PIMS | Certificates</title>
+
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/dashboard.css">
+
+</head>
+
+<body>
+
+<div id="layoutTop"></div>
+
+<div class="content">
+
+    <div class="card">
+
+        <h1>🏆 Certificates</h1>
+
+        <p>The official document system. Nothing changes rank with a
+           button — promotions, awards, suspensions and training are all
+           certificates with an approval workflow and a secure QR.</p>
+
+    </div>
+
+    <!-- ISSUE -->
+    <div class="card hidden" id="issueCard">
+
+        <h2>🎖 Issue Certificate</h2>
+
+        <div class="certForm">
+
+            <select id="certOfficer"></select>
+
+            <select id="certType"></select>
+
+            <select id="certRank" class="hidden"></select>
+
+            <input id="certTitle" placeholder="Title (optional — defaults to the type)">
+
+            <input id="certReason" placeholder="Reason (e.g. Outstanding service...)">
+
+            <input id="certDate" type="date">
+
+            <button id="certIssue" class="primaryBtn">Issue → Pending Approval</button>
+
+        </div>
+
+    </div>
+
+    <!-- PENDING -->
+    <div class="card hidden" id="pendingCard">
+
+        <h2>⏳ Pending Approval <span id="pendingCount" class="grantKind"></span></h2>
+
+        <div id="pendingList"><p class="muted">Loading...</p></div>
+
+    </div>
+
+    <!-- ALL -->
+    <div class="card">
+
+        <h2>📜 All Certificates</h2>
+
+        <div id="certList"><p class="muted">Loading...</p></div>
+
+    </div>
+
+</div>
+
+<!-- CERTIFICATE DOCUMENT MODAL -->
+<div id="certModal" class="modal hidden">
+
+    <div class="idCardWrap">
+
+        <div class="certDoc" id="certDoc">
+
+            <div class="certDocHeader">
+
+                <div class="certDocShield">🛡</div>
+
+                <h3>SHIBA POLICE DEPARTMENT</h3>
+
+                <span>Official Certificate</span>
+
+            </div>
+
+            <div class="certDocBody">
+
+                <h2 id="cdType">—</h2>
+
+                <p class="certDocOfficer" id="cdOfficer">—</p>
+
+                <p class="certDocReason" id="cdReason"></p>
+
+                <div class="certDocMeta">
+
+                    <div><small>Certificate ID</small><b id="cdId">—</b></div>
+
+                    <div><small>Status</small><b id="cdStatus">—</b></div>
+
+                    <div><small>Issued by</small><b id="cdIssuedBy">—</b></div>
+
+                    <div><small>Approved by</small><b id="cdApprovedBy">—</b></div>
+
+                    <div><small>Effective</small><b id="cdEffective">—</b></div>
+
+                    <div><small>Created</small><b id="cdCreated">—</b></div>
+
+                </div>
+
+            </div>
+
+            <div class="certDocFooter">
+
+                <div class="certDocQr" id="cdQr"></div>
+
+                <small>Scan with the SHIBA PIMS Scanner to verify —
+                       this code validates only against our records.</small>
+
+            </div>
+
+        </div>
+
+        <div class="idCardActions">
+
+            <button id="cdPrint">🖨 Print</button>
+
+            <button id="cdClose">Close</button>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div id="layoutFooter"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+
+<script src="js/version.js"></script>
+
+<script src="js/supabaseClient.js"></script>
+
+<script src="js/core/idService.js"></script>
+<script src="js/core/permissionService.js"></script>
+<script src="js/core/auditService.js"></script>
+<script src="js/core/timelineService.js"></script>
+<script src="js/core/notificationService.js"></script>
+<script src="js/core/certificateService.js"></script>
+
+<script src="js/auth.js"></script>
+<script src="js/session.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/layout.js"></script>
+<script src="js/commandPalette.js"></script>
+<script src="js/certificates.js"></script>
+
+<script>
+
+if(localStorage.getItem("loggedIn")!="true"){
+
+    window.location.href="index.html";
+
+}
+
+document.getElementById("layoutTop").innerHTML = AppLayout.createTopbar();
+document.getElementById("layoutFooter").innerHTML = AppLayout.createFooter();
+
+</script>
+
+</body>
+
+</html>

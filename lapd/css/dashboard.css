@@ -1608,3 +1608,405 @@ grid-template-columns:1fr;
     flex-shrink:0;
 
 }
+
+/* ---------- CERTIFICATES ---------- */
+
+.certForm{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:10px;
+
+    max-width:520px;
+
+}
+
+.certItem{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    gap:12px;
+
+    flex-wrap:wrap;
+
+    padding:12px 14px;
+
+    border-radius:10px;
+
+    background:#15283d55;
+
+    border:1px solid rgba(255,255,255,.06);
+
+    margin-bottom:8px;
+
+}
+
+.certInfo strong{
+
+    margin-right:8px;
+
+}
+
+.certInfo small{
+
+    display:block;
+
+    color:#8fa6c4;
+
+    margin-top:4px;
+
+}
+
+.certStatus{
+
+    margin-left:8px;
+
+    font-size:12px;
+
+}
+
+.certActions{
+
+    display:flex;
+
+    gap:8px;
+
+    flex-shrink:0;
+
+}
+
+.certActions button{
+
+    padding:8px 13px;
+
+    border:none;
+
+    border-radius:8px;
+
+    background:#15283d;
+
+    color:white;
+
+    cursor:pointer;
+
+    font-size:13px;
+
+    transition:0.2s;
+
+}
+
+.certActions button:hover{
+
+    background:#2e8bff33;
+
+}
+
+/* ---------- CERTIFICATE DOCUMENT ---------- */
+
+.certDoc{
+
+    width:520px;
+
+    max-width:94vw;
+
+    border-radius:18px;
+
+    overflow:hidden;
+
+    background:linear-gradient(165deg,#101d33,#0a1728 60%,#0d1b2e);
+
+    border:1px solid rgba(214,175,54,.35);
+
+    box-shadow:0 25px 60px rgba(0,0,0,.55);
+
+    color:white;
+
+    text-align:center;
+
+}
+
+.certDocHeader{
+
+    padding:22px 20px 14px;
+
+    background:linear-gradient(90deg,#3d2f00,#8a6d1a);
+
+}
+
+.certDocShield{
+
+    font-size:34px;
+
+}
+
+.certDocHeader h3{
+
+    letter-spacing:2px;
+
+    margin-top:6px;
+
+}
+
+.certDocHeader span{
+
+    font-size:11px;
+
+    letter-spacing:3px;
+
+    text-transform:uppercase;
+
+    opacity:.85;
+
+}
+
+.certDocBody{
+
+    padding:24px;
+
+}
+
+.certDocBody h2{
+
+    font-size:26px;
+
+    color:#ffd76a;
+
+}
+
+.certDocOfficer{
+
+    margin-top:8px;
+
+    font-size:15px;
+
+}
+
+.certDocReason{
+
+    color:#b8c5d6;
+
+    font-style:italic;
+
+    margin-top:8px;
+
+}
+
+.certDocMeta{
+
+    display:grid;
+
+    grid-template-columns:1fr 1fr;
+
+    gap:10px 16px;
+
+    margin-top:18px;
+
+    text-align:left;
+
+}
+
+.certDocMeta small{
+
+    display:block;
+
+    color:#6b83a3;
+
+    font-size:9px;
+
+    text-transform:uppercase;
+
+    letter-spacing:1px;
+
+}
+
+.certDocMeta b{
+
+    font-size:13px;
+
+}
+
+.certDocFooter{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:14px;
+
+    padding:16px 20px;
+
+    background:rgba(0,0,0,.3);
+
+    text-align:left;
+
+}
+
+.certDocFooter small{
+
+    color:#8fa6c4;
+
+}
+
+.certDocQr{
+
+    width:74px;
+
+    height:74px;
+
+    background:white;
+
+    border-radius:8px;
+
+    padding:5px;
+
+    flex-shrink:0;
+
+}
+
+.certDocQr svg{
+
+    width:100%;
+
+    height:100%;
+
+    display:block;
+
+}
+
+@media print{
+
+    #certModal, #certModal * { visibility:visible; }
+
+    #certModal{
+
+        position:absolute;
+
+        inset:0;
+
+        background:white;
+
+        display:block;
+
+        backdrop-filter:none;
+
+    }
+
+    .certDoc{ margin:40px auto; box-shadow:none; }
+
+}
+
+/* ---------- SCANNER ---------- */
+
+#scanArea{
+
+    position:relative;
+
+    border-radius:14px;
+
+    overflow:hidden;
+
+    background:#0a1424;
+
+    min-height:240px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+}
+
+#scanVideo{
+
+    width:100%;
+
+    max-height:340px;
+
+    object-fit:cover;
+
+}
+
+#scanOverlay{
+
+    position:absolute;
+
+    inset:0;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    background:rgba(7,17,29,.6);
+
+}
+
+#scanStop{
+
+    padding:11px 18px;
+
+    border:none;
+
+    border-radius:10px;
+
+    background:#3d1520;
+
+    color:white;
+
+    cursor:pointer;
+
+}
+
+.scanGood, .scanWarn, .scanBad{
+
+    padding:20px;
+
+    border-radius:14px;
+
+    text-align:center;
+
+}
+
+.scanGood{
+
+    background:#12351f44;
+
+    border:1px solid #2ecc71;
+
+}
+
+.scanWarn{
+
+    background:#3d2f0044;
+
+    border:1px solid #f1c40f;
+
+}
+
+.scanBad{
+
+    background:#3d152044;
+
+    border:1px solid #ff4d4d;
+
+}
+
+.scanIcon{
+
+    font-size:44px;
+
+}
+
+.scanGood h2, .scanWarn h2, .scanBad h2{
+
+    margin-top:6px;
+
+}

@@ -2,6 +2,32 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.20.0 — 2026-07-09 · Phase 5 — Certificates, Promotions & the Scanner
+
+### Added
+- **🏆 Certificates Center** (`certificates.html`) — the official
+  document system. Issue any of 9 certificate types (Promotion, Award,
+  Commendation, Training, Firearm Qualification, Medical, Suspension,
+  Probation, Termination) → it lands in **Pending Approval** →
+  Lieutenant+ approves or rejects (with a reason). **No more Promote
+  button anywhere** — a promotion happens only when its certificate is
+  approved, which triggers the full cascade: rank change → timeline →
+  audit → notification → inbox.
+- **Official certificate documents** — printable, gold-trimmed, with
+  Certificate ID, issuer, approver, effective date, and a **secure QR**.
+- **📷 SHIBA Scanner** (`scanner.html`, new sidebar tab) — scan a
+  certificate QR with the camera (or paste the token). A code validates
+  **only against our database**: forged, foreign, revoked, or rejected
+  codes are flagged. Every scan is audited.
+- **Personnel File → Certificates tab** is now real: the officer's
+  certificates with status chips + document view; Issue button for
+  Sergeant+.
+- Officers page: row/drawer/personnel "Promote" buttons became
+  **🎖 Issue Certificate**.
+- Database: `SETUP-PATCH-8.sql` (also bundled in `RUN-ALL-PENDING.sql`)
+  — certificates table with unguessable `qr_token` + the
+  `verify_qr_token` scanner function. Graceful hints until run.
+
 ## v0.19.0 — 2026-07-07 · Version display + auto update check
 
 ### Added

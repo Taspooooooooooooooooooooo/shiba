@@ -51,7 +51,9 @@ const AppLayout = {
 
     <a href="#">🚔 Vehicles</a>
 
-    <a href="#">🏆 Certificates</a>
+    <a href="certificates.html">🏆 Certificates</a>
+
+    <a href="scanner.html">📷 Scanner</a>
 
     <a href="#">📅 Shifts</a>
 

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>SHIBA PIMS | Scanner</title>
+
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/dashboard.css">
+
+</head>
+
+<body>
+
+<div id="layoutTop"></div>
+
+<div class="content">
+
+    <div class="card">
+
+        <h1>📷 SHIBA Scanner</h1>
+
+        <p>Verify SHIBA PIMS documents. Every official QR carries a
+           secret token that exists <b>only in our database</b> — codes
+           from anywhere else (or forged / screenshotted ones with a
+           fake token) will fail here.</p>
+
+    </div>
+
+    <div class="grid">
+
+        <!-- CAMERA -->
+        <div class="card">
+
+            <h2>Camera</h2>
+
+            <div id="scanArea">
+
+                <video id="scanVideo" playsinline muted></video>
+
+                <canvas id="scanCanvas" class="hidden"></canvas>
+
+                <div id="scanOverlay">
+
+                    <p class="muted">Camera is off.</p>
+
+                </div>
+
+            </div>
+
+            <div style="margin-top:12px;display:flex;gap:10px">
+
+                <button id="scanStart" class="primaryBtn">▶ Start camera</button>
+
+                <button id="scanStop" class="hidden">⏹ Stop</button>
+
+            </div>
+
+        </div>
+
+        <!-- MANUAL -->
+        <div class="card">
+
+            <h2>Manual check</h2>
+
+            <p class="muted" style="margin-bottom:10px">No camera? Paste
+               the verification token or the whole scanner link.</p>
+
+            <input id="manualToken" placeholder="Token or scanner link...">
+
+            <button id="manualVerify" class="primaryBtn" style="margin-top:10px">Verify</button>
+
+        </div>
+
+    </div>
+
+    <!-- RESULT -->
+    <div class="card hidden" id="resultCard">
+
+        <div id="scanResult"></div>
+
+    </div>
+
+</div>
+
+<div id="layoutFooter"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+
+<script src="js/version.js"></script>
+
+<script src="js/supabaseClient.js"></script>
+
+<script src="js/core/idService.js"></script>
+<script src="js/core/permissionService.js"></script>
+<script src="js/core/auditService.js"></script>
+<script src="js/core/timelineService.js"></script>
+<script src="js/core/notificationService.js"></script>
+<script src="js/core/certificateService.js"></script>
+
+<script src="js/auth.js"></script>
+<script src="js/session.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/layout.js"></script>
+<script src="js/commandPalette.js"></script>
+<script src="js/scanner.js"></script>
+
+<script>
+
+if(localStorage.getItem("loggedIn")!="true"){
+
+    window.location.href="index.html";
+
+}
+
+document.getElementById("layoutTop").innerHTML = AppLayout.createTopbar();
+document.getElementById("layoutFooter").innerHTML = AppLayout.createFooter();
+
+</script>
+
+</body>
+
+</html>

@@ -12,7 +12,8 @@ const Personnel = {
 
     loaded: {
         timeline: false, audit: false, cases: false,
-        career: false, stats: false, inbox: false, notes: false, perms: false
+        career: false, stats: false, inbox: false, notes: false,
+        perms: false, certs: false
     },
 
     /* ----------------------------------------------------- */
@@ -699,6 +700,103 @@ const Personnel = {
     },
 
     /* ----------------------------------------------------- */
+    /* certificates (Phase 5)                                 */
+    /* ----------------------------------------------------- */
+
+    async renderCerts() {
+
+        if (this.loaded.certs) return;
+
+        this.loaded.certs = true;
+
+        const box = document.getElementById("pfCerts");
+
+        const { rows, error } =
+            await CertificateService.forOfficer(this.officer.id);
+
+        if (error) {
+
+            box.innerHTML =
+                `<p class="muted">${CertificateService.SETUP_HINT}</p>`;
+
+            return;
+
+        }
+
+        box.innerHTML = "";
+
+        if (await PermissionService.can("certificates.issue")) {
+
+            const issueBtn = document.createElement("button");
+
+            issueBtn.className = "primaryBtn";
+
+            issueBtn.style.marginBottom = "14px";
+
+            issueBtn.textContent = "🎖 Issue certificate for " +
+                this.officer.name;
+
+            issueBtn.onclick = () =>
+                location.href = "certificates.html?officer=" +
+                    this.officer.id;
+
+            box.appendChild(issueBtn);
+
+        }
+
+        if (!rows.length) {
+
+            const p = document.createElement("p");
+
+            p.className = "muted";
+
+            p.textContent = "No certificates yet.";
+
+            box.appendChild(p);
+
+            return;
+
+        }
+
+        rows.forEach(c => {
+
+            const row = document.createElement("div");
+
+            row.className = "certItem";
+
+            row.innerHTML =
+                `<div class="certInfo">` +
+                `<strong>${c.certificate_id || "—"}</strong> ` +
+                `<span class="grantKind">${c.type}</span>` +
+                `<span class="certStatus">` +
+                CertificateService.statusChip(c.status, c.revoked_at) +
+                `</span>` +
+                `<small>${c.new_rank_name ? "→ " + c.new_rank_name + " · " : ""}` +
+                `${c.reason ? c.reason + " · " : ""}` +
+                `${new Date(c.created_at).toLocaleDateString()}` +
+                `${c.approved_by ? " · approved by " + c.approved_by : ""}</small>` +
+                `</div>`;
+
+            const view = document.createElement("button");
+
+            view.textContent = "📄 View";
+
+            view.className = "primaryBtn";
+
+            view.style.cssText = "padding:8px 13px;font-size:13px;flex-shrink:0";
+
+            view.onclick = () =>
+                location.href = "certificates.html?view=" + c.id;
+
+            row.appendChild(view);
+
+            box.appendChild(row);
+
+        });
+
+    },
+
+    /* ----------------------------------------------------- */
     /* save permission groups (admins)                        */
     /* ----------------------------------------------------- */
 
@@ -1111,7 +1209,13 @@ const Personnel = {
 
         const editBtn = document.getElementById("pfEditBtn");
 
-        if (!Officers.perms.promote) promoteBtn.style.display = "none";
+        /* promotions & awards now flow through certificates */
+
+        if (!(await PermissionService.can("certificates.issue"))) {
+
+            promoteBtn.style.display = "none";
+
+        }
 
         if (!Officers.perms.reset) resetBtn.style.display = "none";
 
@@ -1223,11 +1327,9 @@ const Personnel = {
 
         }
 
-        promoteBtn.onclick = async () => {
+        promoteBtn.onclick = () => {
 
-            await Officers.promote(id);
-
-            setTimeout(() => location.reload(), 900);
+            location.href = "certificates.html?officer=" + id;
 
         };
 
@@ -1275,6 +1377,8 @@ const Personnel = {
                 if (btn.dataset.tab === "tabNotes") this.renderNotes();
 
                 if (btn.dataset.tab === "tabPerms") this.renderPerms();
+
+                if (btn.dataset.tab === "tabCerts") this.renderCerts();
 
             };
 

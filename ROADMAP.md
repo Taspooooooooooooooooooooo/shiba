@@ -117,19 +117,24 @@ and why", built in focused parts:
       the database + Supabase **RLS** so rules are enforced on the
       server, not just the UI.*
 
-## 🟡 PHASE 5 — Certificates & Promotions
+## 🟡 PHASE 5 — Certificates & Promotions (IN PROGRESS)
 
 Nothing changes rank with a button — everything is an official
 certificate with an approval workflow:
 
-- [ ] Certificate builder: template, logo, Chief signature, QR,
-      security pattern, `CERT-2026-…`, PDF export
-- [ ] Issue → **Pending Approval** → Chief approves → rank changes +
-      timeline + audit + notification + inbox, certificate becomes
-      *Official*
-- [ ] Same flow for Demotion, Award, Commendation, Suspension,
-      Training, Firearm Qualification, Probation, Termination
-- [ ] Promotion queue ("Certificates Waiting For Approval")
+- [x] Certificates Center: issue builder (9 types), `CERT-2026-…` ids,
+      official printable document with secure QR
+- [x] Issue → **Pending Approval** → Lieutenant+ approves → rank
+      changes + timeline + audit + notification + inbox
+- [x] Same flow for Award, Commendation, Suspension, Training,
+      Firearm Qualification, Medical, Probation, Termination
+- [x] Pending-approval queue with approve / reject (+ reason)
+- [x] 📷 **SHIBA Scanner** tab — camera QR verification that validates
+      **only our database tokens** (forged/revoked codes fail); scans
+      audited; manual token entry fallback
+- [ ] PDF export & fancier certificate templates (logo, signature,
+      security pattern)
+- [ ] Special QR code types (awaiting the BOSS's permission 😄)
 
 ### 🔐 Secure QR Verification (user request, 2026-07-07)
 

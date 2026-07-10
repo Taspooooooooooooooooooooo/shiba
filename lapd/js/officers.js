@@ -942,9 +942,11 @@ class OfficersEngine {
                     `<button onclick="location.href='personnel.html?id=${officer.id}&edit=1'">Edit</button>`;
             }
 
+            /* promotions flow through certificates now (Phase 5) */
+
             if (this.perms.promote) {
                 actions +=
-                    `<button onclick="Officers.promote('${officer.id}')">Promote</button>`;
+                    `<button onclick="location.href='certificates.html?officer=${officer.id}'">🎖 Cert</button>`;
             }
 
             if (this.perms.archive && officer.status !== "Retired"
