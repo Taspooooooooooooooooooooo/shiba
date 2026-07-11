@@ -946,7 +946,7 @@ class OfficersEngine {
 
             if (this.perms.promote) {
                 actions +=
-                    `<button onclick="location.href='certificates.html?officer=${officer.id}'">🎖 Cert</button>`;
+                    `<button onclick="location.href='cert-studio.html?officer=${officer.id}'">🎖 Cert</button>`;
             }
 
             if (this.perms.archive && officer.status !== "Retired"

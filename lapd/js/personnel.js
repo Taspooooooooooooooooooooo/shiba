@@ -737,7 +737,7 @@ const Personnel = {
                 this.officer.name;
 
             issueBtn.onclick = () =>
-                location.href = "certificates.html?officer=" +
+                location.href = "cert-studio.html?officer=" +
                     this.officer.id;
 
             box.appendChild(issueBtn);
@@ -1329,7 +1329,7 @@ const Personnel = {
 
         promoteBtn.onclick = () => {
 
-            location.href = "certificates.html?officer=" + id;
+            location.href = "cert-studio.html?officer=" + id;
 
         };
 

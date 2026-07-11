@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>SHIBA PIMS | Certificate Studio</title>
+
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/dashboard.css">
+
+</head>
+
+<body>
+
+<div id="layoutTop"></div>
+
+<div class="content">
+
+    <!-- STUDIO HEADER -->
+    <div class="card studioHeader">
+
+        <div>
+
+            <a class="offLink" href="certificates.html">‹ Back to Certificates</a>
+
+            <h1 style="margin-top:6px">🎖 Certificate Studio</h1>
+
+            <p class="muted">Fill in the left — watch the official document
+               build itself on the right.</p>
+
+        </div>
+
+        <div class="studioHeaderRight">
+
+            <span class="statusPill" id="studioStatus">Draft</span>
+
+            <button id="studioGenerate" class="primaryBtn">Generate → Pending Approval</button>
+
+        </div>
+
+    </div>
+
+    <div class="studioGrid">
+
+        <!-- LEFT: FORM -->
+        <div>
+
+            <div class="card">
+
+                <h2>1 · Certificate Type</h2>
+
+                <div class="typeChips" id="typeChips"></div>
+
+            </div>
+
+            <div class="card">
+
+                <h2>2 · Officer</h2>
+
+                <select id="stOfficer" style="width:100%"></select>
+
+                <div class="officerCard" id="stOfficerCard"></div>
+
+            </div>
+
+            <div class="card">
+
+                <h2>3 · Details</h2>
+
+                <div class="certForm">
+
+                    <div id="stRankRow" class="hidden">
+
+                        <label class="wizLabel">New rank</label>
+
+                        <select id="stRank" style="width:100%"></select>
+
+                    </div>
+
+                    <label class="wizLabel">Title</label>
+
+                    <input id="stTitle" placeholder="Certificate title">
+
+                    <label class="wizLabel">Effective date</label>
+
+                    <input id="stDate" type="date">
+
+                    <label class="wizLabel">Official statement
+                        <span class="muted" style="font-size:11px">
+                            (smart template — edit freely)</span></label>
+
+                    <textarea
+                        id="stStatement"
+                        rows="5"
+                        style="background:#15283d;border:1px solid rgba(255,255,255,.08);border-radius:10px;color:white;padding:12px;outline:none;resize:vertical;font-family:inherit"></textarea>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- RIGHT: LIVE PREVIEW -->
+        <div class="studioPreview">
+
+            <div class="certDoc" id="previewDoc">
+
+                <div class="certDocHeader">
+
+                    <div class="certDocShield">🛡</div>
+
+                    <h3>SHIBA POLICE DEPARTMENT</h3>
+
+                    <span>Official Certificate</span>
+
+                </div>
+
+                <div class="certDocBody">
+
+                    <h2 id="pvTitle">—</h2>
+
+                    <p class="certDocOfficer" id="pvOfficer">—</p>
+
+                    <p class="certDocReason" id="pvStatement"></p>
+
+                    <div class="certDocMeta">
+
+                        <div><small>Certificate ID</small><b id="pvId">assigned on generation</b></div>
+
+                        <div><small>Status</small><b id="pvStatus">🟡 Draft</b></div>
+
+                        <div><small>Issued by</small><b id="pvIssuedBy">—</b></div>
+
+                        <div><small>Approved by</small><b>awaits approval</b></div>
+
+                        <div><small>Effective</small><b id="pvEffective">—</b></div>
+
+                        <div><small>Created</small><b id="pvCreated">—</b></div>
+
+                    </div>
+
+                </div>
+
+                <div class="certDocFooter">
+
+                    <div class="certDocQr pvQrPlaceholder">🔒</div>
+
+                    <small>The secure QR is created when the certificate is
+                           generated — it will validate only against our
+                           records.</small>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div id="layoutFooter"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+<script src="js/version.js"></script>
+
+<script src="js/supabaseClient.js"></script>
+
+<script src="js/core/idService.js"></script>
+<script src="js/core/permissionService.js"></script>
+<script src="js/core/auditService.js"></script>
+<script src="js/core/timelineService.js"></script>
+<script src="js/core/notificationService.js"></script>
+<script src="js/core/certificateService.js"></script>
+
+<script src="js/auth.js"></script>
+<script src="js/session.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/layout.js"></script>
+<script src="js/commandPalette.js"></script>
+<script src="js/cert-studio.js"></script>
+
+<script>
+
+if(localStorage.getItem("loggedIn")!="true"){
+
+    window.location.href="index.html";
+
+}
+
+document.getElementById("layoutTop").innerHTML = AppLayout.createTopbar();
+document.getElementById("layoutFooter").innerHTML = AppLayout.createFooter();
+
+</script>
+
+</body>
+
+</html>

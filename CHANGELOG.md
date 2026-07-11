@@ -2,6 +2,25 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.21.0 — 2026-07-11 · Certificate Studio + big-screen layout
+
+### Added
+- **🎖 Certificate Studio** (`cert-studio.html`) — issuing a certificate
+  is now a full-page experience, not a form: pick the type from chips,
+  the officer's file loads read-only (photo, ID, badge, rank, division,
+  hire date), and the **official document builds itself in a LIVE
+  preview** as you type — Canva/Word style. **Smart templates**
+  pre-write the official wording for each of the 9 types (editable).
+  Generate → Pending Approval → the existing approval workflow.
+  Every "Issue Certificate" button now opens the Studio.
+
+### Fixed
+- **Big screens** — page content now fills wide monitors (the content
+  column was sizing to its children, leaving a third of a 1920px
+  screen empty); ultra-wide screens also get more widget columns and
+  breathing room. Mobile keeps its compact layout — the site adapts
+  automatically between PC and mobile.
+
 ## v0.20.0 — 2026-07-09 · Phase 5 — Certificates, Promotions & the Scanner
 
 ### Added

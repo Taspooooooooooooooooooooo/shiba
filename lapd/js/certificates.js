@@ -390,6 +390,18 @@ const Certificates = {
 
         if (!window.db) return;
 
+        /* deep link with an officer → straight into the Studio */
+
+        const pre = new URLSearchParams(location.search).get("officer");
+
+        if (pre) {
+
+            location.href = "cert-studio.html?officer=" + pre;
+
+            return;
+
+        }
+
         this.canIssue = await PermissionService.can("certificates.issue");
 
         this.canApprove =
@@ -406,12 +418,6 @@ const Certificates = {
             document.getElementById("pendingCard").classList.remove("hidden");
 
         }
-
-        await this.loadLookups();
-
-        this.fillForm();
-
-        document.getElementById("certIssue").onclick = () => this.issue();
 
         document.getElementById("cdClose").onclick = () =>
             document.getElementById("certModal").classList.add("hidden");

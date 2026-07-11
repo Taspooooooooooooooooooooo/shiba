@@ -132,8 +132,14 @@ certificate with an approval workflow:
 - [x] 📷 **SHIBA Scanner** tab — camera QR verification that validates
       **only our database tokens** (forged/revoked codes fail); scans
       audited; manual token entry fallback
-- [ ] PDF export & fancier certificate templates (logo, signature,
-      security pattern)
+- [x] **Certificate Studio** — full-page issuing with live document
+      preview, read-only officer card, smart templates per type
+- [ ] Drafts + versioning (save a draft, edit history, restore)
+- [ ] Approval screen extras: history/timeline/audit tabs + attachments
+- [ ] PDF export, watermark, barcode, digital signature
+- [ ] **Certificate Designer** (admin template editor: logo, colors,
+      layout, QR position — change the design without code) → grows
+      into the Document Management System (reports, letters, policies)
 - [ ] Special QR code types (awaiting the BOSS's permission 😄)
 
 ### 🔐 Secure QR Verification (user request, 2026-07-07)

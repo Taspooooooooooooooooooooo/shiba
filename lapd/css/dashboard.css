@@ -124,8 +124,32 @@ body{
 
     padding:30px;
 
-    /* width is auto — filling the space after the fixed sidebar.
-       (a fixed 100% here overflowed past the viewport) */
+    /* body is display:flex, so without flex:1 the content column
+       only sized to its children and left huge dead space on wide
+       monitors — flex:1 makes it FILL the screen (PC-optimized),
+       while the media queries below optimize small screens. */
+
+    flex:1;
+
+    min-width:0;
+
+}
+
+/* extra breathing room + more widget columns on big monitors */
+
+@media(min-width:1600px){
+
+.content{
+
+padding:40px 50px;
+
+}
+
+.grid{
+
+grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+
+}
 
 }
 
@@ -2008,5 +2032,193 @@ grid-template-columns:1fr;
 .scanGood h2, .scanWarn h2, .scanBad h2{
 
     margin-top:6px;
+
+}
+
+/* ---------- CERTIFICATE STUDIO ---------- */
+
+.studioHeader{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    gap:16px;
+
+    flex-wrap:wrap;
+
+}
+
+.studioHeaderRight{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:12px;
+
+    flex-wrap:wrap;
+
+}
+
+.studioGrid{
+
+    display:grid;
+
+    grid-template-columns:minmax(340px,520px) 1fr;
+
+    gap:25px;
+
+    align-items:start;
+
+}
+
+@media(max-width:1100px){
+
+.studioGrid{
+
+grid-template-columns:1fr;
+
+}
+
+}
+
+.studioPreview{
+
+    position:sticky;
+
+    top:100px;
+
+    display:flex;
+
+    justify-content:center;
+
+}
+
+.typeChips{
+
+    display:flex;
+
+    flex-wrap:wrap;
+
+    gap:8px;
+
+}
+
+.typeChip{
+
+    padding:9px 14px;
+
+    border:1px solid rgba(255,255,255,.1);
+
+    border-radius:999px;
+
+    background:#15283d;
+
+    color:#b8c5d6;
+
+    cursor:pointer;
+
+    font-size:13px;
+
+    transition:0.2s;
+
+}
+
+.typeChip:hover{
+
+    color:white;
+
+    border-color:#2e8bff66;
+
+}
+
+.typeChip.on{
+
+    background:#2e8bff33;
+
+    border-color:#2e8bff;
+
+    color:white;
+
+}
+
+.officerCard{
+
+    display:flex;
+
+    gap:14px;
+
+    margin-top:14px;
+
+    padding:14px;
+
+    border-radius:12px;
+
+    background:#15283d55;
+
+    border:1px solid rgba(255,255,255,.06);
+
+}
+
+.officerCard img{
+
+    width:64px;
+
+    height:76px;
+
+    object-fit:cover;
+
+    border-radius:8px;
+
+    background:#15283d;
+
+}
+
+.officerCardFields{
+
+    display:grid;
+
+    grid-template-columns:1fr 1fr;
+
+    gap:6px 14px;
+
+    flex:1;
+
+}
+
+.officerCardFields small{
+
+    display:block;
+
+    color:#5a6b80;
+
+    font-size:9px;
+
+    text-transform:uppercase;
+
+    letter-spacing:1px;
+
+}
+
+.officerCardFields b{
+
+    font-size:13px;
+
+}
+
+.pvQrPlaceholder{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    font-size:26px;
+
+    background:#15283d !important;
 
 }
