@@ -287,6 +287,136 @@
 
         }
 
+        /* ---- ad zone + gate ---- */
+
+        .adBannerCard{ padding:0; overflow:hidden; }
+
+        #adBanner{ min-height:90px; }
+
+        .adPlaceholder{
+
+            padding:22px;
+
+            text-align:center;
+
+            color:#8fa6c4;
+
+            background:repeating-linear-gradient(45deg,#0e1c2e,#0e1c2e 12px,#101f33 12px,#101f33 24px);
+
+        }
+
+        .adReal{
+
+            padding:22px;
+
+            text-align:center;
+
+            color:#5a6b80;
+
+            font-size:11px;
+
+            letter-spacing:2px;
+
+            text-transform:uppercase;
+
+        }
+
+        .adGate{
+
+            position:fixed;
+
+            inset:0;
+
+            z-index:100000;
+
+            background:rgba(3,10,20,.88);
+
+            backdrop-filter:blur(8px);
+
+            display:flex;
+
+            align-items:center;
+
+            justify-content:center;
+
+            padding:20px;
+
+        }
+
+        .adGateBox{
+
+            background:#0f1c2b;
+
+            border:1px solid rgba(255,255,255,.1);
+
+            border-radius:18px;
+
+            padding:26px;
+
+            width:420px;
+
+            max-width:94vw;
+
+            text-align:center;
+
+        }
+
+        .adGateSub{ color:#8fa6c4; font-size:13px; margin:6px 0 14px; }
+
+        .adGateAd{
+
+            min-height:180px;
+
+            border-radius:12px;
+
+            overflow:hidden;
+
+            margin-bottom:14px;
+
+        }
+
+        .adGateTimer{
+
+            font-size:26px;
+
+            font-weight:700;
+
+            color:#58a5ff;
+
+            margin-bottom:12px;
+
+        }
+
+        .adGateGo{
+
+            width:100%;
+
+            padding:13px;
+
+            border:none;
+
+            border-radius:12px;
+
+            background:var(--primary);
+
+            color:white;
+
+            font-size:15px;
+
+            cursor:pointer;
+
+        }
+
+        .adGateGo:disabled{
+
+            background:#15283d;
+
+            color:#5a6b80;
+
+            cursor:not-allowed;
+
+        }
+
     </style>
 
 </head>
@@ -302,6 +432,13 @@
         <h1>☁️ SHIBA CLOUD</h1>
 
         <span>Upload a file, get a link, share it anywhere.</span>
+
+    </div>
+
+    <!-- ad banner (cloud only; never in the main PIMS system) -->
+    <div class="cloud-card adBannerCard">
+
+        <div id="adBanner"></div>
 
     </div>
 
@@ -371,6 +508,8 @@
 
     <script src="../lapd/js/supabaseClient.js"></script>
 
+    <script src="adzone.js"></script>
+
     <script>
 
     /* ======================================================
@@ -384,6 +523,39 @@
 
     const SETUP_HINT =
         "Storage is not set up yet — run cloud/SETUP.sql in the Supabase SQL Editor once.";
+
+    /* who's using the cloud + whether they manage everything.
+       Managers (admins / chiefs) see every file; everyone else
+       sees only their own uploads. */
+
+    const ME = {
+        username: localStorage.getItem("username") || null,
+        role: localStorage.getItem("role") || null,
+        authId: null
+    };
+
+    const IS_MANAGER = ["Super Administrator", "Chief", "Commander"]
+        .includes(ME.role);
+
+    /* deterrent (NOT real protection): discourage casual
+       right-click "Save as" / drag-out to bypass the ad gate.
+       A determined user can still reach public URLs. */
+
+    document.addEventListener("contextmenu", (e) => {
+
+        if (e.target.closest("#viewerPreview, .file-row, #recentList")) {
+
+            e.preventDefault();
+
+        }
+
+    });
+
+    document.addEventListener("dragstart", (e) => {
+
+        if (e.target.closest("#viewerPreview")) e.preventDefault();
+
+    });
 
     /* Storage operations use an ANON client (no auth session).
        The cloud bucket's storage policies allow the anon role;
@@ -426,6 +598,15 @@
     function shareLink(id) {
 
         return location.origin + location.pathname + "?=" + id;
+
+    }
+
+    /* ad-gated download link (people who open this must watch
+       the ad before the file is handed over) */
+
+    function downloadLink(id) {
+
+        return location.origin + "/cloud/downloads/?=" + id;
 
     }
 
@@ -626,10 +807,21 @@
         const actions = document.getElementById("viewerActions");
 
         actions.innerHTML = `
-            <a href="${url}" target="_blank" rel="noopener">⬇️ Open / Download</a>
+            <button id="doDownload">⬇️ Watch ad & download</button>
             <button id="copyDirect">🔗 Copy direct link</button>
             <button id="copyShare">💬 Copy share link</button>
         `;
+
+        document.getElementById("doDownload").onclick = async () => {
+
+            await AdZone.gate({
+                title: "Preparing your download",
+                seconds: AdZone.watchSeconds(data.size)
+            });
+
+            window.open(url, "_blank", "noopener");
+
+        };
 
         document.getElementById("copyDirect").onclick =
             (e) => copyText(url, e.target);
@@ -668,6 +860,17 @@
 
         }
 
+        /* ad-watch gate — support SHIBA Cloud before the upload */
+
+        row.querySelector("small").innerText = "watch a short ad to upload…";
+
+        await AdZone.gate({
+            title: "Preparing your upload",
+            seconds: AdZone.watchSeconds(file.size)
+        });
+
+        row.querySelector("small").innerText = "uploading...";
+
         const id = generateFileId();
 
         const path = id + "/" + file.name;
@@ -698,7 +901,9 @@
                 name: file.name,
                 path: path,
                 size: file.size,
-                mime: guessMime(file)
+                mime: guessMime(file),
+                owner_username: ME.username,
+                owner_id: ME.authId
             }]);
 
         if (dbError) {
@@ -751,11 +956,11 @@
 
         const list = document.getElementById("recentList");
 
-        const { data, error } = await db
+        let { data, error } = await db
             .from("cloud_files")
             .select("*")
             .order("created_at", { ascending: false })
-            .limit(25);
+            .limit(100);
 
         if (error) {
 
@@ -766,6 +971,18 @@
             return;
 
         }
+
+        /* per-account privacy: you only see YOUR uploads —
+           managers (admins/chiefs) see everything. */
+
+        if (!IS_MANAGER && ME.username) {
+
+            data = (data || []).filter(f =>
+                f.owner_username === ME.username);
+
+        }
+
+        data = (data || []).slice(0, 25);
 
         if (!data || data.length === 0) {
 
@@ -799,9 +1016,9 @@
 
             const direct = document.createElement("button");
 
-            direct.innerText = "🔗 Direct";
+            direct.innerText = "⬇️ Download link";
 
-            direct.onclick = (e) => copyText(directLink(f.path), e.target);
+            direct.onclick = (e) => copyText(downloadLink(f.id), e.target);
 
             const del = document.createElement("button");
 
@@ -839,7 +1056,21 @@
        WIRING
     ====================================================== */
 
-    document.addEventListener("DOMContentLoaded", () => {
+    document.addEventListener("DOMContentLoaded", async () => {
+
+        /* render the page ad banner (cloud only) */
+
+        AdZone.render(document.getElementById("adBanner"));
+
+        /* learn the current auth user id (for owner tagging) */
+
+        try {
+
+            const { data } = await db.auth.getUser();
+
+            ME.authId = data?.user?.id || null;
+
+        } catch (e) { /* not signed into Supabase Auth */ }
 
         const params = new URLSearchParams(location.search);
 

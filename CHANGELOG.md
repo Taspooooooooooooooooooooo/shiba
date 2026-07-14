@@ -2,6 +2,30 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.23.0 — 2026-07-11 · SHIBA Cloud rework (ads, ad-gate, privacy)
+
+### Added
+- **Ad-watch gate** — before an upload or download, a full-screen gate
+  shows an ad for a time scaled to the file size (**15–120s**), then
+  hands the file over. Powered by `cloud/adzone.js`.
+- **Ads in /cloud only** — a page banner + gate ad slots, with a
+  labelled placeholder until you connect Adsterra. **The main PIMS
+  system stays 100% ad-free** (police data never sits with ad scripts).
+- **Per-account privacy** — you now see only **your own** uploads;
+  admins/chiefs (management) still see everything. Needs
+  `cloud/SETUP-CLOUD-PRIVACY.sql`.
+- **Direct-download route** `/cloud/downloads/?=<id>` — a clean link
+  that runs the ad-gate then downloads.
+- **Right-click / drag deterrent** on cloud files.
+- **`cloud/ADSTERRA-GUIDE.md`** — step-by-step: account → ad types →
+  paste keys → get paid.
+
+### Honest note
+The gate is client-side (most users comply, but a public bucket URL is
+still reachable directly). True unbypassable protection = private
+bucket + signed-URL edge function — planned next; officer photos keep
+working (verified) and move to their own public path when we do it.
+
 ## v0.22.0 — 2026-07-11 · Applications + Command Palette refresh
 
 ### Added

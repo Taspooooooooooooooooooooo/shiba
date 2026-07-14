@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>SHIBA CLOUD | Download</title>
+
+<link rel="stylesheet" href="../../lapd/css/style.css">
+
+<style>
+
+    body{ min-height:100vh; display:flex; align-items:center;
+          justify-content:center; padding:20px; }
+
+    .dlCard{ background:var(--card); border:1px solid var(--border);
+             border-radius:18px; padding:28px; width:460px;
+             max-width:94vw; text-align:center; box-shadow:var(--shadow); }
+
+    .dlCard h1{ color:var(--primary); font-size:24px; }
+
+    .dlName{ margin:10px 0; font-size:15px; }
+
+    .dlMeta{ color:var(--text2); font-size:13px; }
+
+    #adBanner{ min-height:90px; margin:16px 0; border-radius:12px;
+               overflow:hidden; }
+
+    .adPlaceholder{ padding:20px; text-align:center; color:#8fa6c4;
+        background:repeating-linear-gradient(45deg,#0e1c2e,#0e1c2e 12px,#101f33 12px,#101f33 24px); }
+
+    .adReal{ padding:20px; text-align:center; color:#5a6b80;
+             font-size:11px; letter-spacing:2px; text-transform:uppercase; }
+
+    .dlBtn{ width:100%; padding:14px; border:none; border-radius:12px;
+            background:var(--primary); color:white; font-size:15px;
+            cursor:pointer; margin-top:8px; }
+
+    .dlBtn:disabled{ background:#15283d; color:#5a6b80; cursor:not-allowed; }
+
+    .dlTimer{ font-size:26px; font-weight:700; color:#58a5ff; margin:8px 0; }
+
+    .dlBack{ display:block; margin-top:16px; color:var(--primary);
+             text-decoration:none; font-size:13px; }
+
+</style>
+
+</head>
+
+<body>
+
+<div class="dlCard">
+
+    <h1>☁️ SHIBA CLOUD</h1>
+
+    <p class="dlName" id="dlName">Locating file…</p>
+
+    <p class="dlMeta" id="dlMeta"></p>
+
+    <div id="adBanner"></div>
+
+    <div class="dlTimer hidden" id="dlTimer"><span id="dlCount"></span>s</div>
+
+    <button class="dlBtn hidden" id="dlBtn" disabled>Please wait…</button>
+
+    <a class="dlBack" href="../">‹ Back to SHIBA Cloud</a>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+<script src="../../lapd/js/supabaseClient.js"></script>
+<script src="../adzone.js"></script>
+
+<script>
+
+/* direct-download route: /cloud/downloads/?=<file id>
+   shows the ad-watch gate (timer scaled to file size), then
+   hands over the file. (Honest client-side gate — a public
+   bucket URL is still reachable directly; true lock = signed
+   URLs from an edge function, planned next.) */
+
+const BUCKET = "cloud";
+
+/* right-click deterrent (not real protection) */
+document.addEventListener("contextmenu", (e) => e.preventDefault());
+
+function publicUrl(path){
+    return db.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+}
+
+function fmt(bytes){
+    if(bytes==null) return "";
+    if(bytes<1024) return bytes+" B";
+    if(bytes<1048576) return (bytes/1024).toFixed(1)+" KB";
+    return (bytes/1048576).toFixed(1)+" MB";
+}
+
+(async () => {
+
+    const id = new URLSearchParams(location.search).get("")
+        || new URLSearchParams(location.search).get("f");
+
+    if(!id){
+        document.getElementById("dlName").textContent = "No file specified.";
+        return;
+    }
+
+    const { data, error } = await db
+        .from("cloud_files").select("*").eq("id", id).maybeSingle();
+
+    if(error || !data){
+        document.getElementById("dlName").textContent =
+            "File not found (or deleted).";
+        return;
+    }
+
+    document.getElementById("dlName").textContent = data.name;
+    document.getElementById("dlMeta").textContent =
+        fmt(data.size) + " · uploaded " +
+        new Date(data.created_at).toLocaleString();
+
+    AdZone.render(document.getElementById("adBanner"));
+
+    /* countdown */
+    let left = AdZone.watchSeconds(data.size);
+    const timer = document.getElementById("dlTimer");
+    const count = document.getElementById("dlCount");
+    const btn = document.getElementById("dlBtn");
+    timer.classList.remove("hidden");
+    btn.classList.remove("hidden");
+    count.textContent = left;
+
+    const iv = setInterval(() => {
+        left--;
+        count.textContent = Math.max(0, left);
+        if(left<=0){
+            clearInterval(iv);
+            timer.classList.add("hidden");
+            btn.disabled = false;
+            btn.textContent = "⬇️ Download " + data.name;
+            btn.onclick = () => window.open(publicUrl(data.path), "_blank", "noopener");
+        }
+    }, 1000);
+
+})();
+
+</script>
+
+</body>
+
+</html>
