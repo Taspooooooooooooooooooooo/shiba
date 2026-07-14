@@ -140,7 +140,14 @@ certificate with an approval workflow:
 - [ ] **Certificate Designer** (admin template editor: logo, colors,
       layout, QR position — change the design without code) → grows
       into the Document Management System (reports, letters, policies)
-- [ ] Special QR code types (awaiting the BOSS's permission 😄)
+- [x] **Applications** — officers apply (SWAT/K9/Detective/Transfer/
+      Training/Special Permission), Sergeant+ review (accept/deny/
+      request changes); accepting auto-assigns division/group
+- [ ] Special QR code types + 2D matrix barcode (Data Matrix/PDF417)
+      — deferred; user to confirm the exact symbology
+- [ ] **Cloud rework** (next): ads (Adsterra, /cloud only), ad-watch
+      gate, per-account file privacy, direct-download route + true
+      server-side lock (private bucket + edge function)
 
 ### 🔐 Secure QR Verification (user request, 2026-07-07)
 

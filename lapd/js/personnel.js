@@ -13,7 +13,7 @@ const Personnel = {
     loaded: {
         timeline: false, audit: false, cases: false,
         career: false, stats: false, inbox: false, notes: false,
-        perms: false, certs: false
+        perms: false, certs: false, apps: false
     },
 
     /* ----------------------------------------------------- */
@@ -797,6 +797,82 @@ const Personnel = {
     },
 
     /* ----------------------------------------------------- */
+    /* applications (Phase 5)                                 */
+    /* ----------------------------------------------------- */
+
+    async renderApps() {
+
+        if (this.loaded.apps) return;
+
+        this.loaded.apps = true;
+
+        const box = document.getElementById("pfApps");
+
+        const { rows, error } =
+            await ApplicationService.forOfficer(this.officer.id);
+
+        if (error) {
+
+            box.innerHTML =
+                `<p class="muted">${ApplicationService.SETUP_HINT}</p>`;
+
+            return;
+
+        }
+
+        box.innerHTML = "";
+
+        const applyBtn = document.createElement("button");
+
+        applyBtn.className = "primaryBtn";
+
+        applyBtn.style.marginBottom = "14px";
+
+        applyBtn.textContent = "📝 New application for " + this.officer.name;
+
+        applyBtn.onclick = () =>
+            location.href = "applications.html?officer=" + this.officer.id;
+
+        box.appendChild(applyBtn);
+
+        if (!rows.length) {
+
+            const p = document.createElement("p");
+
+            p.className = "muted";
+
+            p.textContent = "No applications yet.";
+
+            box.appendChild(p);
+
+            return;
+
+        }
+
+        rows.forEach(a => {
+
+            const row = document.createElement("div");
+
+            row.className = "certItem";
+
+            row.innerHTML =
+                `<div class="certInfo">` +
+                `<strong>${a.application_id || "—"}</strong> ` +
+                `<span class="grantKind">${a.type}</span>` +
+                `<span class="certStatus">` +
+                ApplicationService.statusChip(a.status) + `</span>` +
+                `<small>${new Date(a.created_at).toLocaleDateString()}` +
+                `${a.reviewed_by ? " · by " + a.reviewed_by : ""}` +
+                `${a.decision_reason ? " · " + a.decision_reason : ""}</small>` +
+                `</div>`;
+
+            box.appendChild(row);
+
+        });
+
+    },
+
+    /* ----------------------------------------------------- */
     /* save permission groups (admins)                        */
     /* ----------------------------------------------------- */
 
@@ -1379,6 +1455,8 @@ const Personnel = {
                 if (btn.dataset.tab === "tabPerms") this.renderPerms();
 
                 if (btn.dataset.tab === "tabCerts") this.renderCerts();
+
+                if (btn.dataset.tab === "tabApps") this.renderApps();
 
             };
 

@@ -2222,3 +2222,41 @@ grid-template-columns:1fr;
     background:#15283d !important;
 
 }
+
+/* ---------- APPLICATIONS ---------- */
+
+.apQa{
+
+    font-size:12px;
+
+    color:#8fa6c4;
+
+    margin-top:3px;
+
+}
+
+.apQa b{
+
+    color:#b8c5d6;
+
+}
+
+.apMot{
+
+    color:#b8c5d6;
+
+    font-size:13px;
+
+    margin-top:6px;
+
+    font-style:italic;
+
+}
+
+.apAnswer{
+
+    width:100%;
+
+    margin-bottom:6px;
+
+}

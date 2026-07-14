@@ -200,4 +200,29 @@ grant execute on function public.verify_qr_token(text) to anon, authenticated;
 select 'PATCH 8 applied - certificates + secure QR verification ready' as result;
 
 
-select 'ALL PENDING PATCHES applied (3, 5, 6, 7, 8)' as result;
+-- ---------- PATCH 9 : applications ----------
+
+create table if not exists public.applications (
+  id uuid not null default gen_random_uuid(),
+  application_id text unique,
+  officer_id uuid references public.officers(id) on delete cascade,
+  type text not null,
+  motivation text,
+  answers jsonb,
+  status text not null default 'Submitted',
+  reviewed_by text,
+  decision_reason text,
+  decided_at timestamp with time zone,
+  created_at timestamp with time zone default now(),
+  constraint applications_pkey primary key (id)
+);
+create index if not exists applications_officer_idx
+  on public.applications (officer_id);
+create index if not exists applications_status_idx
+  on public.applications (status);
+insert into public.public_ids (type, prefix, with_year)
+values ('APPLICATION', 'APP', true)
+on conflict (type) do nothing;
+
+
+select 'ALL PENDING PATCHES applied (3, 5, 6, 7, 8, 9)' as result;

@@ -55,6 +55,8 @@ const AppLayout = {
 
     <a href="scanner.html">📷 Scanner</a>
 
+    <a href="applications.html">📝 Applications</a>
+
     <a href="#">📅 Shifts</a>
 
     <a href="#">💬 Messages</a>

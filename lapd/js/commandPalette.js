@@ -10,35 +10,48 @@ class CommandPalette {
 
         this.commands = [
 
-            {
-                title: "Dashboard",
-                action: () => location.href = "dashboard.html"
-            },
+            /* --- navigation --- */
+            { title: "🏠 Dashboard",
+              action: () => location.href = "dashboard.html" },
 
-            {
-                title: "Officer Management",
-                action: () => location.href = "officers.html"
-            },
+            { title: "👮 Officers",
+              action: () => location.href = "officers.html" },
 
-            {
-                title: "Cases",
-                action: () => alert("Coming Soon")
-            },
+            { title: "🏆 Certificates",
+              action: () => location.href = "certificates.html" },
 
-            {
-                title: "Reports",
-                action: () => alert("Coming Soon")
-            },
+            { title: "🎖 Certificate Studio",
+              action: () => location.href = "cert-studio.html" },
 
-            {
-                title: "Certificates",
-                action: () => alert("Coming Soon")
-            },
+            { title: "📷 Scanner — verify a QR",
+              action: () => location.href = "scanner.html" },
 
-            {
-                title: "Vehicles",
-                action: () => alert("Coming Soon")
-            }
+            { title: "📝 Applications",
+              action: () => location.href = "applications.html" },
+
+            { title: "🛡 Permissions Reference",
+              action: () => location.href = "permissions.html" },
+
+            { title: "☁️ Cloud",
+              action: () => location.href = "../cloud/" },
+
+            { title: "⚙️ Settings",
+              action: () => location.href = "settings.html" },
+
+            /* --- quick actions --- */
+            { title: "＋ Create Officer",
+              action: () => location.href = "officers.html?create=1" },
+
+            { title: "🎖 Issue Certificate",
+              action: () => location.href = "cert-studio.html" },
+
+            { title: "🔍 Search Officers",
+              action: () => location.href = "officers.html" },
+
+            /* --- account --- */
+            { title: "🚪 Log out",
+              action: () => { if (window.Auth) Auth.logout();
+                  else { localStorage.clear(); location.href = "index.html"; } } }
 
         ];
 

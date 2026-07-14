@@ -2,6 +2,24 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.22.0 — 2026-07-11 · Applications + Command Palette refresh
+
+### Added
+- **📝 Applications** (`applications.html`, new sidebar tab) — officers
+  apply for special assignments (SWAT, K9, Detective, Traffic,
+  Transfer, Training, Special Permission), each with its own questions.
+  **Sergeant+** (`applications.review`) see a review queue and
+  **Accept / Deny / Request Changes** (reason required). Decisions
+  notify the officer + timeline + audit. Accepting SWAT/K9/etc. can
+  **auto-assign the division**; Training grants the Training-Officer
+  permission group. `APP-2026-…` ids. Personnel File gets an
+  **Applications tab**. Needs `lapd/SETUP-PATCH-9.sql`.
+- **⌨️ Command Palette (Ctrl+K) refreshed** — now covers every current
+  page (Officers, Certificates, Certificate Studio, Scanner,
+  Applications, Permissions, Cloud, Settings) plus quick actions
+  (Create Officer, Issue Certificate) and Log out. No more "Coming
+  Soon" dead entries.
+
 ## v0.21.0 — 2026-07-11 · Certificate Studio + big-screen layout
 
 ### Added
