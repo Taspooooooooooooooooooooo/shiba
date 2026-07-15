@@ -2,6 +2,14 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.25.1 — 2026-07-15 · Applications: graceful degrade before PATCH-10
+
+### Fixed
+- Submitting / editing an application no longer fails if
+  `SETUP-PATCH-10.sql` hasn't been run yet — it retries without the
+  `linked_certificate` / `updated_at` columns (with a one-line hint when
+  a certificate link is dropped). Run PATCH-10 to enable cert-linking.
+
 ## v0.25.0 — 2026-07-15 · Applications rework (auto-detect, form builder, in-app dialogs)
 
 ### Added

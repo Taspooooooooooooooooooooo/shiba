@@ -102,6 +102,21 @@ const ApplicationService = {
     /* submit                                                 */
     /* ----------------------------------------------------- */
 
+    /* true when an error is "that column doesn't exist yet" —
+       lets the app keep working before PATCH 10 is run. */
+
+    _missingColumn(error, col) {
+
+        const s = ((error?.message || "") + " " + (error?.code || ""))
+            .toLowerCase();
+
+        return s.includes("pgrst204") ||
+            (s.includes(col.toLowerCase()) &&
+             (s.includes("does not exist") || s.includes("could not find") ||
+              s.includes("schema cache")));
+
+    },
+
     async submit({ officerId, officerLabel, officerUserId, type,
                    motivation, answers, linkedCertificate }) {
 
@@ -109,17 +124,34 @@ const ApplicationService = {
 
         const appId = await IdService.next("APPLICATION");
 
-        const { data, error } = await db
+        const base = {
+            application_id: appId,
+            officer_id: officerId,
+            type: type,
+            motivation: motivation || null,
+            answers: answers || {}
+        };
+
+        let { data, error } = await db
             .from("applications")
-            .insert([{
-                application_id: appId,
-                officer_id: officerId,
-                type: type,
-                motivation: motivation || null,
-                answers: answers || {},
-                linked_certificate: linkedCertificate || null
-            }])
+            .insert([{ ...base, linked_certificate: linkedCertificate || null }])
             .select();
+
+        /* PATCH 10 not run yet → retry without the new column */
+
+        if (error && this._missingColumn(error, "linked_certificate")) {
+
+            if (linkedCertificate) {
+                UI?.warning("Certificate link needs PATCH-10 — " +
+                    "submitted without it.");
+            }
+
+            ({ data, error } = await db
+                .from("applications")
+                .insert([base])
+                .select());
+
+        }
 
         if (error) {
 
@@ -163,20 +195,38 @@ const ApplicationService = {
 
         }
 
-        const { error } = await db
+        const base = {
+            motivation: motivation || null,
+            answers: answers || {},
+            status: "Submitted",
+            decision_reason: null,
+            reviewed_by: null,
+            decided_at: null
+        };
+
+        let { error } = await db
             .from("applications")
             .update({
-                motivation: motivation || null,
-                answers: answers || {},
+                ...base,
                 linked_certificate: linkedCertificate || null,
-                status: "Submitted",
-                decision_reason: null,
-                reviewed_by: null,
-                decided_at: null,
                 updated_at: new Date().toISOString()
             })
             .eq("id", app.id)
             .eq("officer_id", app.officer_id);
+
+        /* PATCH 10 not run yet → retry without the new columns */
+
+        if (error &&
+            (this._missingColumn(error, "linked_certificate") ||
+             this._missingColumn(error, "updated_at"))) {
+
+            ({ error } = await db
+                .from("applications")
+                .update(base)
+                .eq("id", app.id)
+                .eq("officer_id", app.officer_id));
+
+        }
 
         if (error) {
 
