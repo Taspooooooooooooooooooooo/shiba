@@ -249,11 +249,23 @@
 
             max-width:100%;
 
-            max-height:420px;
+            max-height:70vh;
+
+            width:auto;
 
             border-radius:12px;
 
             border:1px solid var(--border);
+
+        }
+
+        /* the viewer card gets wider so previews have room */
+
+        #viewerCard{
+
+            width:900px;
+
+            max-width:95vw;
 
         }
 
@@ -292,6 +304,53 @@
         .adBannerCard{ padding:0; overflow:hidden; }
 
         #adBanner{ min-height:90px; }
+
+        /* side ad rails — multiple banners in the empty margins.
+           Only shown on wide screens; cloud pages only. */
+
+        .adRail{
+
+            position:fixed;
+
+            top:90px;
+
+            bottom:20px;
+
+            width:210px;
+
+            display:none;
+
+            flex-direction:column;
+
+            gap:16px;
+
+            overflow:auto;
+
+            z-index:5;
+
+        }
+
+        .adRailLeft{ left:16px; }
+
+        .adRailRight{ right:16px; }
+
+        .adSlot{
+
+            min-height:250px;
+
+            border-radius:14px;
+
+            overflow:hidden;
+
+            flex-shrink:0;
+
+        }
+
+        @media(min-width:1280px){
+
+            .adRail{ display:flex; }
+
+        }
 
         .adPlaceholder{
 
@@ -426,6 +485,19 @@
     <!-- ===================================================== -->
     <!-- Header                                                 -->
     <!-- ===================================================== -->
+
+    <!-- side ad rails (multiple banners; wide screens; cloud only) -->
+    <div class="adRail adRailLeft">
+        <div class="adSlot" id="adL1"></div>
+        <div class="adSlot" id="adL2"></div>
+        <div class="adSlot" id="adL3"></div>
+    </div>
+
+    <div class="adRail adRailRight">
+        <div class="adSlot" id="adR1"></div>
+        <div class="adSlot" id="adR2"></div>
+        <div class="adSlot" id="adR3"></div>
+    </div>
 
     <div class="cloud-header">
 
@@ -607,6 +679,50 @@
     function downloadLink(id) {
 
         return location.origin + "/cloud/downloads/?=" + id;
+
+    }
+
+    /* force a REAL download (Save file), not open-in-tab.
+       Cross-origin URLs ignore the <a download> attribute, so
+       we fetch the bytes and hand over a same-origin blob. */
+
+    async function forceDownload(url, filename, btn) {
+
+        const original = btn ? btn.textContent : null;
+
+        if (btn) { btn.disabled = true; btn.textContent = "Downloading…"; }
+
+        try {
+
+            const res = await fetch(url);
+
+            const blob = await res.blob();
+
+            const objUrl = URL.createObjectURL(blob);
+
+            const a = document.createElement("a");
+
+            a.href = objUrl;
+
+            a.download = filename || "download";
+
+            document.body.appendChild(a);
+
+            a.click();
+
+            a.remove();
+
+            setTimeout(() => URL.revokeObjectURL(objUrl), 5000);
+
+        } catch (e) {
+
+            /* fallback if the fetch is blocked */
+
+            window.open(url, "_blank", "noopener");
+
+        }
+
+        if (btn) { btn.disabled = false; btn.textContent = original; }
 
     }
 
@@ -808,23 +924,19 @@
 
         actions.innerHTML = `
             <button id="doDownload">⬇️ Watch ad & download</button>
-            <button id="copyDirect">🔗 Copy direct link</button>
             <button id="copyShare">💬 Copy share link</button>
         `;
 
-        document.getElementById("doDownload").onclick = async () => {
+        document.getElementById("doDownload").onclick = async (e) => {
 
             await AdZone.gate({
                 title: "Preparing your download",
                 seconds: AdZone.watchSeconds(data.size)
             });
 
-            window.open(url, "_blank", "noopener");
+            await forceDownload(url, data.name, e.target);
 
         };
-
-        document.getElementById("copyDirect").onclick =
-            (e) => copyText(url, e.target);
 
         document.getElementById("copyShare").onclick =
             (e) => copyText(shareLink(id), e.target);
@@ -1058,9 +1170,12 @@
 
     document.addEventListener("DOMContentLoaded", async () => {
 
-        /* render the page ad banner (cloud only) */
+        /* render the page ad banner + side rail slots (cloud only) */
 
         AdZone.render(document.getElementById("adBanner"));
+
+        ["adL1","adL2","adL3","adR1","adR2","adR3"].forEach(slot =>
+            AdZone.render(document.getElementById(slot)));
 
         /* learn the current auth user id (for owner tagging) */
 

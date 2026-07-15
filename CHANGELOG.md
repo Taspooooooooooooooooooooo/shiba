@@ -2,6 +2,21 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.24.0 — 2026-07-14 · Cloud polish (real download, ad rails, bigger preview)
+
+### Changed
+- **Real download** — the download button (and the `/cloud/downloads/`
+  route) now **saves the file** instead of opening it in a tab. It
+  fetches the bytes and hands over a same-origin blob so the browser's
+  Save dialog fires even for cross-origin storage.
+- **Removed the "Copy direct link"** button from the file viewer — the
+  share link + the ad-gated download link remain.
+- **Bigger file preview** — the viewer card is now up to 900px wide and
+  previews are up to 70% of screen height (less empty space).
+- **Side ad rails** — 3 stacked ad slots on the left and right margins
+  of the cloud + download pages (in addition to the top banner), shown
+  on wide screens. Cloud only; placeholder until Adsterra is connected.
+
 ## v0.23.0 — 2026-07-11 · SHIBA Cloud rework (ads, ad-gate, privacy)
 
 ### Added

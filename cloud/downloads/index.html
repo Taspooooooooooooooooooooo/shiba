@@ -45,11 +45,33 @@
     .dlBack{ display:block; margin-top:16px; color:var(--primary);
              text-decoration:none; font-size:13px; }
 
+    .adRail{ position:fixed; top:20px; bottom:20px; width:210px;
+             display:none; flex-direction:column; gap:16px; overflow:auto; }
+
+    .adRailLeft{ left:16px; } .adRailRight{ right:16px; }
+
+    .adSlot{ min-height:250px; border-radius:14px; overflow:hidden;
+             flex-shrink:0; }
+
+    @media(min-width:1280px){ .adRail{ display:flex; } }
+
 </style>
 
 </head>
 
 <body>
+
+<div class="adRail adRailLeft">
+    <div class="adSlot" id="adL1"></div>
+    <div class="adSlot" id="adL2"></div>
+    <div class="adSlot" id="adL3"></div>
+</div>
+
+<div class="adRail adRailRight">
+    <div class="adSlot" id="adR1"></div>
+    <div class="adSlot" id="adR2"></div>
+    <div class="adSlot" id="adR3"></div>
+</div>
 
 <div class="dlCard">
 
@@ -123,6 +145,22 @@ function fmt(bytes){
 
     AdZone.render(document.getElementById("adBanner"));
 
+    ["adL1","adL2","adL3","adR1","adR2","adR3"].forEach(s =>
+        AdZone.render(document.getElementById(s)));
+
+    /* real download (Save file), not open-in-tab */
+    async function forceDownload(url, filename){
+        try {
+            const res = await fetch(url);
+            const blob = await res.blob();
+            const objUrl = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = objUrl; a.download = filename || "download";
+            document.body.appendChild(a); a.click(); a.remove();
+            setTimeout(() => URL.revokeObjectURL(objUrl), 5000);
+        } catch(e){ window.open(url, "_blank", "noopener"); }
+    }
+
     /* countdown */
     let left = AdZone.watchSeconds(data.size);
     const timer = document.getElementById("dlTimer");
@@ -140,7 +178,13 @@ function fmt(bytes){
             timer.classList.add("hidden");
             btn.disabled = false;
             btn.textContent = "⬇️ Download " + data.name;
-            btn.onclick = () => window.open(publicUrl(data.path), "_blank", "noopener");
+            btn.onclick = () => {
+                btn.disabled = true; btn.textContent = "Downloading…";
+                forceDownload(publicUrl(data.path), data.name).then(() => {
+                    btn.disabled = false;
+                    btn.textContent = "⬇️ Download " + data.name;
+                });
+            };
         }
     }, 1000);
 
