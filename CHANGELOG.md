@@ -2,6 +2,31 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.25.0 — 2026-07-15 · Applications rework (auto-detect, form builder, in-app dialogs)
+
+### Added
+- **Sergeant I+ can review** — application review is now open to the
+  Sergeant tier and above (was Lieutenant+). Reviewers **open** each
+  application in a detail dialog to see the full submission and decide;
+  nothing sensitive is just listed in the open.
+- **Google-Forms-style form** — each question is its own card, and the
+  applicant can **add** their own questions and **remove** any question.
+- **Link a certificate** — optionally attach one of your approved
+  certificates (e.g. a **Firearm Qualification**) to an application.
+  Needs `lapd/SETUP-PATCH-10.sql` (or re-run `RUN-ALL-PENDING.sql`).
+- **Edit & resubmit** — when a reviewer requests changes, the applicant
+  can edit their answers/motivation/linked cert and resubmit.
+- **In-app dialogs** — a themed modal system (`UI.modal` / `UI.confirm`
+  / `UI.promptText`) replaces every native browser `prompt`/`confirm`
+  in the applications flow (deny reason, request-changes note, accept
+  confirmation).
+
+### Changed
+- **Removed the "You are applying as" picker** — the applicant is now
+  **auto-detected** from the signed-in account.
+- **"All Applications" → "My Applications"** — you see only your own
+  applications; the review queue (Sergeant I+) is where open ones live.
+
 ## v0.24.0 — 2026-07-14 · Cloud polish (real download, ad rails, bigger preview)
 
 ### Changed

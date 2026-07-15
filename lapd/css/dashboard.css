@@ -2260,3 +2260,292 @@ grid-template-columns:1fr;
     margin-bottom:6px;
 
 }
+
+/* ---------- IN-APP MODAL SYSTEM ---------- */
+
+.uiModalBack{
+
+    position:fixed;
+    inset:0;
+    z-index:1000002;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+    background:rgba(4,10,20,.66);
+    backdrop-filter:blur(3px);
+    opacity:0;
+    transition:opacity .16s ease;
+
+}
+
+.uiModalBack.show{ opacity:1; }
+
+.uiModal{
+
+    width:100%;
+    max-width:520px;
+    max-height:88vh;
+    overflow:auto;
+    background:#0f2036;
+    border:1px solid rgba(255,255,255,.1);
+    border-radius:16px;
+    box-shadow:0 24px 70px rgba(0,0,0,.55);
+    transform:translateY(10px) scale(.98);
+    transition:transform .16s ease;
+
+}
+
+.uiModalBack.show .uiModal{ transform:none; }
+
+.uiModalHead{
+
+    padding:18px 20px 0;
+    font-size:17px;
+    font-weight:700;
+    color:#fff;
+
+}
+
+.uiModalBody{ padding:14px 20px; }
+
+.uiModalMsg{
+
+    color:#b8c5d6;
+    font-size:14px;
+    line-height:1.5;
+    margin:0 0 4px;
+
+}
+
+.uiModalInput{
+
+    width:100%;
+    background:#15283d;
+    border:1px solid rgba(255,255,255,.1);
+    border-radius:10px;
+    color:#fff;
+    padding:11px 12px;
+    outline:none;
+    font-family:inherit;
+    font-size:14px;
+    resize:vertical;
+
+}
+
+.uiModalInput:focus{ border-color:#2e8bff; }
+
+.uiModalFoot{
+
+    display:flex;
+    justify-content:flex-end;
+    gap:10px;
+    padding:6px 20px 18px;
+
+}
+
+.ghostBtn{
+
+    padding:10px 16px;
+    border:1px solid rgba(255,255,255,.14);
+    border-radius:10px;
+    background:transparent;
+    color:#b8c5d6;
+    cursor:pointer;
+    font-size:13px;
+    font-family:inherit;
+    transition:.2s;
+
+}
+
+.ghostBtn:hover{ color:#fff; border-color:rgba(255,255,255,.3); }
+
+/* ---------- GOOGLE-FORMS-STYLE QUESTION CARDS ---------- */
+
+.formQ{
+
+    position:relative;
+    background:#15283d55;
+    border:1px solid rgba(255,255,255,.07);
+    border-left:3px solid #2e8bff;
+    border-radius:12px;
+    padding:14px 16px;
+    margin:12px 0;
+
+}
+
+.formQ .formQLabel{
+
+    display:block;
+    color:#dbe4f0;
+    font-size:13.5px;
+    font-weight:600;
+    margin-bottom:9px;
+    padding-right:26px;
+
+}
+
+/* custom (applicant-added) question: the label itself is editable */
+
+.formQ input.formQLabelEdit{
+
+    width:calc(100% - 26px);
+    background:transparent;
+    border:none;
+    border-bottom:1px solid rgba(255,255,255,.15);
+    color:#dbe4f0;
+    font-size:13.5px;
+    font-weight:600;
+    font-family:inherit;
+    padding:2px 0 7px;
+    margin-bottom:9px;
+    outline:none;
+
+}
+
+.formQ input.formQLabelEdit:focus{ border-bottom-color:#2e8bff; }
+
+.formQ textarea.formQAnswer,
+.formQ input.formQAnswer{
+
+    width:100%;
+    background:#15283d;
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:9px;
+    color:#fff;
+    padding:10px 11px;
+    outline:none;
+    font-family:inherit;
+    font-size:13.5px;
+    resize:vertical;
+
+}
+
+.formQ textarea.formQAnswer:focus,
+.formQ input.formQAnswer:focus{ border-color:#2e8bff; }
+
+.formQRemove{
+
+    position:absolute;
+    top:10px;
+    right:10px;
+    width:24px;
+    height:24px;
+    border:none;
+    border-radius:7px;
+    background:rgba(255,255,255,.06);
+    color:#8fa6c4;
+    cursor:pointer;
+    font-size:13px;
+    line-height:1;
+
+}
+
+.formQRemove:hover{ background:#ff556633; color:#ff8891; }
+
+.formAddQ{
+
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    padding:9px 15px;
+    margin-top:4px;
+    border:1px dashed rgba(255,255,255,.2);
+    border-radius:10px;
+    background:transparent;
+    color:#8fb4ff;
+    cursor:pointer;
+    font-size:13px;
+    font-family:inherit;
+    transition:.2s;
+
+}
+
+.formAddQ:hover{ border-color:#2e8bff; color:#fff; background:#2e8bff1a; }
+
+/* "applying as" auto-detected officer banner */
+
+.applyingAs{
+
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:12px 14px;
+    border-radius:12px;
+    background:#15283d;
+    border:1px solid rgba(255,255,255,.08);
+    margin-bottom:6px;
+
+}
+
+.applyingAs .aaAvatar{
+
+    width:40px;
+    height:40px;
+    border-radius:50%;
+    object-fit:cover;
+    background:#2e8bff22;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:18px;
+
+}
+
+.applyingAs .aaName{ font-weight:600; color:#fff; font-size:14px; }
+
+.applyingAs .aaMeta{ color:#8fa6c4; font-size:12px; }
+
+/* linked certificate pill in the review detail */
+
+.linkedCert{
+
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    padding:8px 12px;
+    border-radius:10px;
+    background:#0a6b2f22;
+    border:1px solid #17a34a55;
+    color:#7ee2a8;
+    font-size:12.5px;
+    margin-top:8px;
+
+}
+
+/* compact review-queue row with an Open button */
+
+.reviewRow{
+
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:13px 15px;
+    border-radius:12px;
+    background:#15283d55;
+    border:1px solid rgba(255,255,255,.07);
+    margin-bottom:10px;
+
+}
+
+.reviewRow .rrMain{ flex:1; min-width:0; }
+
+.reviewRow .rrTitle{ font-weight:600; color:#fff; font-size:14px; }
+
+.reviewRow .rrSub{ color:#8fa6c4; font-size:12px; margin-top:2px; }
+
+/* read-only Q&A block inside the detail modal */
+
+.detailQa{
+
+    background:#15283d55;
+    border-left:3px solid #2e8bff;
+    border-radius:8px;
+    padding:10px 12px;
+    margin:8px 0;
+
+}
+
+.detailQa b{ display:block; color:#dbe4f0; font-size:12.5px; margin-bottom:3px; }
+
+.detailQa span{ color:#b8c5d6; font-size:13px; white-space:pre-wrap; }

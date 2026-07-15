@@ -185,6 +185,7 @@ const PermissionService = {
             "bodycam.download",
             "certificates.issue",
             "reports.create",
+            "applications.review",
             "cloud.upload"
         ],
 

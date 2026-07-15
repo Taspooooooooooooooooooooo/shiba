@@ -225,4 +225,12 @@ values ('APPLICATION', 'APP', true)
 on conflict (type) do nothing;
 
 
-select 'ALL PENDING PATCHES applied (3, 5, 6, 7, 8, 9)' as result;
+-- ---------- PATCH 10 : applications certificate link + edit ----------
+
+alter table public.applications
+  add column if not exists linked_certificate text;
+alter table public.applications
+  add column if not exists updated_at timestamp with time zone;
+
+
+select 'ALL PENDING PATCHES applied (3, 5, 6, 7, 8, 9, 10)' as result;

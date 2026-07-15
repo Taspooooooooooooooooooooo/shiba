@@ -103,7 +103,7 @@ const ApplicationService = {
     /* ----------------------------------------------------- */
 
     async submit({ officerId, officerLabel, officerUserId, type,
-                   motivation, answers }) {
+                   motivation, answers, linkedCertificate }) {
 
         if (!window.db) return { ok: false };
 
@@ -116,7 +116,8 @@ const ApplicationService = {
                 officer_id: officerId,
                 type: type,
                 motivation: motivation || null,
-                answers: answers || {}
+                answers: answers || {},
+                linked_certificate: linkedCertificate || null
             }])
             .select();
 
@@ -142,6 +143,63 @@ const ApplicationService = {
         UI?.success(appId + " submitted");
 
         return { ok: true, row: data[0] };
+
+    },
+
+    /* ----------------------------------------------------- */
+    /* update — applicant edits & resubmits after changes     */
+    /*          were requested. Owner-guarded by officerId.   */
+    /* ----------------------------------------------------- */
+
+    async update(app, { motivation, answers, linkedCertificate }) {
+
+        if (!window.db) return { ok: false };
+
+        if (app.status !== "Changes Requested") {
+
+            UI?.error("Only applications with changes requested can be edited.");
+
+            return { ok: false };
+
+        }
+
+        const { error } = await db
+            .from("applications")
+            .update({
+                motivation: motivation || null,
+                answers: answers || {},
+                linked_certificate: linkedCertificate || null,
+                status: "Submitted",
+                decision_reason: null,
+                reviewed_by: null,
+                decided_at: null,
+                updated_at: new Date().toISOString()
+            })
+            .eq("id", app.id)
+            .eq("officer_id", app.officer_id);
+
+        if (error) {
+
+            console.error("APPLICATION UPDATE ERROR:", error);
+
+            UI?.error("Could not save your changes.");
+
+            return { ok: false, reason: error.message };
+
+        }
+
+        AuditService.log({
+            action: "APPLICATION_RESUBMITTED",
+            target: app.application_id + " (" + app.type + ")",
+            officerId: app.officer_id
+        });
+
+        TimelineService.add(app.officer_id, "Application resubmitted",
+            app.application_id + " · " + app.type);
+
+        UI?.success(app.application_id + " resubmitted");
+
+        return { ok: true };
 
     },
 

@@ -37,13 +37,24 @@
 
             <label class="wizLabel">You are applying as</label>
 
-            <select id="apOfficer"></select>
+            <div id="applyingAs" class="applyingAs">
+                <div class="aaAvatar">👤</div>
+                <div>
+                    <div class="aaName">Detecting your account…</div>
+                    <div class="aaMeta"></div>
+                </div>
+            </div>
 
             <label class="wizLabel">Application type</label>
 
             <div class="typeChips" id="apTypes"></div>
 
             <div id="apQuestions"></div>
+
+            <button type="button" id="apAddQ" class="formAddQ">
+                ➕ Add a question</button>
+
+            <div id="apCertLink"></div>
 
             <label class="wizLabel">Motivation (short summary)</label>
 
@@ -58,19 +69,22 @@
 
     </div>
 
-    <!-- REVIEW QUEUE -->
+    <!-- REVIEW QUEUE (Sergeant I+ only) -->
     <div class="card hidden" id="reviewCard">
 
         <h2>🗂 Review Queue <span id="reviewCount" class="grantKind"></span></h2>
+
+        <p class="muted" style="margin-top:-4px">Open an application to review
+           its full details and decide.</p>
 
         <div id="reviewList"><p class="muted">Loading...</p></div>
 
     </div>
 
-    <!-- ALL -->
+    <!-- MY APPLICATIONS -->
     <div class="card">
 
-        <h2>📜 All Applications</h2>
+        <h2>📜 My Applications</h2>
 
         <div id="appList"><p class="muted">Loading...</p></div>
 
@@ -91,6 +105,7 @@
 <script src="js/core/auditService.js"></script>
 <script src="js/core/timelineService.js"></script>
 <script src="js/core/notificationService.js"></script>
+<script src="js/core/certificateService.js"></script>
 <script src="js/core/applicationService.js"></script>
 
 <script src="js/auth.js"></script>
