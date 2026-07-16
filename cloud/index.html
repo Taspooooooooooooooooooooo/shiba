@@ -345,6 +345,12 @@
 
             flex-shrink:0;
 
+            display:flex;
+
+            align-items:flex-start;
+
+            justify-content:center;
+
         }
 
         @media(min-width:1280px){
@@ -487,17 +493,14 @@
     <!-- Header                                                 -->
     <!-- ===================================================== -->
 
-    <!-- side ad rails (multiple banners; wide screens; cloud only) -->
+    <!-- side ad rails (wide screens; cloud only)
+         left = 160x600 skyscraper · right = native banner -->
     <div class="adRail adRailLeft">
-        <div class="adSlot" id="adL1"></div>
-        <div class="adSlot" id="adL2"></div>
-        <div class="adSlot" id="adL3"></div>
+        <div class="adSlot" id="adLeft"></div>
     </div>
 
     <div class="adRail adRailRight">
-        <div class="adSlot" id="adR1"></div>
-        <div class="adSlot" id="adR2"></div>
-        <div class="adSlot" id="adR3"></div>
+        <div class="adSlot" id="adRight"></div>
     </div>
 
     <div class="cloud-header">
@@ -1171,12 +1174,9 @@
 
     document.addEventListener("DOMContentLoaded", async () => {
 
-        /* render the page ad banner + side rail slots (cloud only) */
+        /* top banner + side rails + social bar (cloud only) */
 
-        AdZone.render(document.getElementById("adBanner"));
-
-        ["adL1","adL2","adL3","adR1","adR2","adR3"].forEach(slot =>
-            AdZone.render(document.getElementById(slot)));
+        AdZone.mount();
 
         /* learn the current auth user id (for owner tagging) */
 

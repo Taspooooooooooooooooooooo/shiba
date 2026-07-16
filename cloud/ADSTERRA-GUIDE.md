@@ -33,39 +33,45 @@ Optional extras (higher revenue, more intrusive — your call):
 
 Each unit gives you a **zone key** (looks like `a1b2c3d4e5...`).
 
-## 3. Paste your keys
+## 3. ✅ CONNECTED — where each unit lives
 
-Open **`cloud/adzone.js`** and replace the placeholders:
+All 6 units are wired in `cloud/adzone.js` (`AdZone.ZONES`) and mounted
+by one call, `AdZone.mount()`, on `/cloud/` and `/cloud/downloads/`:
+
+| Unit | Zone | Where it shows |
+|---|---|---|
+| Social Bar | 30274390 | floating, once per cloud page |
+| Native Banner | 30274891 | right rail |
+| Banner 728×90 | 30274392 | top banner (desktop ≥820px) |
+| Banner 300×250 | 30274393 | the ad-watch gate |
+| Banner 160×600 | 30274394 | left rail (skyscraper) |
+| Banner 320×50 | 30274395 | top banner (mobile <820px) |
+
+Each unit is used **once per page** — Adsterra fills duplicates poorly.
+
+## 4. Why each banner sits in its own iframe
+
+Adsterra's banner format reads a **global `atOptions`** object when its
+`invoke.js` runs. Two different sizes on one page would overwrite each
+other's config and render the wrong size (or nothing at all). So
+`renderBanner()` builds a `srcdoc` iframe per unit, giving each its own
+window/global:
 
 ```js
-ZONES: {
-  banner: "your-banner-zone-key",
-  interstitial: "your-gate-zone-key"
-}
+frame.srcdoc =
+  "<script>atOptions=" + JSON.stringify({key, format:"iframe",
+     height, width, params:{}}) + ";<\/script>" +
+  '<script src="https://www.highperformanceformat.com/' +
+  key + '/invoke.js"><\/script>';
 ```
 
-## 4. Paste the ad code
+The Native Banner doesn't use `atOptions` (it targets its own container
+id), so it's injected directly into the page. Note scripts added via
+`innerHTML` never execute — always build real `<script>` nodes.
 
-Adsterra gives you a snippet per zone. In `adzone.js`, inside
-`render(container)`, build it with real DOM nodes (scripts added via
-`innerHTML` do **not** run). Example for a 300×250 banner:
-
-```js
-render(container){
-  if(!this.configured()){ /* placeholder */ return; }
-  container.innerHTML = "";
-  const s1 = document.createElement("script");
-  s1.text = "atOptions = { 'key':'" + this.ZONES.banner +
-            "','format':'iframe','height':250,'width':300,'params':{} };";
-  const s2 = document.createElement("script");
-  s2.src = "//www.highperformanceformat.com/" + this.ZONES.banner +
-           "/invoke.js";
-  container.append(s1, s2);
-}
-```
-
-(Use the exact snippet Adsterra shows for *your* zone — the domain can
-differ.) Commit, push, hard-refresh `/cloud` — real ads appear.
+**Heads-up:** the Social Bar rewrites the browser tab title (e.g.
+*"(1) New Message!"*) as an attention grab. Turn it off in Adsterra →
+your Social Bar unit → settings, if you'd rather keep your title.
 
 ## 5. Get paid
 

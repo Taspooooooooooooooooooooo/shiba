@@ -3,10 +3,22 @@
    ONLY loaded on the /cloud pages. NEVER in the main PIMS
    system (police data must stay ad-free).
 
-   ── HOW ADS PLUG IN ──────────────────────────────────────
-   Paste your real Adsterra ad code where marked ADSTERRA
-   below (see cloud/ADSTERRA-GUIDE.md for the step-by-step).
-   Until then a clearly-labelled placeholder shows instead.
+   ── CONNECTED: Adsterra (6 units, live) ──────────────────
+   Social Bar     30274390  → floating, injected once/page
+   Native Banner  30274891  → right rail
+   Banner 728x90  30274392  → top banner (desktop)
+   Banner 300x250 30274393  → the ad-watch gate
+   Banner 160x600 30274394  → left rail (skyscraper)
+   Banner 320x50  30274395  → top banner (mobile)
+
+   ── WHY EACH BANNER GETS ITS OWN IFRAME ──────────────────
+   Adsterra's banner format reads a GLOBAL `atOptions` object
+   when its invoke.js runs. Two different sizes on one page
+   would overwrite each other's config and render the wrong
+   size (or nothing). Rendering each banner inside its own
+   srcdoc iframe gives every unit a private window/global, so
+   any number of sizes can coexist. Each unit is used ONCE
+   per page (Adsterra fills duplicates poorly).
 
    ── HONEST LIMITATION ────────────────────────────────────
    This gate runs in the browser. Most visitors will watch
@@ -17,52 +29,167 @@
 
 window.AdZone = {
 
-    /* your Adsterra publisher zone(s) — fill these in */
+    /* real Adsterra zones */
 
     ZONES: {
-        banner: "REPLACE_WITH_YOUR_ADSTERRA_BANNER_ZONE",
-        interstitial: "REPLACE_WITH_YOUR_ADSTERRA_SOCIAL_BAR_OR_INTERSTITIAL"
+
+        socialBar:
+            "https://pl30374889.effectivecpmnetwork.com/e7/7c/95/" +
+            "e77c95a1cb5e3947bbd401bdc5c4ee2b.js",
+
+        native: {
+            src: "https://pl30374890.effectivecpmnetwork.com/" +
+                 "34c6792c7028d8f2ab355ef5544c6f66/invoke.js",
+            container: "container-34c6792c7028d8f2ab355ef5544c6f66"
+        },
+
+        leaderboard: { key: "f6c2cc4002c0c19047e060aba0dfdbab", w: 728, h: 90 },
+
+        rectangle:   { key: "f7a965d7fbb4b1125b92be8118d27c36", w: 300, h: 250 },
+
+        skyscraper:  { key: "91179e011e47f5611047e3ead39e4eb9", w: 160, h: 600 },
+
+        mobile:      { key: "45a7deec36fb10e97d6adb554dbf1242", w: 320, h: 50 }
+
     },
 
     configured() {
 
-        return this.ZONES.banner &&
-            !this.ZONES.banner.startsWith("REPLACE_");
+        return !!this.ZONES.leaderboard.key;
 
     },
 
-    /* render an ad into a container (or a labelled placeholder) */
+    /* ------------------------------------------------------ */
+    /* one banner = one isolated iframe (own `atOptions`)      */
+    /* ------------------------------------------------------ */
 
-    render(container) {
+    renderBanner(container, zone) {
+
+        if (!container || !zone) return;
+
+        container.innerHTML = "";
+
+        const frame = document.createElement("iframe");
+
+        frame.width = zone.w;
+
+        frame.height = zone.h;
+
+        frame.scrolling = "no";
+
+        frame.setAttribute("frameborder", "0");
+
+        frame.setAttribute("title", "Advertisement");
+
+        frame.setAttribute("loading", "lazy");
+
+        frame.style.cssText =
+            "border:0;display:block;margin:0 auto;max-width:100%";
+
+        frame.srcdoc =
+            '<!doctype html><html><head><meta charset="utf-8">' +
+            "<style>html,body{margin:0;padding:0;overflow:hidden;" +
+            "background:transparent}</style></head><body>" +
+            "<script>atOptions=" + JSON.stringify({
+                key: zone.key,
+                format: "iframe",
+                height: zone.h,
+                width: zone.w,
+                params: {}
+            }) + ";<\/script>" +
+            '<script src="https://www.highperformanceformat.com/' +
+            zone.key + '/invoke.js"><\/script>' +
+            "</body></html>";
+
+        container.appendChild(frame);
+
+    },
+
+    /* top banner: leaderboard on desktop, 320x50 on phones */
+
+    renderTop(container) {
 
         if (!container) return;
 
-        if (this.configured()) {
+        const narrow = window.matchMedia("(max-width:820px)").matches;
 
-            /* ───── ADSTERRA: put your ad container/script here ─────
-               Example (Banner 300x250):
-               container.innerHTML =
-                 '<script type="text/javascript"> atOptions = {' +
-                 " 'key':'" + this.ZONES.banner + "', 'format':'iframe'," +
-                 " 'height':250, 'width':300, 'params':{} }; <\/script>" +
-                 '<script src="//www.highperformanceformat.com/' +
-                 this.ZONES.banner + '/invoke.js"><\/script>';
-               (scripts injected via innerHTML don't execute — use the
-               DOM-append method shown in ADSTERRA-GUIDE.md)
-            ─────────────────────────────────────────────────────── */
+        this.renderBanner(container,
+            narrow ? this.ZONES.mobile : this.ZONES.leaderboard);
 
-            container.innerHTML =
-                "<div class='adReal'>Advertisement</div>";
+    },
 
-        } else {
+    /* left rail — 160x600 skyscraper */
 
-            container.innerHTML =
-                "<div class='adPlaceholder'>" +
-                "<b>Ad Space</b><br><small>SHIBA Cloud is funded by ads. " +
-                "Connect Adsterra in cloud/adzone.js to show real ads " +
-                "here.</small></div>";
+    renderSkyscraper(container) {
 
-        }
+        this.renderBanner(container, this.ZONES.skyscraper);
+
+    },
+
+    /* right rail — native banner (its own container + async script;
+       no atOptions, so it lives directly in the page) */
+
+    renderNative(container) {
+
+        if (!container || this._nativeDone) return;
+
+        this._nativeDone = true;
+
+        container.innerHTML = "";
+
+        const box = document.createElement("div");
+
+        box.id = this.ZONES.native.container;
+
+        container.appendChild(box);
+
+        const s = document.createElement("script");
+
+        s.async = true;
+
+        s.setAttribute("data-cfasync", "false");
+
+        s.src = this.ZONES.native.src;
+
+        container.appendChild(s);
+
+    },
+
+    /* floating Social Bar — once per page */
+
+    socialBar() {
+
+        if (this._socialDone) return;
+
+        this._socialDone = true;
+
+        const s = document.createElement("script");
+
+        s.src = this.ZONES.socialBar;
+
+        document.body.appendChild(s);
+
+    },
+
+    /* generic (used by the gate) — 300x250 */
+
+    render(container) {
+
+        this.renderBanner(container, this.ZONES.rectangle);
+
+    },
+
+    /* wire every slot a cloud page has, in one call */
+
+    mount() {
+
+        this.renderTop(document.getElementById("adBanner"));
+
+        this.renderSkyscraper(document.getElementById("adLeft"));
+
+        this.renderNative(document.getElementById("adRight"));
+
+        this.socialBar();
 
     },
 

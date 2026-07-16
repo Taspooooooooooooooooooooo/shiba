@@ -2,6 +2,28 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.26.0 — 2026-07-15 · Adsterra connected (real ads in /cloud)
+
+### Added
+- **All 6 Adsterra units are live** in `cloud/adzone.js` — Social Bar
+  (floating), Native Banner (right rail), 728×90 (top, desktop), 320×50
+  (top, mobile), 160×600 (left rail), 300×250 (the ad-watch gate).
+  One `AdZone.mount()` call wires every slot on `/cloud/` and
+  `/cloud/downloads/`. **The main PIMS system stays 100% ad-free.**
+- Each banner renders inside its **own `srcdoc` iframe**, because
+  Adsterra's format reads a *global* `atOptions` — two sizes on one page
+  would otherwise clobber each other. Verified: `atOptions` never leaks
+  into the page global.
+
+### Changed
+- Side rails are now **one slot per side** (left 160×600, right native)
+  instead of 3 identical slots — Adsterra fills duplicate units poorly,
+  and a 600px skyscraper already fills the rail.
+
+### Note
+The Social Bar rewrites the browser tab title ("(1) New Message!") as an
+attention grab — switchable off in the Adsterra unit's settings.
+
 ## v0.25.1 — 2026-07-15 · Applications: graceful degrade before PATCH-10
 
 ### Fixed

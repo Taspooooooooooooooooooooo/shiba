@@ -51,6 +51,7 @@
     .adRailLeft{ left:16px; } .adRailRight{ right:16px; }
 
     .adSlot{ min-height:250px; border-radius:14px; overflow:hidden;
+             display:flex; align-items:flex-start; justify-content:center;
              flex-shrink:0; }
 
     @media(min-width:1280px){ .adRail{ display:flex; } }
@@ -62,15 +63,11 @@
 <body>
 
 <div class="adRail adRailLeft">
-    <div class="adSlot" id="adL1"></div>
-    <div class="adSlot" id="adL2"></div>
-    <div class="adSlot" id="adL3"></div>
+    <div class="adSlot" id="adLeft"></div>
 </div>
 
 <div class="adRail adRailRight">
-    <div class="adSlot" id="adR1"></div>
-    <div class="adSlot" id="adR2"></div>
-    <div class="adSlot" id="adR3"></div>
+    <div class="adSlot" id="adRight"></div>
 </div>
 
 <div class="dlCard">
@@ -143,10 +140,7 @@ function fmt(bytes){
         fmt(data.size) + " · uploaded " +
         new Date(data.created_at).toLocaleString();
 
-    AdZone.render(document.getElementById("adBanner"));
-
-    ["adL1","adL2","adL3","adR1","adR2","adR3"].forEach(s =>
-        AdZone.render(document.getElementById(s)));
+    AdZone.mount();
 
     /* real download (Save file), not open-in-tab */
     async function forceDownload(url, filename){
