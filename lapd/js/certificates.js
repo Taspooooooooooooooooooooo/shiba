@@ -372,6 +372,12 @@ const Certificates = {
 
         }
 
+        /* PDF417 credential strip — same secret token, licence-style */
+
+        CertificateService.renderPdf417(
+            document.getElementById("cdPdf417"),
+            CertificateService.barcodePayload(cert));
+
         document.getElementById("certModal").classList.remove("hidden");
 
         AuditService.log({

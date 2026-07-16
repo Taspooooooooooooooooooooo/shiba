@@ -2,6 +2,27 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.27.0 — 2026-07-16 · PDF417 credential barcode
+
+### Added
+- **PDF417 barcode on every certificate document** — the stacked
+  barcode real driver's licences and police credentials carry, rendered
+  as crisp SVG (prints sharp) next to the existing QR.
+- **Branded payload:** `SHIBA|CERT|<cert id>|<officer id>|<token>`.
+  The **token is still the only authority** — `verify_qr_token()` checks
+  it against our DB, so a hand-crafted barcode with a made-up token is
+  rejected exactly like a forged QR (verified: forged → `valid:false`).
+- **Scanner reads PDF417** — ZXing decodes the strip from the camera
+  alongside jsQR (every 6th frame; PDF417 is far heavier than QR).
+  `extractToken()` now accepts the SHIBA payload, a QR link, or a raw
+  token.
+
+### Note
+The Digital ID card does **not** get a PDF417 yet — officers have no
+`qr_token`, so its barcode could be *decoded* but not *verified*, and a
+scanner saying "valid" for an unverifiable code would be security
+theatre. Needs an `officers.qr_token` patch first.
+
 ## v0.26.0 — 2026-07-15 · Adsterra connected (real ads in /cloud)
 
 ### Added

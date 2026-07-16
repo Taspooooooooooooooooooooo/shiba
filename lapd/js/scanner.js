@@ -12,16 +12,89 @@ const Scanner = {
 
     scanning: false,
 
+    _frame: 0,
+
+    _pdfReader: null,
+
+    /* ----------------------------------------------------- */
+    /* PDF417 decoding (ZXing) — the credential strip on our  */
+    /* certificates + identity cards. jsQR only reads QR, so  */
+    /* this runs alongside it.                                */
+    /* ----------------------------------------------------- */
+
+    pdfReader() {
+
+        if (this._pdfReader) return this._pdfReader;
+
+        if (!window.ZXing) return null;
+
+        const hints = new Map();
+
+        hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS,
+            [ZXing.BarcodeFormat.PDF_417]);
+
+        hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
+
+        this._pdfReader = new ZXing.MultiFormatReader();
+
+        this._pdfReader.setHints(hints);
+
+        return this._pdfReader;
+
+    },
+
+    decodePdf417(canvas) {
+
+        const reader = this.pdfReader();
+
+        if (!reader) return null;
+
+        try {
+
+            const source = new ZXing.HTMLCanvasElementLuminanceSource(canvas);
+
+            const bitmap = new ZXing.BinaryBitmap(
+                new ZXing.HybridBinarizer(source));
+
+            const result = reader.decode(bitmap);
+
+            return result ? result.getText() : null;
+
+        } catch (e) {
+
+            /* NotFoundException every frame without a barcode — normal */
+
+            return null;
+
+        }
+
+    },
+
     /* ----------------------------------------------------- */
     /* token extraction — accepts a raw token or our          */
     /* scanner link (…/scanner.html?t=<token>)                */
     /* ----------------------------------------------------- */
+
+    /* accepts, in order:
+         SHIBA|CERT|<cert id>|<officer id>|<token>   (PDF417 strip)
+         https://…/scanner.html?t=<token>            (QR link)
+         <token>                                     (typed by hand) */
 
     extractToken(text) {
 
         const value = (text || "").trim();
 
         if (!value) return null;
+
+        if (value.startsWith(CertificateService.PDF417_PREFIX + "|")) {
+
+            const parts = value.split("|");
+
+            const token = parts[parts.length - 1].trim();
+
+            if (token) return token;
+
+        }
 
         try {
 
@@ -209,9 +282,28 @@ const Scanner = {
 
                 this.stop();
 
-                this.verify(code.data, "camera");
+                this.verify(code.data, "camera · QR");
 
                 return;
+
+            }
+
+            /* PDF417 is far heavier to decode than QR — every 6th
+               frame keeps the preview smooth on phones. */
+
+            if (++this._frame % 6 === 0) {
+
+                const strip = this.decodePdf417(canvas);
+
+                if (strip) {
+
+                    this.stop();
+
+                    this.verify(strip, "camera · PDF417");
+
+                    return;
+
+                }
 
             }
 

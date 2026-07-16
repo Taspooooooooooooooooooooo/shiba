@@ -1903,6 +1903,40 @@ grid-template-columns:1fr;
 
 }
 
+/* PDF417 credential strip (driver's-licence style) */
+
+.certDocCodes{
+
+    flex:1;
+
+    min-width:0;
+
+}
+
+.certDocPdf417{
+
+    background:white;
+
+    border-radius:6px;
+
+    padding:5px 7px;
+
+    margin-bottom:7px;
+
+    line-height:0;
+
+}
+
+.certDocPdf417 svg{
+
+    width:100%;
+
+    height:38px;
+
+    display:block;
+
+}
+
 @media print{
 
     #certModal, #certModal * { visibility:visible; }
