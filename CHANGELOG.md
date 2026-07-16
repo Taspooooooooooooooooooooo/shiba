@@ -20,9 +20,21 @@ All notable changes to the SHIBA Police Information Management System.
   instead of 3 identical slots — Adsterra fills duplicate units poorly,
   and a 600px skyscraper already fills the rail.
 
+- **Admin mode — management browses the cloud ad-free.** Super
+  Administrator / Chief / Commander (the same roles that already see
+  every file) get **no banners, no social bar, and no ad-watch wait** —
+  downloads hand over instantly. A badge **only they can see** ("🛡 Admin
+  · Ads OFF") can flip ads back on to preview what a visitor gets.
+  Visitors always get ads and never see the badge.
+
 ### Note
 The Social Bar rewrites the browser tab title ("(1) New Message!") as an
-attention grab — switchable off in the Adsterra unit's settings.
+attention grab — switchable off in the Adsterra unit's settings. (Admin
+mode sidesteps it entirely for you.)
+
+**Honest:** admin mode reads `localStorage.role`, so it's client-side —
+someone could set `role="Chief"` to skip ads. Same caveat as the rest of
+the gate; the real fix is the private bucket + signed-URL edge function.
 
 ## v0.25.1 — 2026-07-15 · Applications: graceful degrade before PATCH-10
 

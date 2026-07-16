@@ -60,6 +60,104 @@ window.AdZone = {
     },
 
     /* ------------------------------------------------------ */
+    /* ADMIN MODE — management browses the cloud ad-free       */
+    /*                                                         */
+    /* Same roles the cloud already trusts to see every file.  */
+    /* Admins get NO banners, NO social bar and NO ad-watch    */
+    /* wait, plus a badge (only they can see) to flip ads back */
+    /* on and preview what a visitor gets.                     */
+    /*                                                         */
+    /* HONEST: this reads localStorage, so it's client-side —  */
+    /* anyone could set role="Chief" and skip the ads. Same    */
+    /* caveat as the rest of the gate; the real fix is the     */
+    /* private bucket + signed-URL edge function.              */
+    /* ------------------------------------------------------ */
+
+    ADMIN_ROLES: ["Super Administrator", "Chief", "Commander"],
+
+    isAdmin() {
+
+        try {
+
+            return this.ADMIN_ROLES.includes(localStorage.getItem("role"));
+
+        } catch (e) { return false; }
+
+    },
+
+    /* visitors always get ads; admins default to ads OFF */
+
+    adsOn() {
+
+        if (!this.isAdmin()) return true;
+
+        return localStorage.getItem("shiba_admin_ads") === "on";
+
+    },
+
+    setAdsOn(on) {
+
+        localStorage.setItem("shiba_admin_ads", on ? "on" : "off");
+
+        /* ad scripts can't be cleanly unloaded — reload instead */
+
+        location.reload();
+
+    },
+
+    /* collapse the slots so admins don't see empty holes */
+
+    hideSlots() {
+
+        document.querySelectorAll(".adRail")
+            .forEach(r => r.style.display = "none");
+
+        const b = document.getElementById("adBanner");
+
+        if (b) (b.closest(".adBannerCard") || b).style.display = "none";
+
+    },
+
+    adminBadge() {
+
+        if (document.getElementById("adAdminBadge")) return;
+
+        const on = this.adsOn();
+
+        const bar = document.createElement("div");
+
+        bar.id = "adAdminBadge";
+
+        bar.style.cssText =
+            "position:fixed;left:14px;bottom:14px;z-index:100000;" +
+            "display:flex;align-items:center;gap:10px;padding:8px 8px 8px 14px;" +
+            "border-radius:999px;background:#0f2036ee;color:#b8c5d6;" +
+            "border:1px solid rgba(255,255,255,.14);backdrop-filter:blur(4px);" +
+            "font:13px/1 system-ui,-apple-system,sans-serif;" +
+            "box-shadow:0 8px 24px rgba(0,0,0,.45)";
+
+        const label = document.createElement("span");
+
+        label.textContent = "🛡 Admin · Ads " + (on ? "ON" : "OFF");
+
+        const btn = document.createElement("button");
+
+        btn.textContent = on ? "Turn ads off" : "Preview ads";
+
+        btn.style.cssText =
+            "padding:6px 12px;border-radius:999px;cursor:pointer;" +
+            "border:1px solid rgba(255,255,255,.16);background:#2e8bff22;" +
+            "color:#8fb4ff;font:12px/1 inherit";
+
+        btn.onclick = () => this.setAdsOn(!on);
+
+        bar.append(label, btn);
+
+        document.body.appendChild(bar);
+
+    },
+
+    /* ------------------------------------------------------ */
     /* one banner = one isolated iframe (own `atOptions`)      */
     /* ------------------------------------------------------ */
 
@@ -183,6 +281,14 @@ window.AdZone = {
 
     mount() {
 
+        /* admin-only badge (visitors never see it) */
+
+        if (this.isAdmin()) this.adminBadge();
+
+        /* admin mode: no ads at all */
+
+        if (!this.adsOn()) { this.hideSlots(); return; }
+
         this.renderTop(document.getElementById("adBanner"));
 
         this.renderSkyscraper(document.getElementById("adLeft"));
@@ -207,6 +313,10 @@ window.AdZone = {
        countdown finishes (or the user skips, if allowed). */
 
     gate({ title, seconds }) {
+
+        /* admin mode: no ad, no waiting — hand the file straight over */
+
+        if (!this.adsOn()) return Promise.resolve(true);
 
         return new Promise((resolve) => {
 
