@@ -10,7 +10,7 @@
    "newer version available" prompt.
 ========================================================== */
 
-window.SHIBA_VERSION = "0.28.1";
+window.SHIBA_VERSION = "0.28.2";
 window.SHIBA_CHANNEL = "Alpha";
 
 (function () {
@@ -80,7 +80,37 @@ window.SHIBA_CHANNEL = "Alpha";
         document.body.appendChild(bar);
 
         document.getElementById("updateReload").onclick = () =>
-            location.reload();
+            hardRefresh();
+
+    }
+
+    /* A plain location.reload() can re-serve a STALE cached copy of the
+       page + version.js (GitHub Pages sends Cache-Control: max-age=600),
+       which is why the banner sometimes survives one click. Force the
+       browser to re-fetch the page and version.js from the network
+       (cache:"reload" updates the HTTP cache entry), THEN reload — so
+       the reload picks up the new build the first time. */
+
+    async function hardRefresh() {
+
+        const btn = document.getElementById("updateReload");
+
+        if (btn) { btn.disabled = true; btn.textContent = "Refreshing…"; }
+
+        const vjs = document.querySelector('script[src*="version.js"]');
+
+        const targets = [location.href];
+
+        if (vjs) targets.push(vjs.src.split("?")[0]);
+
+        try {
+
+            await Promise.all(targets.map(u =>
+                fetch(u, { cache: "reload" })));
+
+        } catch (e) { /* offline / blocked — reload anyway */ }
+
+        location.reload();
 
     }
 

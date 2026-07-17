@@ -2,6 +2,25 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.28.2 — 2026-07-17 · PATCH-11 fix (legacy tables) + reliable update reload
+
+### Fixed
+- **`SETUP-PATCH-11.sql` failed with `column "division_id" does not
+  exist`** — the original DB dump left behind *empty* legacy `cases` /
+  `case_assignments` / `case_notes` tables with the wrong shape
+  (`case_number` / `assigned_to`, no `case_id`), so `create table if not
+  exists` skipped them and the index failed. The patch now detects the
+  legacy shape (no `case_id` column), **aborts untouched if any row
+  exists** (so real data is never lost), and only drops + recreates when
+  the leftovers are empty. Stays idempotent after you have real cases.
+- **"A newer version is available → Refresh now" sometimes needed several
+  clicks.** GitHub Pages caches the page + `version.js` for 10 minutes,
+  so a plain reload re-served the stale script. The button now
+  re-fetches the page and `version.js` with `cache:"reload"` (bypassing
+  the HTTP cache) *before* reloading, so one click lands the new build.
+  (Takes effect from this version onward — the fix ships inside
+  `version.js`.)
+
 ## v0.28.1 — 2026-07-17 · Personnel File ↔ Cases wiring + stale text
 
 ### Fixed

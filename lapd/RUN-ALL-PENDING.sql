@@ -235,6 +235,28 @@ alter table public.applications
 
 -- ---------- PATCH 11 : cases + case assignments (Phase 6) ----------
 
+-- the original dump left EMPTY legacy cases/case_assignments/case_notes
+-- tables with the wrong shape (case_number/assigned_to, no case_id).
+-- drop them ONLY if legacy + empty; abort if any row exists.
+do $$
+declare n bigint;
+begin
+  if to_regclass('public.cases') is not null
+     and not exists (
+       select 1 from information_schema.columns
+        where table_schema = 'public' and table_name = 'cases'
+          and column_name = 'case_id') then
+    execute 'select count(*) from public.cases' into n;
+    if n > 0 then
+      raise exception
+        'Legacy public.cases holds % row(s) — aborting so no data is lost.', n;
+    end if;
+    drop table if exists public.case_notes cascade;
+    drop table if exists public.case_assignments cascade;
+    drop table if exists public.cases cascade;
+  end if;
+end $$;
+
 create table if not exists public.cases (
   id uuid not null default gen_random_uuid(),
   case_id text unique,
