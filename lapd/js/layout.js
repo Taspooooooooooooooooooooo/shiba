@@ -43,7 +43,7 @@ const AppLayout = {
 
     <a href="../cloud/">☁️ Cloud</a>
 
-    <a href="#">📂 Cases</a>
+    <a href="cases.html">📂 Cases</a>
 
     <a href="#">📄 Reports</a>
 

@@ -2,6 +2,32 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.28.0 — 2026-07-17 · Phase 6 Sprint 6.1 — Cases (core)
+
+### Added
+- **Case Management — the operational heart of PIMS.** A case is a
+  *container* (a digital case file), not a form. New `📂 Cases` page.
+- **Case dashboard** — searchable, filterable table (status / priority /
+  division), every row opens the full case file.
+- **Create Case wizard** — 4 steps (General → Description → Officers →
+  Review), with add/remove of additional officers (Sergeant+) each with
+  a role. Officer applicants set themselves as Lead Investigator.
+- **The 8-step create cascade** — one click fans out: generate `CASE-…`
+  ID → insert case → assignments → per-officer Personnel-File timeline
+  entries → audit log → notifications to assignees → dashboard.
+- **Case file page** — General + Assignments tabs, full lifecycle status
+  (Draft → Open → Investigation → Evidence Collection → Supervisor
+  Review → Approved For Closing → Closed → Archived), Sergeant+ status
+  advancement. Timeline / Evidence / Notes / History / Audit tabs are
+  stubbed ("soon") for later 6.x sprints.
+- Cases wired into the nav and `Ctrl+K` command palette.
+
+### Setup
+Run **`lapd/SETUP-PATCH-11.sql`** (or re-run `RUN-ALL-PENDING.sql`) —
+adds the `cases` + `case_assignments` tables. Until then the page
+degrades to a friendly hint. The ID engine's `CASE` prefix was already
+seeded, so no ID setup is needed.
+
 ## v0.27.0 — 2026-07-16 · PDF417 credential barcode
 
 ### Added

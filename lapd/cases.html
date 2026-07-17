@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>SHIBA PIMS | Cases</title>
+
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/dashboard.css">
+
+</head>
+
+<body>
+
+<div id="layoutTop"></div>
+
+<div class="content">
+
+    <div class="card">
+
+        <h1>📂 Cases</h1>
+
+        <p>Every case is a digital case file — incident, officers, evidence,
+           reports, timeline and audit, all under one <b>CASE-2026-…</b> ID.</p>
+
+    </div>
+
+    <!-- DASHBOARD -->
+    <div class="card">
+
+        <div class="caseBar">
+
+            <button id="caseCreate" class="primaryBtn hidden">➕ Create Case</button>
+
+            <input id="caseSearch" class="caseSearch"
+                   placeholder="Search case ID, title or location…">
+
+            <select id="caseFilterStatus" class="caseFilter"></select>
+
+            <select id="caseFilterPriority" class="caseFilter"></select>
+
+            <select id="caseFilterDivision" class="caseFilter"></select>
+
+        </div>
+
+        <div class="table caseTableWrap">
+
+            <table>
+
+                <thead>
+                    <tr>
+                        <th>Case ID</th>
+                        <th>Title</th>
+                        <th>Priority</th>
+                        <th>Division</th>
+                        <th>Lead</th>
+                        <th>Status</th>
+                        <th>Updated</th>
+                    </tr>
+                </thead>
+
+                <tbody id="caseRows">
+                    <tr><td colspan="7" class="muted">Loading…</td></tr>
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div id="layoutFooter"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+<script src="js/version.js"></script>
+
+<script src="js/supabaseClient.js"></script>
+
+<script src="js/core/idService.js"></script>
+<script src="js/core/permissionService.js"></script>
+<script src="js/core/auditService.js"></script>
+<script src="js/core/timelineService.js"></script>
+<script src="js/core/notificationService.js"></script>
+<script src="js/core/caseService.js"></script>
+
+<script src="js/auth.js"></script>
+<script src="js/session.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/layout.js"></script>
+<script src="js/commandPalette.js"></script>
+<script src="js/cases.js"></script>
+
+<script>
+
+if(localStorage.getItem("loggedIn")!="true"){
+
+    window.location.href="index.html";
+
+}
+
+document.getElementById("layoutTop").innerHTML = AppLayout.createTopbar();
+document.getElementById("layoutFooter").innerHTML = AppLayout.createFooter();
+
+</script>
+
+</body>
+
+</html>

@@ -17,6 +17,9 @@ class CommandPalette {
             { title: "👮 Officers",
               action: () => location.href = "officers.html" },
 
+            { title: "📂 Cases",
+              action: () => location.href = "cases.html" },
+
             { title: "🏆 Certificates",
               action: () => location.href = "certificates.html" },
 
@@ -41,6 +44,9 @@ class CommandPalette {
             /* --- quick actions --- */
             { title: "＋ Create Officer",
               action: () => location.href = "officers.html?create=1" },
+
+            { title: "＋ Create Case",
+              action: () => location.href = "cases.html" },
 
             { title: "🎖 Issue Certificate",
               action: () => location.href = "cert-studio.html" },

@@ -2583,3 +2583,307 @@ grid-template-columns:1fr;
 .detailQa b{ display:block; color:#dbe4f0; font-size:12.5px; margin-bottom:3px; }
 
 .detailQa span{ color:#b8c5d6; font-size:13px; white-space:pre-wrap; }
+
+/* ---------- CASES (Phase 6) ---------- */
+
+.caseBar{
+
+    display:flex;
+
+    flex-wrap:wrap;
+
+    gap:10px;
+
+    align-items:center;
+
+    margin-bottom:16px;
+
+}
+
+.caseSearch{
+
+    flex:1;
+
+    min-width:200px;
+
+    background:#15283d;
+
+    border:1px solid rgba(255,255,255,.1);
+
+    border-radius:10px;
+
+    color:#fff;
+
+    padding:10px 12px;
+
+    outline:none;
+
+    font-family:inherit;
+
+}
+
+.caseSearch:focus{ border-color:#2e8bff; }
+
+.caseFilter{
+
+    background:#15283d;
+
+    border:1px solid rgba(255,255,255,.1);
+
+    border-radius:10px;
+
+    color:#b8c5d6;
+
+    padding:10px 12px;
+
+    outline:none;
+
+    font-family:inherit;
+
+    cursor:pointer;
+
+}
+
+.caseTableWrap table{ width:100%; border-collapse:collapse; }
+
+.caseRow{ cursor:pointer; transition:.15s; }
+
+.caseRow:hover{ background:#2e8bff14; }
+
+/* wizard */
+
+.caseWizard{ max-width:600px; }
+
+.wizSteps{
+
+    display:flex;
+
+    gap:8px;
+
+    padding:0 20px 4px;
+
+}
+
+.wizDot{
+
+    width:26px;
+
+    height:26px;
+
+    border-radius:50%;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    font-size:12px;
+
+    background:#15283d;
+
+    border:1px solid rgba(255,255,255,.12);
+
+    color:#8fa6c4;
+
+}
+
+.wizDot.on{ background:#2e8bff33; border-color:#2e8bff; color:#fff; }
+
+.wizDot.done{ background:#0a6b2f44; border-color:#17a34a; color:#7ee2a8; }
+
+.wizGrid{
+
+    display:grid;
+
+    grid-template-columns:1fr 1fr;
+
+    gap:12px;
+
+}
+
+.wizAssignee{
+
+    display:flex;
+
+    gap:8px;
+
+    align-items:center;
+
+    margin-bottom:8px;
+
+}
+
+.wizAssignee .waOff{ flex:2; }
+
+.wizAssignee .waRole{ flex:1; }
+
+.wizAssignee .formQRemove{ position:static; flex-shrink:0; }
+
+.rvGrid{
+
+    display:grid;
+
+    grid-template-columns:1fr 1fr;
+
+    gap:10px 16px;
+
+}
+
+.rvRow small{
+
+    display:block;
+
+    color:#5a6b80;
+
+    font-size:9px;
+
+    text-transform:uppercase;
+
+    letter-spacing:1px;
+
+    margin-bottom:2px;
+
+}
+
+.rvRow div{ color:#dbe4f0; font-size:13px; }
+
+/* case file */
+
+.caseHeadTop{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    gap:16px;
+
+    flex-wrap:wrap;
+
+}
+
+.caseHeadId{
+
+    color:#2e8bff;
+
+    font-size:12px;
+
+    letter-spacing:1px;
+
+    font-weight:700;
+
+}
+
+.caseHeadTitle{ margin:2px 0 6px; }
+
+.caseHeadMeta{ color:#8fa6c4; font-size:13px; }
+
+.caseHeadStatus{ text-align:right; }
+
+.caseStatusPill{
+
+    display:inline-block;
+
+    padding:7px 14px;
+
+    border-radius:999px;
+
+    background:#15283d;
+
+    border:1px solid rgba(255,255,255,.1);
+
+    font-size:13px;
+
+    margin-bottom:8px;
+
+}
+
+.caseStatusMove{ display:flex; gap:8px; justify-content:flex-end; }
+
+.caseStatusMove .uiModalInput{ width:auto; }
+
+.caseBack{
+
+    display:inline-block;
+
+    margin-top:12px;
+
+    color:#8fa6c4;
+
+    text-decoration:none;
+
+    font-size:13px;
+
+}
+
+.caseBack:hover{ color:#fff; }
+
+.caseTabs{
+
+    display:flex;
+
+    flex-wrap:wrap;
+
+    gap:6px;
+
+    margin:16px 0;
+
+}
+
+.caseTab{
+
+    padding:9px 15px;
+
+    border:1px solid rgba(255,255,255,.1);
+
+    border-radius:999px;
+
+    background:#15283d;
+
+    color:#b8c5d6;
+
+    cursor:pointer;
+
+    font-size:13px;
+
+    font-family:inherit;
+
+    transition:.2s;
+
+}
+
+.caseTab:hover{ color:#fff; border-color:#2e8bff66; }
+
+.caseTab.on{ background:#2e8bff33; border-color:#2e8bff; color:#fff; }
+
+.caseTab.soon{ opacity:.45; cursor:default; }
+
+.caseTab.soon:hover{ color:#b8c5d6; border-color:rgba(255,255,255,.1); }
+
+.caseDesc{
+
+    background:#15283d55;
+
+    border:1px solid rgba(255,255,255,.06);
+
+    border-radius:10px;
+
+    padding:12px 14px;
+
+    color:#b8c5d6;
+
+    font-size:13px;
+
+    white-space:pre-wrap;
+
+    line-height:1.5;
+
+    margin-top:6px;
+
+}
+
+@media(max-width:600px){
+
+    .wizGrid, .rvGrid{ grid-template-columns:1fr; }
+
+}
