@@ -2,6 +2,20 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.28.1 — 2026-07-17 · Personnel File ↔ Cases wiring + stale text
+
+### Fixed
+- **Personnel File "Cases" tab** was written against a placeholder schema
+  (`case_number` / `assigned_to`) that never matched the real tables — it
+  now reads the officer's actual cases via `case_assignments` and each row
+  links to its case file. Stale empty-state text ("the full Case System
+  arrives in Phase 5") replaced with the real setup hint.
+- **Statistics tab "Cases" count** now counts real assignments instead of
+  showing "—".
+- **Permissions tab** note "Division, resource, and ownership permissions
+  arrive in later parts of Phase 4" was stale (Phase 4 is complete) — now
+  states they're enforced by the Policy Engine.
+
 ## v0.28.0 — 2026-07-17 · Phase 6 Sprint 6.1 — Cases (core)
 
 ### Added

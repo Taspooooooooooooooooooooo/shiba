@@ -2887,3 +2887,19 @@ grid-template-columns:1fr;
     .wizGrid, .rvGrid{ grid-template-columns:1fr; }
 
 }
+
+/* clickable case row inside the Personnel File Cases tab */
+
+a.pfCaseLink{
+
+    text-decoration:none;
+
+    color:inherit;
+
+    border-radius:8px;
+
+    transition:.15s;
+
+}
+
+a.pfCaseLink:hover{ background:#2e8bff14; }

@@ -208,28 +208,73 @@ const Personnel = {
 
         const box = document.getElementById("pfCases");
 
+        /* every case this officer is on — lead or assigned — via
+           case_assignments (the lead is stored there too). */
+
         const { data, error } = await db
-            .from("cases")
-            .select("case_number, title, status, created_at")
-            .or("assigned_to.eq." + this.officer.id +
-                ",created_by.eq." + this.officer.id)
-            .order("created_at", { ascending: false });
+            .from("case_assignments")
+            .select("role, assigned_at, " +
+                "cases(id, case_id, title, status, updated_at)")
+            .eq("officer_id", this.officer.id)
+            .order("assigned_at", { ascending: false });
 
         box.innerHTML = "";
 
-        if (error || !data || !data.length) {
+        if (error) {
 
             box.innerHTML =
-                "<p class='muted'>No cases yet — the full Case System " +
-                "arrives in Phase 5.</p>";
+                "<p class='muted'>Cases need a one-time setup — run " +
+                "lapd/SETUP-PATCH-11.sql (or RUN-ALL-PENDING.sql) in the " +
+                "Supabase SQL Editor.</p>";
 
             return;
 
         }
 
-        data.forEach(c => this.feedRow(box,
-            new Date(c.created_at).toLocaleString(),
-            c.case_number, c.title + " · " + c.status, ""));
+        const rows = (data || []).filter(r => r.cases);
+
+        if (!rows.length) {
+
+            box.innerHTML =
+                "<p class='muted'>Not assigned to any cases yet.</p>";
+
+            return;
+
+        }
+
+        const chip = s =>
+            window.CaseService ? CaseService.statusChip(s) : (s || "—");
+
+        rows.forEach(r => {
+
+            const c = r.cases;
+
+            const item = document.createElement("a");
+
+            item.className = "feedItem pfCaseLink";
+
+            item.href = "case.html?id=" + encodeURIComponent(c.id);
+
+            const time = document.createElement("span");
+            time.className = "feedTime";
+            time.textContent =
+                new Date(c.updated_at || r.assigned_at).toLocaleDateString();
+
+            const id = document.createElement("strong");
+            id.textContent = c.case_id;
+
+            const detail = document.createElement("span");
+            detail.className = "feedTarget";
+            detail.textContent = (c.title || "") + " · " + chip(c.status);
+
+            const role = document.createElement("small");
+            role.textContent = r.role;
+
+            item.append(time, id, detail, role);
+
+            box.appendChild(item);
+
+        });
 
     },
 
@@ -315,17 +360,6 @@ const Personnel = {
 
         const id = this.officer.id;
 
-        const countOr = async (table, orExpr) => {
-
-            const { count, error } = await db
-                .from(table)
-                .select("*", { count: "exact", head: true })
-                .or(orExpr);
-
-            return error ? "—" : (count || 0);
-
-        };
-
         const countEq = async (table, col, value) => {
 
             const { count, error } = await db
@@ -343,8 +377,7 @@ const Personnel = {
             .filter(e => /promot/i.test(e.action)).length;
 
         const stats = [
-            ["📁 Cases", await countOr("cases",
-                "assigned_to.eq." + id + ",created_by.eq." + id)],
+            ["📁 Cases", await countEq("case_assignments", "officer_id", id)],
             ["📄 Reports", await countEq("reports", "officer_id", id)],
             ["🎖 Promotions", promotions],
             ["📜 Timeline Events", timeline.length],
@@ -692,8 +725,8 @@ const Personnel = {
         note.style.marginTop = "14px";
 
         note.textContent =
-            "Division, resource, and ownership permissions arrive in later " +
-            "parts of Phase 4.";
+            "Division, resource, and ownership rules are enforced by the " +
+            "Policy Engine and apply automatically where relevant.";
 
         box.appendChild(note);
 
