@@ -2,6 +2,18 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.29.1 — 2026-07-18 · Random 5-digit badge numbers
+
+### Changed
+- **Badge numbers are random 5-digit again** (`BDG-79914`), not the
+  sequential ID engine (`BDG-000001`, `BDG-000002`, …) — a badge is an
+  identity, not a running counter. New officers get a random badge that
+  is uniqueness-checked against the roster.
+- **Existing sequential badges migrated**: OFCR-000001 → BDG-79914,
+  OFCR-000002 → BDG-59658, OFCR-000003 → BDG-36121 (audited + on each
+  officer's timeline). The whole roster now matches the original
+  random-badge style.
+
 ## v0.29.0 — 2026-07-18 · Phase 6 Sprint 6.2 — the case file comes alive
 
 ### Added

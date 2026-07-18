@@ -15,9 +15,38 @@ function generateOfficerId() {
 
 }
 
-function generateBadgeNumber() {
+/* badges are RANDOM 5-digit numbers (BDG-48291), not sequential —
+   a badge is an identity, not a running counter. Uniqueness is
+   checked against the roster (badge_number is UNIQUE in the DB). */
+
+function randomBadge() {
 
     return "BDG-" + Math.floor(10000 + Math.random() * 90000);
+
+}
+
+async function generateBadgeNumber() {
+
+    for (let i = 0; i < 8; i++) {
+
+        const candidate = randomBadge();
+
+        if (!window.db) return candidate;
+
+        const { data } = await db
+            .from("officers")
+            .select("id")
+            .eq("badge_number", candidate)
+            .maybeSingle();
+
+        if (!data) return candidate;
+
+    }
+
+    /* 8 collisions in 90 000 numbers — practically impossible,
+       but the DB UNIQUE constraint is the final guard anyway */
+
+    return randomBadge();
 
 }
 
@@ -352,7 +381,9 @@ class OfficersEngine {
 
         const officerId = await IdService.next("OFFICER", generateOfficerId);
 
-        const badge = await IdService.next("BADGE", generateBadgeNumber);
+        /* badge: random 5-digit, NOT the sequential ID engine */
+
+        const badge = await generateBadgeNumber();
 
         if (this.ranks.length === 0 && this.divisions.length === 0) {
             await this.loadLookups();
