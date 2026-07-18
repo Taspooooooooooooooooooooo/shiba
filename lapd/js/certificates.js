@@ -350,33 +350,12 @@ const Certificates = {
         document.getElementById("cdCreated").textContent =
             new Date(cert.created_at).toLocaleDateString();
 
-        /* secure QR — encodes the scanner URL with the secret token */
+        /* PDF417 credential strip — carries the SECRET token (never
+           a link); the scanner validates it against our database */
 
-        const qrBox = document.getElementById("cdQr");
-
-        qrBox.innerHTML = "";
-
-        try {
-
-            const qr = qrcode(0, "M");
-
-            qr.addData(CertificateService.scannerUrl(cert.qr_token));
-
-            qr.make();
-
-            qrBox.innerHTML = qr.createSvgTag({ cellSize: 3, margin: 0 });
-
-        } catch (e) {
-
-            qrBox.innerHTML = "<small class='muted'>QR unavailable</small>";
-
-        }
-
-        /* PDF417 credential strip — same secret token, licence-style */
-
-        CertificateService.renderPdf417(
+        BarcodeService.renderPdf417(
             document.getElementById("cdPdf417"),
-            CertificateService.barcodePayload(cert));
+            BarcodeService.certificate(cert));
 
         document.getElementById("certModal").classList.remove("hidden");
 

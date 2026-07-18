@@ -1212,28 +1212,26 @@ const Personnel = {
         document.getElementById("idCardIssued").textContent =
             "Issued " + new Date().toLocaleDateString();
 
-        /* QR encodes the officer's identity/verify link */
+        /* PDF417 credential strip — carries the officer's SECRET
+           scan token (no links); the Scanner validates it against
+           our database. Token column arrives with PATCH-13. */
 
-        const qrBox = document.getElementById("idCardQr");
+        const strip = document.getElementById("idCardPdf417");
 
-        qrBox.innerHTML = "";
+        if (this.raw?.scan_token) {
 
-        try {
+            BarcodeService.renderPdf417(strip,
+                BarcodeService.officer({
+                    officer_id: o.officerId,
+                    badge_number: o.badge,
+                    scan_token: this.raw.scan_token
+                }));
 
-            const url = location.origin +
-                "/lapd/personnel.html?id=" + o.id;
+        } else {
 
-            const qr = qrcode(0, "M");
-
-            qr.addData(url);
-
-            qr.make();
-
-            qrBox.innerHTML = qr.createSvgTag({ cellSize: 3, margin: 0 });
-
-        } catch (e) {
-
-            qrBox.innerHTML = "<small class='muted'>QR unavailable</small>";
+            strip.innerHTML =
+                "<small class='muted'>Barcode needs PATCH-13 — run " +
+                "lapd/SETUP-PATCH-13.sql once.</small>";
 
         }
 

@@ -1,9 +1,11 @@
 /* ==========================================================
    SHIBA PIMS
-   Scanner (Phase 5) — verifies SHIBA QR codes ONLY.
-   A code is valid only if its secret token exists in our
-   database (verify_qr_token RPC). Forged, foreign, or
-   revoked codes fail. Every verification is audited.
+   Scanner — verifies SHIBA PDF417 credentials ONLY.
+   Certificates, officer ID cards and evidence labels all
+   carry a SECRET token (never a link); a code is valid only
+   if its token exists in our database (verify_scan_token
+   RPC). Forged, foreign, or revoked codes fail. Every
+   verification is audited. QR codes are retired.
 ========================================================== */
 
 const Scanner = {
@@ -17,9 +19,7 @@ const Scanner = {
     _pdfReader: null,
 
     /* ----------------------------------------------------- */
-    /* PDF417 decoding (ZXing) — the credential strip on our  */
-    /* certificates + identity cards. jsQR only reads QR, so  */
-    /* this runs alongside it.                                */
+    /* PDF417 decoding (ZXing)                                */
     /* ----------------------------------------------------- */
 
     pdfReader() {
@@ -71,72 +71,86 @@ const Scanner = {
     },
 
     /* ----------------------------------------------------- */
-    /* token extraction — accepts a raw token or our          */
-    /* scanner link (…/scanner.html?t=<token>)                */
+    /* verify — ONE call recognises certificate / officer /   */
+    /* evidence tokens. Falls back to the certificate-only    */
+    /* RPC until PATCH-13 is run.                             */
     /* ----------------------------------------------------- */
 
-    /* accepts, in order:
-         SHIBA|CERT|<cert id>|<officer id>|<token>   (PDF417 strip)
-         https://…/scanner.html?t=<token>            (QR link)
-         <token>                                     (typed by hand) */
+    async verifyToken(token) {
 
-    extractToken(text) {
-
-        const value = (text || "").trim();
-
-        if (!value) return null;
-
-        if (value.startsWith(CertificateService.PDF417_PREFIX + "|")) {
-
-            const parts = value.split("|");
-
-            const token = parts[parts.length - 1].trim();
-
-            if (token) return token;
-
-        }
+        if (!window.db) return { valid: false };
 
         try {
 
-            const url = new URL(value);
+            const { data, error } = await db
+                .rpc("verify_scan_token", { p_token: (token || "").trim() });
 
-            const t = new URLSearchParams(url.search).get("t");
+            if (!error && data) return data;
 
-            if (t) return t.trim();
+            /* RPC missing → PATCH-13 not run yet; certificates
+               still verify through the old cert-only RPC */
 
-        } catch (e) { /* not a URL — treat as raw token */ }
+            if (error && /find the function|does not exist|PGRST202/i
+                    .test(error.message || "")) {
 
-        return value;
+                const cert = await CertificateService.verifyToken(token);
+
+                if (cert?.valid) cert.kind = "certificate";
+
+                return cert || { valid: false };
+
+            }
+
+            return { valid: false };
+
+        } catch (e) { return { valid: false }; }
 
     },
 
-    /* ----------------------------------------------------- */
-    /* verify + render                                        */
-    /* ----------------------------------------------------- */
-
     async verify(text, source) {
 
-        const token = this.extractToken(text);
+        const parsed = BarcodeService.parse(text);
 
-        if (!token) return;
+        if (!parsed) return;
 
-        const result = await CertificateService.verifyToken(token);
+        const result = await this.verifyToken(parsed.token);
 
-        this.renderResult(result, token);
+        this.renderResult(result);
+
+        const label =
+            result.kind === "officer" ? result.officer_public_id + " — " +
+                (result.officer_name || "")
+            : result.kind === "evidence" ? result.evidence_id + " (" +
+                (result.case_public_id || "no case") + ")"
+            : result.valid ? result.certificate_id + " — " +
+                (result.officer_name || "")
+            : "unknown token";
 
         AuditService.log({
             action: result.valid
-                ? (result.revoked ? "QR_SCAN_REVOKED" : "QR_SCAN_VALID")
-                : "QR_SCAN_INVALID",
-            target: result.valid
-                ? result.certificate_id + " — " + (result.officer_name || "")
-                : "unknown token",
-            details: "via " + (source || "scanner")
+                ? (result.revoked ? "SCAN_REVOKED" : "SCAN_VALID")
+                : "SCAN_INVALID",
+            target: label,
+            details: "PDF417 via " + (source || "scanner") +
+                (result.kind ? " · " + result.kind : "")
         });
 
     },
 
-    renderResult(result, token) {
+    /* ----------------------------------------------------- */
+    /* result rendering — per credential kind                 */
+    /* ----------------------------------------------------- */
+
+    fieldGrid(rows) {
+
+        return `<div class="fieldGrid" style="margin-top:14px">` +
+            rows.filter(r => r[1]).map(([k, v]) =>
+                `<div class="fieldItem"><small>${k}</small><div>${v}</div></div>`
+            ).join("") + `</div>`;
+
+    },
+
+    renderResult(result) {
 
         const card = document.getElementById("resultCard");
 
@@ -151,11 +165,11 @@ const Scanner = {
 
                     <div class="scanIcon">❌</div>
 
-                    <h2>NOT A VALID SHIBA DOCUMENT</h2>
+                    <h2>NOT A VALID SHIBA CREDENTIAL</h2>
 
                     <p class="muted">This code is not in our records. It was
                        not issued by SHIBA PIMS${result.setup
-                           ? " — or the certificate system setup " +
+                           ? " — or the system setup " +
                              "(RUN-ALL-PENDING.sql) has not been run yet"
                            : ""}. Treat it as forged.</p>
 
@@ -167,46 +181,104 @@ const Scanner = {
 
         }
 
-        const revoked = result.revoked;
+        let html = "";
 
-        const pending = result.status === "Pending";
+        if (result.kind === "officer") {
 
-        const rejected = result.status === "Rejected";
+            const bad = ["Suspended", "Terminated", "Retired"]
+                .includes(result.status);
 
-        const good = !revoked && !pending && !rejected;
+            html = `
+                <div class="${bad ? "scanWarn" : "scanGood"}">
 
-        const headline = revoked ? "⚫ DOCUMENT REVOKED"
-            : rejected ? "🔴 DOCUMENT REJECTED"
-            : pending ? "🟡 GENUINE — AWAITING APPROVAL"
-            : "✅ VERIFIED SHIBA DOCUMENT";
+                    <div class="scanIcon">${bad ? "⚠️" : "👮"}</div>
 
-        const rows = [
-            ["Certificate", result.certificate_id],
-            ["Type", result.type + (result.title &&
-                result.title !== result.type ? " — " + result.title : "")],
-            ["Officer", (result.officer_name || "—") +
-                (result.officer_public_id ? " (" + result.officer_public_id + ")" : "")],
-            ["Status", CertificateService.statusChip(result.status, revoked)],
-            ["New rank", result.new_rank || null],
-            ["Effective", result.effective_date || null],
-            ["Issued by", result.issued_by || null],
-            ["Approved by", result.approved_by || null]
-        ].filter(r => r[1]);
+                    <h2>${bad
+                        ? "GENUINE ID — OFFICER " +
+                          (result.status || "").toUpperCase()
+                        : "VERIFIED SHIBA OFFICER"}</h2>
 
-        box.innerHTML = `
-            <div class="${good ? "scanGood" : "scanWarn"}">
+                    ${this.fieldGrid([
+                        ["Officer", result.officer_name],
+                        ["Officer ID", result.officer_public_id],
+                        ["Badge", result.badge],
+                        ["Rank", result.rank],
+                        ["Division", result.division],
+                        ["Status", result.status]
+                    ])}
 
-                <div class="scanIcon">${headline.slice(0, 2)}</div>
+                </div>`;
 
-                <h2>${headline.slice(2).trim()}</h2>
+        } else if (result.kind === "evidence") {
 
-                <div class="fieldGrid" style="margin-top:14px">
-                    ${rows.map(([k, v]) =>
-                        `<div class="fieldItem"><small>${k}</small><div>${v}</div></div>`
-                    ).join("")}
-                </div>
+            html = `
+                <div class="scanGood">
 
-            </div>`;
+                    <div class="scanIcon">🧰</div>
+
+                    <h2>VERIFIED EVIDENCE ITEM</h2>
+
+                    ${this.fieldGrid([
+                        ["Evidence", result.evidence_id],
+                        ["Case", result.case_public_id],
+                        ["Type", result.type],
+                        ["Description", result.description],
+                        ["File", result.file_name],
+                        ["SHA-256", result.hash
+                            ? result.hash.slice(0, 16) + "…" : null],
+                        ["Logged by", result.uploaded_by],
+                        ["Logged", result.created_at
+                            ? new Date(result.created_at).toLocaleString()
+                            : null]
+                    ])}
+
+                </div>`;
+
+        } else {
+
+            /* certificate (default kind) */
+
+            const revoked = result.revoked;
+
+            const pending = result.status === "Pending";
+
+            const rejected = result.status === "Rejected";
+
+            const good = !revoked && !pending && !rejected;
+
+            const headline = revoked ? "⚫ DOCUMENT REVOKED"
+                : rejected ? "🔴 DOCUMENT REJECTED"
+                : pending ? "🟡 GENUINE — AWAITING APPROVAL"
+                : "✅ VERIFIED SHIBA DOCUMENT";
+
+            html = `
+                <div class="${good ? "scanGood" : "scanWarn"}">
+
+                    <div class="scanIcon">${headline.slice(0, 2)}</div>
+
+                    <h2>${headline.slice(2).trim()}</h2>
+
+                    ${this.fieldGrid([
+                        ["Certificate", result.certificate_id],
+                        ["Type", result.type + (result.title &&
+                            result.title !== result.type
+                                ? " — " + result.title : "")],
+                        ["Officer", (result.officer_name || "—") +
+                            (result.officer_public_id
+                                ? " (" + result.officer_public_id + ")" : "")],
+                        ["Status", CertificateService.statusChip(
+                            result.status, revoked)],
+                        ["New rank", result.new_rank || null],
+                        ["Effective", result.effective_date || null],
+                        ["Issued by", result.issued_by || null],
+                        ["Approved by", result.approved_by || null]
+                    ])}
+
+                </div>`;
+
+        }
+
+        box.innerHTML = html;
 
         card.scrollIntoView({ behavior: "smooth" });
 
@@ -272,26 +344,10 @@ const Scanner = {
 
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-            const image = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            /* PDF417 decode is heavy — every 3rd frame keeps the
+               preview smooth on phones */
 
-            const code = window.jsQR
-                ? jsQR(image.data, image.width, image.height)
-                : null;
-
-            if (code && code.data) {
-
-                this.stop();
-
-                this.verify(code.data, "camera · QR");
-
-                return;
-
-            }
-
-            /* PDF417 is far heavier to decode than QR — every 6th
-               frame keeps the preview smooth on phones. */
-
-            if (++this._frame % 6 === 0) {
+            if (++this._frame % 3 === 0) {
 
                 const strip = this.decodePdf417(canvas);
 
@@ -299,7 +355,7 @@ const Scanner = {
 
                     this.stop();
 
-                    this.verify(strip, "camera · PDF417");
+                    this.verify(strip, "camera");
 
                     return;
 
@@ -357,7 +413,7 @@ const Scanner = {
 
             });
 
-        /* opened from a QR link: /lapd/scanner.html?t=<token> */
+        /* opened from a legacy link: /lapd/scanner.html?t=<token> */
 
         const t = new URLSearchParams(location.search).get("t");
 

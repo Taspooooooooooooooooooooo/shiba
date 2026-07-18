@@ -636,6 +636,335 @@ const CaseService = {
 
         return true;
 
+    },
+
+    /* ----------------------------------------------------- */
+    /* evidence (Sprint 6.3) — every piece is its own object  */
+    /* with an EVID- id and a SHA-256 hash of the file.       */
+    /* Evidence is never deleted from the UI.                 */
+    /* ----------------------------------------------------- */
+
+    EVIDENCE_TYPES: ["Photo", "Video", "Audio", "Document",
+                     "Bodycam", "Other"],
+
+    PERSON_ROLES: ["Victim", "Witness", "Suspect", "Other"],
+
+    SETUP_HINT_63:
+        "This tab needs a one-time setup — run lapd/SETUP-PATCH-13.sql " +
+        "(or RUN-ALL-PENDING.sql) in the Supabase SQL Editor.",
+
+    /* storage uses a dedicated ANON client — the cloud bucket's
+       policies are anon-only, so the authenticated session client
+       gets rejected (learned in v0.10.1). */
+
+    _storage: null,
+
+    storage() {
+
+        if (!this._storage) {
+
+            this._storage = window.supabase.createClient(
+                "https://vtqyqzuhifzqzqszhtwq.supabase.co",
+                "sb_publishable_NunfAEMxNJA39nzFxtn42g_hsmzxcv8",
+                { auth: { persistSession: false, autoRefreshToken: false } }
+            ).storage;
+
+        }
+
+        return this._storage;
+
+    },
+
+    /* SHA-256 of the file, computed in the browser before upload —
+       later re-hashing the file proves it wasn't tampered with */
+
+    async sha256(file) {
+
+        const buf = await file.arrayBuffer();
+
+        const digest = await crypto.subtle.digest("SHA-256", buf);
+
+        return [...new Uint8Array(digest)]
+            .map(b => b.toString(16).padStart(2, "0")).join("");
+
+    },
+
+    async evidence(caseUuid) {
+
+        const { data, error } = await db
+            .from("case_evidence")
+            .select("*")
+            .eq("case_id", caseUuid)
+            .order("created_at", { ascending: false });
+
+        if (error) return { error };
+
+        return { rows: data || [] };
+
+    },
+
+    /* 11-char share id — the same format SHIBA Cloud uses */
+
+    cloudFileId() {
+
+        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
+                      "abcdefghijklmnopqrstuvwxyz0123456789";
+
+        const bytes = new Uint8Array(11);
+
+        crypto.getRandomValues(bytes);
+
+        return [...bytes].map(b => chars[b % chars.length]).join("");
+
+    },
+
+    async addEvidence(caseRow, { file, type, description }) {
+
+        if (!window.db) return false;
+
+        const evId = await IdService.next("EVIDENCE",
+            () => "EVID-" + String(Date.now()).slice(-6));
+
+        let fileUrl = null, fileName = null, fileSize = null, hash = null;
+
+        let uploadedPath = null, cloudId = null;
+
+        if (file) {
+
+            hash = await this.sha256(file);
+
+            /* the file goes THROUGH SHIBA Cloud — same bucket, same
+               path layout, and a cloud_files row so it shows up in
+               the uploader's cloud account (like officer photos) */
+
+            cloudId = this.cloudFileId();
+
+            uploadedPath = cloudId + "/" + file.name;
+
+            const { error: upErr } = await this.storage()
+                .from("cloud")
+                .upload(uploadedPath, file);
+
+            if (upErr) {
+
+                console.error("EVIDENCE UPLOAD ERROR:", upErr);
+
+                UI?.error("Could not upload the file.");
+
+                return false;
+
+            }
+
+            fileUrl = this.storage().from("cloud")
+                .getPublicUrl(uploadedPath).data.publicUrl;
+
+            fileName = file.name;
+
+            fileSize = file.size;
+
+            let authId = null;
+
+            try {
+
+                const { data } = await db.auth.getUser();
+
+                authId = data?.user?.id || null;
+
+            } catch (e) { /* no session — owner_id stays null */ }
+
+            const { error: cfErr } = await db
+                .from("cloud_files")
+                .insert([{
+                    id: cloudId,
+                    name: file.name,
+                    path: uploadedPath,
+                    size: file.size,
+                    mime: file.type || null,
+                    owner_username:
+                        localStorage.getItem("username") || null,
+                    owner_id: authId
+                }]);
+
+            if (cfErr) {
+
+                console.warn("cloud_files register:", cfErr.message);
+
+                cloudId = null;   /* file still uploaded — keep going */
+
+            }
+
+        }
+
+        const { error } = await db
+            .from("case_evidence")
+            .insert([{
+                evidence_id: evId,
+                case_id: caseRow.id,
+                type: type || "Other",
+                description: description || null,
+                file_url: fileUrl,
+                file_name: fileName,
+                file_size: fileSize,
+                hash: hash,
+                cloud_id: cloudId,
+                uploaded_by: localStorage.getItem("username") || null
+            }]);
+
+        if (error) {
+
+            /* don't orphan the upload if the table is missing */
+
+            if (uploadedPath) {
+
+                try {
+
+                    await this.storage().from("cloud").remove([uploadedPath]);
+
+                    if (cloudId) {
+
+                        await db.from("cloud_files")
+                            .delete().eq("id", cloudId);
+
+                    }
+
+                } catch (e) { /* best effort */ }
+
+            }
+
+            UI?.error(this.SETUP_HINT_63);
+
+            return false;
+
+        }
+
+        await Promise.allSettled([
+
+            this.caseEvent(caseRow.id, "Evidence uploaded",
+                evId + " · " + (type || "Other") +
+                (fileName ? " · " + fileName : "")),
+
+            AuditService.log({
+                action: "CASE_EVIDENCE_ADDED",
+                target: caseRow.case_id + " — " + evId,
+                details: (type || "Other") +
+                    (hash ? " · sha256 " + hash.slice(0, 12) + "…" : "")
+            })
+
+        ]);
+
+        UI?.success(evId + " added");
+
+        return true;
+
+    },
+
+    /* ----------------------------------------------------- */
+    /* people (Sprint 6.3) — victims, witnesses, suspects     */
+    /* ----------------------------------------------------- */
+
+    async persons(caseUuid) {
+
+        const { data, error } = await db
+            .from("case_persons")
+            .select("*")
+            .eq("case_id", caseUuid)
+            .order("created_at", { ascending: true });
+
+        if (error) return { error };
+
+        return { rows: data || [] };
+
+    },
+
+    async addPerson(caseRow, { name, role, details }) {
+
+        if (!window.db || !name?.trim()) return false;
+
+        if (!(await PermissionService.can("cases.assign"))) {
+
+            UI?.error("Requires Sergeant or above.");
+
+            return false;
+
+        }
+
+        const personId = await IdService.next("PERSON",
+            () => "PRSN-" + String(Date.now()).slice(-6));
+
+        const { error } = await db
+            .from("case_persons")
+            .insert([{
+                person_id: personId,
+                case_id: caseRow.id,
+                role: role || "Other",
+                name: name.trim(),
+                details: details?.trim() || null,
+                added_by: localStorage.getItem("username") || null
+            }]);
+
+        if (error) {
+
+            UI?.error(this.SETUP_HINT_63);
+
+            return false;
+
+        }
+
+        await Promise.allSettled([
+
+            this.caseEvent(caseRow.id, "Person added",
+                personId + " · " + (role || "Other") + " · " + name.trim()),
+
+            AuditService.log({
+                action: "CASE_PERSON_ADDED",
+                target: caseRow.case_id + " — " + personId,
+                details: (role || "Other") + " · " + name.trim()
+            })
+
+        ]);
+
+        UI?.success(personId + " added");
+
+        return true;
+
+    },
+
+    async removePerson(caseRow, person) {
+
+        if (!window.db) return false;
+
+        if (!(await PermissionService.can("cases.assign"))) {
+
+            UI?.error("Requires Sergeant or above.");
+
+            return false;
+
+        }
+
+        const { error } = await db
+            .from("case_persons")
+            .delete()
+            .eq("id", person.id);
+
+        if (error) { UI?.error("Could not remove the person."); return false; }
+
+        await Promise.allSettled([
+
+            this.caseEvent(caseRow.id, "Person removed",
+                person.person_id + " · " + person.role + " · " + person.name),
+
+            AuditService.log({
+                action: "CASE_PERSON_REMOVED",
+                target: caseRow.case_id + " — " + person.person_id,
+                details: person.role + " · " + person.name
+            })
+
+        ]);
+
+        UI?.success(person.person_id + " removed");
+
+        return true;
+
     }
 
 };

@@ -27,8 +27,9 @@ const CaseFile = {
     TABS: [
         { key: "general", label: "General", live: true },
         { key: "assignments", label: "Assignments", live: true },
+        { key: "people", label: "People", live: true },
         { key: "timeline", label: "Timeline", live: true },
-        { key: "evidence", label: "Evidence", live: false },
+        { key: "evidence", label: "Evidence", live: true },
         { key: "notes", label: "Notes", live: true },
         { key: "history", label: "History", live: true },
         { key: "audit", label: "Audit", live: true }
@@ -178,7 +179,9 @@ const CaseFile = {
 
         if (this.tab === "general") body.innerHTML = this.viewGeneral();
         else if (this.tab === "assignments") await this.viewAssignments(body);
+        else if (this.tab === "people") await this.viewPeople(body);
         else if (this.tab === "timeline") await this.viewTimeline(body);
+        else if (this.tab === "evidence") await this.viewEvidence(body);
         else if (this.tab === "notes") await this.viewNotes(body);
         else if (this.tab === "history") await this.viewHistory(body);
         else if (this.tab === "audit") await this.viewAudit(body);
@@ -365,6 +368,330 @@ const CaseFile = {
         const { rows } = await CaseService.assignments(this.id);
 
         this.assignmentRows = rows || [];
+
+    },
+
+    /* --------------------------------------------------------- */
+    /* PEOPLE — victims, witnesses, suspects (Sergeant+ edits)   */
+    /* --------------------------------------------------------- */
+
+    ROLE_ICONS: { "Victim": "🤕", "Witness": "👁", "Suspect": "🚨",
+                  "Other": "👤" },
+
+    async viewPeople(body) {
+
+        body.innerHTML = "";
+
+        const card = this.card("🧑‍🤝‍🧑 People",
+            "Victims, witnesses and suspects on this case — each with " +
+            "their own ID.");
+
+        if (this.canAssign) {
+
+            const bar = document.createElement("div");
+            bar.className = "personBar";
+
+            const name = document.createElement("input");
+            name.className = "uiModalInput";
+            name.placeholder = "Full name…";
+
+            const role = document.createElement("select");
+            role.className = "uiModalInput";
+            role.innerHTML = CaseService.PERSON_ROLES.map(r =>
+                `<option>${r}</option>`).join("");
+
+            const details = document.createElement("input");
+            details.className = "uiModalInput";
+            details.placeholder = "Details (optional)…";
+
+            const add = document.createElement("button");
+            add.className = "primaryBtn";
+            add.textContent = "Add";
+            add.onclick = async () => {
+                if (!name.value.trim()) { UI.error("A name is required."); return; }
+                add.disabled = true;
+                const ok = await CaseService.addPerson(this.caseRow, {
+                    name: name.value, role: role.value,
+                    details: details.value
+                });
+                add.disabled = false;
+                if (ok) this.renderBody();
+            };
+
+            bar.append(name, role, details, add);
+            card.appendChild(bar);
+
+        }
+
+        const { rows, error } = await CaseService.persons(this.id);
+
+        if (error) {
+
+            card.appendChild(this.hint63());
+
+        } else if (!rows.length) {
+
+            const p = document.createElement("p");
+            p.className = "muted";
+            p.textContent = "No persons recorded on this case.";
+            card.appendChild(p);
+
+        } else {
+
+            rows.forEach(person => {
+
+                const row = document.createElement("div");
+                row.className = "certItem";
+
+                const info = document.createElement("div");
+                info.className = "certInfo";
+                info.innerHTML =
+                    `<strong>${this.ROLE_ICONS[person.role] || "👤"} ` +
+                    `${this.esc(person.name)}</strong>
+                     <span class="grantKind">${this.esc(person.role)}</span>
+                     <small>${this.esc(person.person_id || "")}
+                     · added ${new Date(person.created_at).toLocaleDateString()}
+                     ${person.added_by ? " · by " + this.esc(person.added_by) : ""}</small>` +
+                    (person.details
+                        ? `<div class="apQa">${this.esc(person.details)}</div>` : "");
+
+                row.appendChild(info);
+
+                if (this.canAssign) {
+
+                    const actions = document.createElement("div");
+                    actions.className = "certActions";
+
+                    const del = document.createElement("button");
+                    del.className = "dangerBtn";
+                    del.textContent = "Remove";
+                    del.onclick = async () => {
+
+                        const ok = await UI.confirm({
+                            title: "Remove this person?",
+                            message: person.name + " (" + person.role +
+                                ") will be removed from " +
+                                this.caseRow.case_id + ". The case history " +
+                                "keeps a record.",
+                            confirmText: "Remove",
+                            danger: true
+                        });
+
+                        if (!ok) return;
+
+                        if (await CaseService.removePerson(this.caseRow, person))
+                            this.renderBody();
+
+                    };
+
+                    actions.appendChild(del);
+                    row.appendChild(actions);
+
+                }
+
+                card.appendChild(row);
+
+            });
+
+        }
+
+        body.appendChild(card);
+
+    },
+
+    /* --------------------------------------------------------- */
+    /* EVIDENCE — EVID- objects with a SHA-256 file hash         */
+    /* --------------------------------------------------------- */
+
+    fmtSize(bytes) {
+
+        if (bytes == null) return "";
+
+        if (bytes < 1024) return bytes + " B";
+
+        if (bytes < 1048576) return (bytes / 1024).toFixed(1) + " KB";
+
+        return (bytes / 1048576).toFixed(1) + " MB";
+
+    },
+
+    async viewEvidence(body) {
+
+        body.innerHTML = "";
+
+        const card = this.card("🧰 Evidence",
+            "Every piece is its own object — typed, hashed (SHA-256) and " +
+            "never deleted.");
+
+        /* upload bar — every signed-in officer may add evidence */
+
+        const bar = document.createElement("div");
+        bar.className = "evBar";
+
+        const fileIn = document.createElement("input");
+        fileIn.type = "file";
+        fileIn.className = "uiModalInput evFile";
+
+        const type = document.createElement("select");
+        type.className = "uiModalInput";
+        type.innerHTML = CaseService.EVIDENCE_TYPES.map(t =>
+            `<option>${t}</option>`).join("");
+
+        const desc = document.createElement("input");
+        desc.className = "uiModalInput";
+        desc.placeholder = "Description…";
+
+        const add = document.createElement("button");
+        add.className = "primaryBtn";
+        add.textContent = "Add evidence";
+        add.onclick = async () => {
+
+            const file = fileIn.files[0] || null;
+
+            if (!file && !desc.value.trim()) {
+                UI.error("Attach a file or write a description.");
+                return;
+            }
+
+            add.disabled = true;
+            add.textContent = file ? "Hashing + uploading…" : "Saving…";
+
+            const ok = await CaseService.addEvidence(this.caseRow, {
+                file: file, type: type.value, description: desc.value
+            });
+
+            add.disabled = false;
+            add.textContent = "Add evidence";
+
+            if (ok) this.renderBody();
+
+        };
+
+        bar.append(fileIn, type, desc, add);
+        card.appendChild(bar);
+
+        const { rows, error } = await CaseService.evidence(this.id);
+
+        if (error) {
+
+            card.appendChild(this.hint63());
+
+        } else if (!rows.length) {
+
+            const p = document.createElement("p");
+            p.className = "muted";
+            p.textContent = "No evidence logged yet.";
+            card.appendChild(p);
+
+        } else {
+
+            rows.forEach(ev => {
+
+                const row = document.createElement("div");
+                row.className = "certItem";
+
+                const info = document.createElement("div");
+                info.className = "certInfo";
+
+                info.innerHTML =
+                    `<strong>${this.esc(ev.evidence_id)}</strong>
+                     <span class="grantKind">${this.esc(ev.type)}</span>
+                     <small>${ev.uploaded_by ? "by " + this.esc(ev.uploaded_by) + " · " : ""}` +
+                     `${new Date(ev.created_at).toLocaleString()}` +
+                     `${ev.file_size != null ? " · " + this.fmtSize(ev.file_size) : ""}</small>` +
+                    (ev.description
+                        ? `<div class="apQa">${this.esc(ev.description)}</div>` : "") +
+                    (ev.hash
+                        ? `<div class="evHash" title="SHA-256: ${this.esc(ev.hash)}">` +
+                          `#️⃣ ${this.esc(ev.hash.slice(0, 16))}…</div>` : "");
+
+                row.appendChild(info);
+
+                const actions = document.createElement("div");
+                actions.className = "certActions";
+
+                if (ev.file_url || ev.cloud_id) {
+
+                    const open = document.createElement("a");
+                    open.className = "primaryBtn";
+                    open.style.textDecoration = "none";
+                    open.textContent = "Open file";
+                    open.href = ev.cloud_id
+                        ? "../cloud/?=" + ev.cloud_id
+                        : ev.file_url;
+                    open.target = "_blank";
+                    open.rel = "noopener";
+
+                    actions.appendChild(open);
+
+                }
+
+                if (ev.scan_token) {
+
+                    const barcode = document.createElement("button");
+                    barcode.textContent = "🏷 Barcode";
+                    barcode.onclick = () => this.showEvidenceBarcode(ev);
+
+                    actions.appendChild(barcode);
+
+                }
+
+                if (actions.childNodes.length) row.appendChild(actions);
+
+                card.appendChild(row);
+
+            });
+
+        }
+
+        body.appendChild(card);
+
+    },
+
+    hint63() {
+
+        const p = document.createElement("p");
+        p.className = "muted";
+        p.textContent = CaseService.SETUP_HINT_63;
+        return p;
+
+    },
+
+    /* big printable PDF417 label for an evidence item — the code
+       carries the secret scan token, never a link */
+
+    showEvidenceBarcode(ev) {
+
+        UI.modal({
+
+            title: "🏷 " + ev.evidence_id + " · evidence label",
+
+            render: () => {
+
+                const wrap = document.createElement("div");
+
+                const box = document.createElement("div");
+                box.className = "evBarcodeBox";
+
+                BarcodeService.renderPdf417(box,
+                    BarcodeService.evidence(ev, this.caseRow.case_id),
+                    { scale: 4, height: 18 });
+
+                const meta = document.createElement("p");
+                meta.className = "uiModalMsg";
+                meta.style.textAlign = "center";
+                meta.textContent = ev.evidence_id + " · " + ev.type +
+                    " · " + this.caseRow.case_id;
+
+                wrap.append(box, meta);
+
+                return wrap;
+
+            },
+
+            buttons: [{ label: "Close", kind: "primary", value: null }]
+
+        });
 
     },
 

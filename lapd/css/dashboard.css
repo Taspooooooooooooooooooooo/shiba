@@ -1218,6 +1218,34 @@ grid-template-columns:1fr;
 
 }
 
+/* licence-style PDF417 strip across the bottom of the ID card */
+
+.idCardPdf417{
+
+    background:white;
+
+    margin:0 20px 6px;
+
+    border-radius:8px;
+
+    padding:6px 8px;
+
+    line-height:0;
+
+    text-align:center;
+
+}
+
+.idCardPdf417 svg{
+
+    width:100%;
+
+    height:56px;
+
+    display:block;
+
+}
+
 .idCardFooter{
 
     display:flex;
@@ -1931,7 +1959,7 @@ grid-template-columns:1fr;
 
     width:100%;
 
-    height:38px;
+    height:64px;
 
     display:block;
 
@@ -2983,3 +3011,61 @@ a.pfCaseLink:hover{ background:#2e8bff14; }
 }
 
 .noteActions .ghostBtn{ padding:6px 12px; font-size:12px; }
+
+/* case evidence + people (Sprint 6.3) */
+
+.evBar, .personBar{
+
+    display:flex;
+
+    flex-wrap:wrap;
+
+    gap:10px;
+
+    align-items:center;
+
+    margin-bottom:16px;
+
+}
+
+.evBar .uiModalInput, .personBar .uiModalInput{ width:auto; flex:1; min-width:140px; }
+
+.evBar .evFile{ flex:2; min-width:200px; padding:8px; }
+
+.evHash{
+
+    font-family:monospace;
+
+    font-size:11.5px;
+
+    color:#7ee2a8;
+
+    margin-top:5px;
+
+    cursor:help;
+
+}
+
+.evBarcodeBox{
+
+    background:white;
+
+    border-radius:10px;
+
+    padding:14px;
+
+    margin-bottom:10px;
+
+    line-height:0;
+
+}
+
+.evBarcodeBox svg{
+
+    width:100%;
+
+    height:110px;
+
+    display:block;
+
+}

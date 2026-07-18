@@ -23,10 +23,11 @@
 
         <h1>📷 SHIBA Scanner</h1>
 
-        <p>Verify SHIBA PIMS documents. Every official QR carries a
-           secret token that exists <b>only in our database</b> — codes
-           from anywhere else (or forged / screenshotted ones with a
-           fake token) will fail here.</p>
+        <p>Verify SHIBA PIMS credentials — certificates, officer ID
+           cards and evidence labels. Every official <b>PDF417</b>
+           barcode carries a secret token that exists <b>only in our
+           database</b> — codes from anywhere else (or forged /
+           screenshotted ones with a fake token) will fail here.</p>
 
     </div>
 
@@ -89,7 +90,6 @@
 <div id="layoutFooter"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
 
 <script src="js/version.js"></script>
@@ -101,6 +101,7 @@
 <script src="js/core/auditService.js"></script>
 <script src="js/core/timelineService.js"></script>
 <script src="js/core/notificationService.js"></script>
+<script src="js/core/barcodeService.js"></script>
 <script src="js/core/certificateService.js"></script>
 
 <script src="js/auth.js"></script>

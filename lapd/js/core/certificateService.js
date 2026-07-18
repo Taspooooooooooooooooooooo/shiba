@@ -360,81 +360,9 @@ const CertificateService = {
 
     },
 
-    /* ----------------------------------------------------- */
-    /* PDF417 credential barcode                              */
-    /*                                                        */
-    /* Real driver's licences / police credentials carry a    */
-    /* PDF417 stack, so ours does too. The payload is a       */
-    /* branded SHIBA record — but the TOKEN is still the only */
-    /* thing that proves anything: verify_qr_token() checks   */
-    /* it against our DB, so a hand-crafted barcode with a    */
-    /* made-up token fails exactly like a forged QR.          */
-    /*                                                        */
-    /*   SHIBA|CERT|<certificate_id>|<officer_id>|<token>     */
-    /* ----------------------------------------------------- */
-
-    PDF417_PREFIX: "SHIBA",
-
-    barcodePayload(cert) {
-
-        if (!cert) return "";
-
-        return [
-            this.PDF417_PREFIX,
-            "CERT",
-            cert.certificate_id || "",
-            cert.officers?.officer_id || cert.officer_public_id || "",
-            cert.qr_token || ""
-        ].join("|");
-
-    },
-
-    /* render the PDF417 into a container as crisp SVG (prints
-       well). Silently degrades if the CDN lib is unavailable. */
-
-    renderPdf417(container, payload) {
-
-        if (!container) return false;
-
-        container.innerHTML = "";
-
-        if (!window.bwipjs || !payload) {
-
-            container.innerHTML =
-                "<small class='muted'>Barcode unavailable</small>";
-
-            return false;
-
-        }
-
-        try {
-
-            const svg = bwipjs.toSVG({
-                bcid: "pdf417",
-                text: payload,
-                scale: 3,
-                height: 10,
-                columns: 6,
-                padding: 2,
-                backgroundcolor: "FFFFFF"
-            });
-
-            container.innerHTML = svg;
-
-            return true;
-
-        } catch (e) {
-
-            console.warn("PDF417 render failed:", e);
-
-            container.innerHTML =
-                "<small class='muted'>Barcode unavailable</small>";
-
-            return false;
-
-        }
-
-    },
+    /* PDF417 payloads + rendering live in BarcodeService
+       (js/core/barcodeService.js) — one source for every
+       scannable credential in the system. */
 
     async verifyToken(token) {
 

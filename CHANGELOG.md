@@ -2,6 +2,46 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.30.0 — 2026-07-18 · Sprint 6.3: Evidence & People + PDF417 everywhere + session guard
+
+### Added
+- **Evidence tab (live)** — every piece of evidence is its own object:
+  `EVID-2026-…` id, type (Photo/Video/Audio/Document/Bodycam/Other),
+  description, uploader, upload date and a **SHA-256 hash** of the file
+  (re-hash later to prove it wasn't tampered with). Evidence is never
+  deleted from the UI.
+- **Files go through SHIBA Cloud** — evidence uploads land in the cloud
+  bucket **and register in the uploader's cloud account** (like officer
+  photos); "Open file" opens the cloud viewer link.
+- **People tab** — victims 🤕, witnesses 👁, suspects 🚨 and others,
+  each with a `PRSN-…` id (add/remove Sergeant+, history kept).
+- **🏷 Evidence barcode labels** — every evidence item gets a big
+  printable **PDF417** label, scannable with the SHIBA Scanner.
+- **PDF417 everywhere, QR retired** — certificates, officer ID cards
+  and evidence labels all carry PDF417 codes now, and **every code
+  carries a SECRET token, never a link**. One new `verify_scan_token`
+  RPC recognises all three kinds; the Scanner shows a result card per
+  kind (certificate / officer identity / evidence item). All barcodes
+  rendered **bigger** for easier scanning.
+- **Session security layer** — opening a direct link (e.g. a saved
+  `/officers.html`) used to *look* logged-in whenever the old
+  localStorage flag survived, with no real session behind it. Every
+  protected page now validates the **actual Supabase session** and
+  kicks back to login if it's gone. (Offline hiccups do NOT log you
+  out.)
+
+### Setup
+Run **`lapd/SETUP-PATCH-13.sql`** (or re-run `RUN-ALL-PENDING.sql`) —
+adds `case_evidence` + `case_persons`, the officers' ID-card scan
+tokens, and the unified `verify_scan_token` RPC. Until then the new
+tabs show a friendly hint and the ID card says it needs the patch;
+certificates keep verifying through the old RPC either way.
+
+### Note
+Previously printed certificate documents carried QR codes — the scanner
+no longer reads QR, so reprint them (open the certificate → Print) to
+get the PDF417 version.
+
 ## v0.29.1 — 2026-07-18 · Random 5-digit badge numbers
 
 ### Changed
