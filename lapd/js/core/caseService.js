@@ -47,6 +47,33 @@ const CaseService = {
         "Cases need a one-time setup — run lapd/SETUP-PATCH-11.sql " +
         "(or RUN-ALL-PENDING.sql) in the Supabase SQL Editor.",
 
+    SETUP_HINT_62:
+        "This tab needs a one-time setup — run lapd/SETUP-PATCH-12.sql " +
+        "(or RUN-ALL-PENDING.sql) in the Supabase SQL Editor.",
+
+    /* ----------------------------------------------------- */
+    /* case timeline — the CASE'S own chronological history   */
+    /* (separate from officer_timeline). Fire-and-forget:     */
+    /* degrades silently until PATCH-12 is run.               */
+    /* ----------------------------------------------------- */
+
+    async caseEvent(caseUuid, event, details) {
+
+        if (!window.db || !caseUuid) return;
+
+        try {
+
+            await db.from("case_timeline").insert([{
+                case_id: caseUuid,
+                event: event,
+                details: details || null,
+                actor: localStorage.getItem("username") || null
+            }]);
+
+        } catch (e) { /* table missing — PATCH-12 not run yet */ }
+
+    },
+
     /* ----------------------------------------------------- */
     /* display helpers                                        */
     /* ----------------------------------------------------- */
@@ -175,35 +202,49 @@ const CaseService = {
 
         }
 
-        /* fan-out: audit + per-officer timeline + notifications */
+        /* fan-out: case timeline + audit + per-officer timeline +
+           notifications. MUST be awaited — the wizard navigates to
+           the new case file right after create() resolves, and an
+           un-awaited request would be cancelled by the navigation. */
 
-        AuditService.log({
+        const fanout = [];
+
+        fanout.push(this.caseEvent(row.id, "Case created",
+            title + (incidentType ? " · " + incidentType : "")));
+
+        fanout.push(AuditService.log({
             action: "CASE_CREATED",
             target: caseId + " — " + title,
             details: (incidentType ? incidentType + " · " : "") +
                 (priority || "Medium"),
             officerId: leadOfficerId || null
-        });
+        }));
 
         for (const a of assignees) {
 
             if (!a.officerId) continue;
 
-            TimelineService.add(a.officerId, "Assigned to a case",
-                caseId + " · " + (a.role || "Officer"));
+            fanout.push(this.caseEvent(row.id, "Officer assigned",
+                a.label + " · " + (a.role || "Officer")));
+
+            fanout.push(TimelineService.add(a.officerId,
+                "Assigned to a case",
+                caseId + " · " + (a.role || "Officer")));
 
             if (a.userId) {
 
-                NotificationService.send({
+                fanout.push(NotificationService.send({
                     to: a.userId,
                     title: "New case assignment",
                     message: "You were assigned to " + caseId + " (" + title +
                         ") as " + (a.role || "Officer") + "."
-                });
+                }));
 
             }
 
         }
+
+        await Promise.allSettled(fanout);
 
         UI?.success(caseId + " created");
 
@@ -241,6 +282,9 @@ const CaseService = {
             .eq("id", caseRow.id);
 
         if (error) { UI?.error("Could not update the status."); return false; }
+
+        this.caseEvent(caseRow.id, "Status changed",
+            (caseRow.status || "—") + " → " + newStatus);
 
         AuditService.log({
             action: "CASE_STATUS_CHANGED",
@@ -331,6 +375,266 @@ const CaseService = {
             return r;
 
         }) };
+
+    },
+
+    async timeline(caseUuid) {
+
+        const { data, error } = await db
+            .from("case_timeline")
+            .select("*")
+            .eq("case_id", caseUuid)
+            .order("created_at", { ascending: false })
+            .limit(200);
+
+        if (error) return { error };
+
+        return { rows: data || [] };
+
+    },
+
+    /* audit entries about this case (matched on the CASE- id) */
+
+    async audit(casePublicId) {
+
+        const { data, error } = await db
+            .from("audit_logs")
+            .select("*")
+            .ilike("target", "%" + casePublicId + "%")
+            .order("created_at", { ascending: false })
+            .limit(100);
+
+        if (error) return { error };
+
+        return { rows: data || [] };
+
+    },
+
+    /* ----------------------------------------------------- */
+    /* notes — author + pinned + edited marker; never deleted */
+    /* ----------------------------------------------------- */
+
+    async notes(caseUuid) {
+
+        const { data, error } = await db
+            .from("case_notes")
+            .select("*")
+            .eq("case_id", caseUuid)
+            .order("pinned", { ascending: false })
+            .order("created_at", { ascending: false });
+
+        if (error) return { error };
+
+        return { rows: data || [] };
+
+    },
+
+    async addNote(caseRow, body) {
+
+        if (!window.db || !body?.trim()) return false;
+
+        const { error } = await db
+            .from("case_notes")
+            .insert([{
+                case_id: caseRow.id,
+                author: localStorage.getItem("username") || null,
+                body: body.trim()
+            }]);
+
+        if (error) {
+
+            UI?.error(this.SETUP_HINT_62);
+
+            return false;
+
+        }
+
+        this.caseEvent(caseRow.id, "Note added", null);
+
+        AuditService.log({
+            action: "CASE_NOTE_ADDED",
+            target: caseRow.case_id
+        });
+
+        return true;
+
+    },
+
+    /* only the author edits their own note (client-side check —
+       same trust level as the rest of the permission gating) */
+
+    async editNote(note, body) {
+
+        if (!window.db || !body?.trim()) return false;
+
+        const me = localStorage.getItem("username") || "";
+
+        if (note.author && note.author !== me) {
+
+            UI?.error("Only the author can edit this note.");
+
+            return false;
+
+        }
+
+        const { error } = await db
+            .from("case_notes")
+            .update({ body: body.trim(),
+                      edited_at: new Date().toISOString() })
+            .eq("id", note.id);
+
+        if (error) { UI?.error("Could not save the note."); return false; }
+
+        return true;
+
+    },
+
+    async togglePin(note) {
+
+        if (!window.db) return false;
+
+        if (!(await PermissionService.can("cases.assign"))) {
+
+            UI?.error("Requires Sergeant or above.");
+
+            return false;
+
+        }
+
+        const { error } = await db
+            .from("case_notes")
+            .update({ pinned: !note.pinned })
+            .eq("id", note.id);
+
+        if (error) { UI?.error("Could not update the note."); return false; }
+
+        return true;
+
+    },
+
+    /* ----------------------------------------------------- */
+    /* assignment management — the same fan-out as creating   */
+    /* ----------------------------------------------------- */
+
+    async assign(caseRow, { officerId, userId, label, role }) {
+
+        if (!window.db || !officerId) return false;
+
+        if (!(await PermissionService.can("cases.assign"))) {
+
+            UI?.error("Requires Sergeant or above.");
+
+            return false;
+
+        }
+
+        const { error } = await db
+            .from("case_assignments")
+            .insert([{
+                case_id: caseRow.id,
+                officer_id: officerId,
+                role: role || "Officer",
+                assigned_by: localStorage.getItem("username") || null
+            }]);
+
+        if (error) {
+
+            /* unique (case_id, officer_id) — already on the case */
+
+            if ((error.code || "") === "23505" ||
+                /duplicate|unique/i.test(error.message || "")) {
+
+                UI?.error("That officer is already on this case.");
+
+            } else {
+
+                UI?.error("Could not assign the officer.");
+
+            }
+
+            return false;
+
+        }
+
+        this.caseEvent(caseRow.id, "Officer assigned",
+            label + " · " + (role || "Officer"));
+
+        AuditService.log({
+            action: "CASE_OFFICER_ASSIGNED",
+            target: caseRow.case_id + " — " + label,
+            details: role || "Officer",
+            officerId: officerId
+        });
+
+        TimelineService.add(officerId, "Assigned to a case",
+            caseRow.case_id + " · " + (role || "Officer"));
+
+        if (userId) {
+
+            NotificationService.send({
+                to: userId,
+                title: "New case assignment",
+                message: "You were assigned to " + caseRow.case_id + " (" +
+                    caseRow.title + ") as " + (role || "Officer") + "."
+            });
+
+        }
+
+        UI?.success(label + " assigned");
+
+        return true;
+
+    },
+
+    /* the row is removed, but the case timeline + audit keep the
+       full history of who was on the case. */
+
+    async unassign(caseRow, assignment) {
+
+        if (!window.db) return false;
+
+        if (!(await PermissionService.can("cases.assign"))) {
+
+            UI?.error("Requires Sergeant or above.");
+
+            return false;
+
+        }
+
+        const { error } = await db
+            .from("case_assignments")
+            .delete()
+            .eq("id", assignment.id);
+
+        if (error) { UI?.error("Could not remove the assignment."); return false; }
+
+        this.caseEvent(caseRow.id, "Officer removed",
+            assignment.officer_label + " · " + assignment.role);
+
+        AuditService.log({
+            action: "CASE_OFFICER_REMOVED",
+            target: caseRow.case_id + " — " + assignment.officer_label,
+            details: assignment.role,
+            officerId: assignment.officer_id
+        });
+
+        TimelineService.add(assignment.officer_id, "Removed from a case",
+            caseRow.case_id);
+
+        if (assignment.officers?.user_id) {
+
+            NotificationService.send({
+                to: assignment.officers.user_id,
+                title: "Case assignment removed",
+                message: "You were removed from " + caseRow.case_id + " (" +
+                    caseRow.title + ")."
+            });
+
+        }
+
+        UI?.success(assignment.officer_label + " removed");
+
+        return true;
 
     }
 

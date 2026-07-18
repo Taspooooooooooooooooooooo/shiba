@@ -2,6 +2,35 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.29.0 — 2026-07-18 · Phase 6 Sprint 6.2 — the case file comes alive
+
+### Added
+- **Case Timeline** — the case's own chronological history (created,
+  officers assigned/removed, status changes, notes added), separate from
+  officers' personal timelines. Every case action now writes to it.
+- **Notes** — investigator notes with author, time, an *edited* marker
+  and **📌 pinning** (Sergeant+). Only the author can edit their note;
+  notes are never deleted. Any signed-in officer can write one.
+- **History tab** — the lifecycle at a glance (creation + every status
+  change, with who did it).
+- **Audit tab** — every audit-log entry referencing the case's ID.
+- **Manage assignments from the case file** (Sergeant+) — add an officer
+  with a role, or remove one (with an in-app confirm). Both run the full
+  cascade: case timeline + audit + officer timeline + notification.
+
+### Fixed
+- **Create-case cascade race** — the audit/timeline/notification fan-out
+  wasn't awaited, and the redirect to the new case file cancelled those
+  requests mid-flight (found by creating the first REAL case,
+  CASE-2026-000001 — stub tests couldn't catch it). `create()` now
+  awaits the whole fan-out before the wizard navigates. The missing
+  records for CASE-2026-000001 were backfilled.
+
+### Setup
+Run **`lapd/SETUP-PATCH-12.sql`** (or re-run `RUN-ALL-PENDING.sql`) —
+adds `case_timeline` + `case_notes`. The Timeline/Notes/History tabs
+show a friendly hint until then; Assignments and Audit already work.
+
 ## v0.28.2 — 2026-07-17 · PATCH-11 fix (legacy tables) + reliable update reload
 
 ### Fixed

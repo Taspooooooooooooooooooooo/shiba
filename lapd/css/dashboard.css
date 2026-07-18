@@ -2903,3 +2903,83 @@ a.pfCaseLink{
 }
 
 a.pfCaseLink:hover{ background:#2e8bff14; }
+
+/* case notes (Sprint 6.2) */
+
+.noteComposer{
+
+    display:flex;
+
+    gap:10px;
+
+    align-items:flex-start;
+
+    margin-bottom:16px;
+
+}
+
+.noteComposer textarea{ flex:1; }
+
+.noteItem{
+
+    background:#15283d55;
+
+    border:1px solid rgba(255,255,255,.07);
+
+    border-radius:12px;
+
+    padding:12px 14px;
+
+    margin-bottom:10px;
+
+}
+
+.noteItem.pinned{
+
+    border-color:#f5a62366;
+
+    background:#f5a62311;
+
+}
+
+.noteHead{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    gap:10px;
+
+    flex-wrap:wrap;
+
+    margin-bottom:6px;
+
+}
+
+.noteHead b{ color:#dbe4f0; font-size:13px; }
+
+.noteHead small{ color:#8fa6c4; font-size:11.5px; }
+
+.noteBody{
+
+    color:#b8c5d6;
+
+    font-size:13.5px;
+
+    white-space:pre-wrap;
+
+    line-height:1.5;
+
+}
+
+.noteActions{
+
+    display:flex;
+
+    gap:8px;
+
+    margin-top:10px;
+
+}
+
+.noteActions .ghostBtn{ padding:6px 12px; font-size:12px; }

@@ -297,4 +297,32 @@ create index if not exists case_assignments_officer_idx
   on public.case_assignments (officer_id);
 
 
-select 'ALL PENDING PATCHES applied (3, 5, 6, 7, 8, 9, 10, 11)' as result;
+-- ---------- PATCH 12 : case timeline + notes (Phase 6.2) ----------
+
+create table if not exists public.case_timeline (
+  id uuid not null default gen_random_uuid(),
+  case_id uuid references public.cases(id) on delete cascade,
+  event text not null,
+  details text,
+  actor text,
+  created_at timestamp with time zone default now(),
+  constraint case_timeline_pkey primary key (id)
+);
+create index if not exists case_timeline_case_idx
+  on public.case_timeline (case_id);
+
+create table if not exists public.case_notes (
+  id uuid not null default gen_random_uuid(),
+  case_id uuid references public.cases(id) on delete cascade,
+  author text,
+  body text not null,
+  pinned boolean not null default false,
+  edited_at timestamp with time zone,
+  created_at timestamp with time zone default now(),
+  constraint case_notes_pkey primary key (id)
+);
+create index if not exists case_notes_case_idx
+  on public.case_notes (case_id);
+
+
+select 'ALL PENDING PATCHES applied (3, 5, 6, 7, 8, 9, 10, 11, 12)' as result;
