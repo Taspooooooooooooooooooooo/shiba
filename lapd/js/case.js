@@ -106,6 +106,22 @@ const CaseFile = {
 
     },
 
+    wfBtn(wrap, label, cls, fn) {
+
+        const b = document.createElement("button");
+        b.className = cls;
+        b.textContent = label;
+        b.onclick = async () => {
+            b.disabled = true;
+            const ok = await fn();
+            b.disabled = false;
+            if (ok) this.load();
+        };
+        wrap.appendChild(b);
+        return b;
+
+    },
+
     renderStatusControl() {
 
         const box = document.getElementById("caseStatusCtl");
@@ -114,35 +130,160 @@ const CaseFile = {
 
         box.innerHTML = "";
 
-        if (!this.canAssign) return;
-
-        const options = CaseService.nextStatuses(this.caseRow.status);
-
-        if (!options.length) return;
+        const c = this.caseRow;
 
         const wrap = document.createElement("div");
         wrap.className = "caseStatusMove";
 
-        const sel = document.createElement("select");
-        sel.className = "uiModalInput";
-        sel.innerHTML = "<option value=''>Move to…</option>" +
-            options.map(s => `<option>${this.esc(s)}</option>`).join("");
+        /* priority — Sergeant+ */
 
-        const go = document.createElement("button");
-        go.className = "primaryBtn";
-        go.textContent = "Apply";
-        go.onclick = async () => {
-            if (!sel.value) return;
-            go.disabled = true;
-            const ok = await CaseService.setStatus(
-                this.caseRow, sel.value,
-                localStorage.getItem("username") || "");
-            go.disabled = false;
-            if (ok) this.load();
-        };
+        if (this.canAssign &&
+            !["Closed", "Archived"].includes(c.status)) {
 
-        wrap.append(sel, go);
-        box.appendChild(wrap);
+            const pr = document.createElement("select");
+            pr.className = "uiModalInput";
+            pr.title = "Change priority";
+            pr.innerHTML = CaseService.PRIORITIES.map(p =>
+                `<option ${p === c.priority ? "selected" : ""}>${p}</option>`)
+                .join("");
+            pr.onchange = async () => {
+                if (await CaseService.setPriority(c, pr.value)) this.load();
+                else pr.value = c.priority;
+            };
+            wrap.appendChild(pr);
+
+        }
+
+        const working = CaseService.WORKING.includes(c.status);
+
+        if (working) {
+
+            /* generic mover between working statuses — Sergeant+ */
+
+            if (this.canAssign) {
+
+                const sel = document.createElement("select");
+                sel.className = "uiModalInput";
+                sel.innerHTML = "<option value=''>Move to…</option>" +
+                    CaseService.nextStatuses(c.status).map(s =>
+                        `<option>${this.esc(s)}</option>`).join("");
+                sel.onchange = async () => {
+                    if (!sel.value) return;
+                    if (await CaseService.setStatus(c, sel.value)) this.load();
+                    else sel.value = "";
+                };
+                wrap.appendChild(sel);
+
+            }
+
+            if (this.canRequestClosure && c.status !== "Draft") {
+
+                this.wfBtn(wrap, "📨 Request closure", "primaryBtn",
+                    async () => {
+                        const summary = await UI.promptText({
+                            title: "Request closure · " + c.case_id,
+                            label: "Closing summary (the supervisor sees this)",
+                            multiline: true,
+                            confirmText: "Submit for review"
+                        });
+                        if (summary === null) return false;
+                        return CaseService.requestClosure(c, summary);
+                    });
+
+            }
+
+        } else if (c.status === "Supervisor Review") {
+
+            if (this.isLieutenant) {
+
+                this.wfBtn(wrap, "✅ Approve closure", "primaryBtn",
+                    () => UI.confirm({
+                        title: "Approve closure?",
+                        message: c.case_id + " will move to Approved For " +
+                            "Closing.",
+                        confirmText: "Approve"
+                    }).then(ok => ok && CaseService.approveClosure(c)));
+
+                this.wfBtn(wrap, "↩ Return", "ghostBtn",
+                    async () => {
+                        const reason = await UI.promptText({
+                            title: "Return to investigation · " + c.case_id,
+                            label: "What still needs work?",
+                            multiline: true, required: true,
+                            confirmText: "Return case"
+                        });
+                        if (reason === null) return false;
+                        return CaseService.returnToInvestigation(c, reason);
+                    });
+
+            } else {
+
+                const note = document.createElement("small");
+                note.className = "muted";
+                note.textContent = "Awaiting a Lieutenant+ review.";
+                wrap.appendChild(note);
+
+            }
+
+        } else if (c.status === "Approved For Closing") {
+
+            if (this.isLieutenant) {
+
+                this.wfBtn(wrap, "🔒 Close case", "primaryBtn",
+                    () => UI.confirm({
+                        title: "Close " + c.case_id + "?",
+                        message: "The case stays in the archive forever — " +
+                            "it can be reopened by a Lieutenant+.",
+                        confirmText: "Close case", danger: true
+                    }).then(ok => ok && CaseService.closeCase(c)));
+
+                this.wfBtn(wrap, "↩ Return", "ghostBtn",
+                    async () => {
+                        const reason = await UI.promptText({
+                            title: "Return to investigation · " + c.case_id,
+                            label: "Why is it going back?",
+                            multiline: true, required: true,
+                            confirmText: "Return case"
+                        });
+                        if (reason === null) return false;
+                        return CaseService.returnToInvestigation(c, reason);
+                    });
+
+            }
+
+        } else if (c.status === "Closed" || c.status === "Archived") {
+
+            if (this.isLieutenant) {
+
+                this.wfBtn(wrap, "🔓 Reopen", "ghostBtn",
+                    async () => {
+                        const reason = await UI.promptText({
+                            title: "Reopen " + c.case_id,
+                            label: "Reason for reopening",
+                            multiline: true, required: true,
+                            confirmText: "Reopen case"
+                        });
+                        if (reason === null) return false;
+                        return CaseService.reopen(c, reason);
+                    });
+
+                if (c.status === "Closed") {
+
+                    this.wfBtn(wrap, "📦 Archive", "ghostBtn",
+                        () => UI.confirm({
+                            title: "Archive " + c.case_id + "?",
+                            message: "Archived is the final state — the " +
+                                "case stays searchable forever.",
+                            confirmText: "Archive"
+                        }).then(ok => ok && CaseService.archive(c)));
+
+                }
+
+            }
+
+        }
+
+        if (wrap.childNodes.length) box.appendChild(wrap);
 
     },
 
@@ -177,7 +318,10 @@ const CaseFile = {
 
         const body = document.getElementById("caseTabBody");
 
-        if (this.tab === "general") body.innerHTML = this.viewGeneral();
+        if (this.tab === "general") {
+            body.innerHTML = this.viewGeneral();
+            body.appendChild(await this.buildRelatedCard());
+        }
         else if (this.tab === "assignments") await this.viewAssignments(body);
         else if (this.tab === "people") await this.viewPeople(body);
         else if (this.tab === "timeline") await this.viewTimeline(body);
@@ -243,6 +387,108 @@ const CaseFile = {
                     ? `<label class="wizLabel" style="margin-top:14px">Description</label>
                        <div class="caseDesc">${this.esc(c.description)}</div>` : ""}
             </div>`;
+
+    },
+
+    /* --------------------------------------------------------- */
+    /* RELATED CASES — links work both ways (Sprint 6.4)         */
+    /* --------------------------------------------------------- */
+
+    async buildRelatedCard() {
+
+        const card = this.card("🔗 Related Cases",
+            "Same suspect, same location, a follow-up — linked cases " +
+            "show up on both files.");
+
+        if (this.canAssign) {
+
+            const bar = document.createElement("div");
+            bar.className = "personBar";
+
+            const input = document.createElement("input");
+            input.className = "uiModalInput";
+            input.placeholder = "CASE-2026-000123";
+
+            const link = document.createElement("button");
+            link.className = "primaryBtn";
+            link.textContent = "Link case";
+            link.onclick = async () => {
+                if (!input.value.trim()) return;
+                link.disabled = true;
+                const ok = await CaseService.relate(
+                    this.caseRow, input.value);
+                link.disabled = false;
+                if (ok) this.renderBody();
+            };
+
+            bar.append(input, link);
+            card.appendChild(bar);
+
+        }
+
+        const { rows, error } = await CaseService.related(this.id);
+
+        if (error) {
+
+            const p = document.createElement("p");
+            p.className = "muted";
+            p.textContent = CaseService.SETUP_HINT_64;
+            card.appendChild(p);
+
+        } else if (!rows.length) {
+
+            const p = document.createElement("p");
+            p.className = "muted";
+            p.textContent = "No related cases.";
+            card.appendChild(p);
+
+        } else {
+
+            rows.forEach(rel => {
+
+                const row = document.createElement("div");
+                row.className = "reviewRow";
+
+                const main = document.createElement("div");
+                main.className = "rrMain";
+                main.innerHTML =
+                    `<div class="rrTitle">${this.esc(rel.other.case_id)}
+                     <span class="certStatus">` +
+                    CaseService.statusChip(rel.other.status) + `</span></div>
+                     <div class="rrSub">${this.esc(rel.other.title)} ·
+                     ${CaseService.priorityChip(rel.other.priority)}</div>`;
+
+                const open = document.createElement("a");
+                open.className = "primaryBtn";
+                open.style.textDecoration = "none";
+                open.textContent = "Open";
+                open.href = "case.html?id=" +
+                    encodeURIComponent(rel.other.id);
+
+                row.append(main, open);
+
+                if (this.canAssign) {
+
+                    const un = document.createElement("button");
+                    un.className = "formQRemove";
+                    un.textContent = "✕";
+                    un.title = "Unlink";
+                    un.style.position = "static";
+                    un.onclick = async () => {
+                        if (await CaseService.unrelate(this.caseRow, rel))
+                            this.renderBody();
+                    };
+                    row.appendChild(un);
+
+                }
+
+                card.appendChild(row);
+
+            });
+
+        }
+
+        return card;
 
     },
 
@@ -515,6 +761,22 @@ const CaseFile = {
 
     },
 
+    EVIDENCE_ICONS: { "Photo": "🖼", "Video": "🎞", "Audio": "🎙",
+                      "Document": "📄", "Bodycam": "📹", "Other": "📦" },
+
+    evView: localStorage.getItem("shiba_ev_view") || "list",
+
+    evFileHref(ev) {
+
+        if (ev.cloud_id) return "../cloud/?=" + ev.cloud_id;
+
+        return ev.file_url || null;
+
+    },
+
+    /* Explorer-style evidence browser: toolbar → column list or
+       icon grid, like the Windows file manager */
+
     async viewEvidence(body) {
 
         body.innerHTML = "";
@@ -523,10 +785,49 @@ const CaseFile = {
             "Every piece is its own object — typed, hashed (SHA-256) and " +
             "never deleted.");
 
-        /* upload bar — every signed-in officer may add evidence */
+        /* ---- toolbar ---- */
 
-        const bar = document.createElement("div");
-        bar.className = "evBar";
+        const toolbar = document.createElement("div");
+        toolbar.className = "exToolbar";
+
+        const addBtn = document.createElement("button");
+        addBtn.className = "exBtn";
+        addBtn.textContent = "➕ Add evidence";
+
+        const spacer = document.createElement("div");
+        spacer.className = "exSpacer";
+
+        const listBtn = document.createElement("button");
+        listBtn.className = "exBtn exView" +
+            (this.evView === "list" ? " on" : "");
+        listBtn.title = "Details view";
+        listBtn.textContent = "☰";
+
+        const gridBtn = document.createElement("button");
+        gridBtn.className = "exBtn exView" +
+            (this.evView === "grid" ? " on" : "");
+        gridBtn.title = "Large icons";
+        gridBtn.textContent = "⊞";
+
+        listBtn.onclick = () => {
+            this.evView = "list";
+            localStorage.setItem("shiba_ev_view", "list");
+            this.renderBody();
+        };
+
+        gridBtn.onclick = () => {
+            this.evView = "grid";
+            localStorage.setItem("shiba_ev_view", "grid");
+            this.renderBody();
+        };
+
+        toolbar.append(addBtn, spacer, listBtn, gridBtn);
+        card.appendChild(toolbar);
+
+        /* ---- collapsible add panel ---- */
+
+        const panel = document.createElement("div");
+        panel.className = "evBar hidden";
 
         const fileIn = document.createElement("input");
         fileIn.type = "file";
@@ -535,7 +836,7 @@ const CaseFile = {
         const type = document.createElement("select");
         type.className = "uiModalInput";
         type.innerHTML = CaseService.EVIDENCE_TYPES.map(t =>
-            `<option>${t}</option>`).join("");
+            `<option>${this.EVIDENCE_ICONS[t]} ${t}</option>`).join("");
 
         const desc = document.createElement("input");
         desc.className = "uiModalInput";
@@ -543,7 +844,7 @@ const CaseFile = {
 
         const add = document.createElement("button");
         add.className = "primaryBtn";
-        add.textContent = "Add evidence";
+        add.textContent = "Add";
         add.onclick = async () => {
 
             const file = fileIn.files[0] || null;
@@ -554,21 +855,27 @@ const CaseFile = {
             }
 
             add.disabled = true;
-            add.textContent = file ? "Hashing + uploading…" : "Saving…";
+            add.textContent = file ? "Hashing…" : "Saving…";
 
             const ok = await CaseService.addEvidence(this.caseRow, {
-                file: file, type: type.value, description: desc.value
+                file: file,
+                type: type.value.replace(/^\S+\s/, ""),
+                description: desc.value
             });
 
             add.disabled = false;
-            add.textContent = "Add evidence";
+            add.textContent = "Add";
 
             if (ok) this.renderBody();
 
         };
 
-        bar.append(fileIn, type, desc, add);
-        card.appendChild(bar);
+        panel.append(fileIn, type, desc, add);
+        card.appendChild(panel);
+
+        addBtn.onclick = () => panel.classList.toggle("hidden");
+
+        /* ---- content ---- */
 
         const { rows, error } = await CaseService.evidence(this.id);
 
@@ -580,63 +887,65 @@ const CaseFile = {
 
             const p = document.createElement("p");
             p.className = "muted";
-            p.textContent = "No evidence logged yet.";
+            p.textContent = "This folder is empty.";
             card.appendChild(p);
 
+        } else if (this.evView === "grid") {
+
+            const grid = document.createElement("div");
+            grid.className = "exGrid";
+
+            rows.forEach(ev => {
+
+                const tile = document.createElement("button");
+                tile.className = "exTile";
+                tile.innerHTML =
+                    `<span class="exTileIcon">` +
+                    `${this.EVIDENCE_ICONS[ev.type] || "📦"}</span>` +
+                    `<span class="exTileName">` +
+                    `${this.esc(ev.file_name || ev.evidence_id)}</span>` +
+                    `<small>${this.esc(ev.evidence_id)}</small>`;
+                tile.onclick = () => this.showEvidenceDetail(ev);
+                grid.appendChild(tile);
+
+            });
+
+            card.appendChild(grid);
+
         } else {
+
+            /* details view — column header + rows, Explorer-style */
+
+            const head = document.createElement("div");
+            head.className = "exHeader";
+            head.innerHTML =
+                "<span>Name</span><span>Type</span><span>Size</span>" +
+                "<span>Logged</span><span>By</span>";
+            card.appendChild(head);
 
             rows.forEach(ev => {
 
                 const row = document.createElement("div");
-                row.className = "certItem";
+                row.className = "exRow";
 
-                const info = document.createElement("div");
-                info.className = "certInfo";
+                row.innerHTML =
+                    `<span class="exName">
+                        <span class="exIcon">` +
+                        `${this.EVIDENCE_ICONS[ev.type] || "📦"}</span>
+                        <span class="exNameText">
+                            <b>${this.esc(ev.file_name || ev.evidence_id)}</b>
+                            <small>${this.esc(ev.evidence_id)}` +
+                            `${ev.hash ? " · #" + this.esc(ev.hash.slice(0, 10)) + "…" : ""}` +
+                            `</small>
+                        </span>
+                    </span>` +
+                    `<span>${this.esc(ev.type)}</span>` +
+                    `<span>${ev.file_size != null
+                        ? this.fmtSize(ev.file_size) : "—"}</span>` +
+                    `<span>${new Date(ev.created_at).toLocaleDateString()}</span>` +
+                    `<span>${this.esc(ev.uploaded_by || "—")}</span>`;
 
-                info.innerHTML =
-                    `<strong>${this.esc(ev.evidence_id)}</strong>
-                     <span class="grantKind">${this.esc(ev.type)}</span>
-                     <small>${ev.uploaded_by ? "by " + this.esc(ev.uploaded_by) + " · " : ""}` +
-                     `${new Date(ev.created_at).toLocaleString()}` +
-                     `${ev.file_size != null ? " · " + this.fmtSize(ev.file_size) : ""}</small>` +
-                    (ev.description
-                        ? `<div class="apQa">${this.esc(ev.description)}</div>` : "") +
-                    (ev.hash
-                        ? `<div class="evHash" title="SHA-256: ${this.esc(ev.hash)}">` +
-                          `#️⃣ ${this.esc(ev.hash.slice(0, 16))}…</div>` : "");
-
-                row.appendChild(info);
-
-                const actions = document.createElement("div");
-                actions.className = "certActions";
-
-                if (ev.file_url || ev.cloud_id) {
-
-                    const open = document.createElement("a");
-                    open.className = "primaryBtn";
-                    open.style.textDecoration = "none";
-                    open.textContent = "Open file";
-                    open.href = ev.cloud_id
-                        ? "../cloud/?=" + ev.cloud_id
-                        : ev.file_url;
-                    open.target = "_blank";
-                    open.rel = "noopener";
-
-                    actions.appendChild(open);
-
-                }
-
-                if (ev.scan_token) {
-
-                    const barcode = document.createElement("button");
-                    barcode.textContent = "🏷 Barcode";
-                    barcode.onclick = () => this.showEvidenceBarcode(ev);
-
-                    actions.appendChild(barcode);
-
-                }
-
-                if (actions.childNodes.length) row.appendChild(actions);
+                row.onclick = () => this.showEvidenceDetail(ev);
 
                 card.appendChild(row);
 
@@ -645,6 +954,71 @@ const CaseFile = {
         }
 
         body.appendChild(card);
+
+    },
+
+    /* Explorer "properties" dialog for one evidence item */
+
+    showEvidenceDetail(ev) {
+
+        UI.modal({
+
+            title: (this.EVIDENCE_ICONS[ev.type] || "📦") + " " +
+                (ev.file_name || ev.evidence_id),
+
+            render: () => {
+
+                const wrap = document.createElement("div");
+
+                const line = (k, v) =>
+                    `<div class="rvRow"><small>${k}</small>` +
+                    `<div>${this.esc(v || "—")}</div></div>`;
+
+                wrap.innerHTML =
+                    `<div class="rvGrid">
+                        ${line("Evidence ID", ev.evidence_id)}
+                        ${line("Type", ev.type)}
+                        ${line("Size", ev.file_size != null
+                            ? this.fmtSize(ev.file_size) : "—")}
+                        ${line("Logged", new Date(ev.created_at).toLocaleString())}
+                        ${line("Logged by", ev.uploaded_by)}
+                        ${line("Case", this.caseRow.case_id)}
+                    </div>` +
+                    (ev.description
+                        ? `<div class="apMot" style="margin-top:10px">` +
+                          `${this.esc(ev.description)}</div>` : "") +
+                    (ev.hash
+                        ? `<div class="evHash" style="margin-top:10px" ` +
+                          `title="Full SHA-256">#️⃣ ${this.esc(ev.hash)}</div>`
+                        : "");
+
+                return wrap;
+
+            },
+
+            buttons: [
+                { label: "Close", kind: "ghost", value: null },
+                ...(ev.scan_token
+                    ? [{ label: "🏷 Barcode", kind: "ghost", value: "barcode" }]
+                    : []),
+                ...(this.evFileHref(ev)
+                    ? [{ label: "Open file", kind: "primary", value: "open" }]
+                    : [])
+            ]
+
+        }).then(choice => {
+
+            if (choice === "open") {
+
+                window.open(this.evFileHref(ev), "_blank", "noopener");
+
+            } else if (choice === "barcode") {
+
+                this.showEvidenceBarcode(ev);
+
+            }
+
+        });
 
     },
 
@@ -959,6 +1333,14 @@ const CaseFile = {
         this.caseRow = row;
 
         await this.reloadAssignments();
+
+        /* review-workflow gates */
+
+        this.isLieutenant = await CaseService.roleAtLeast("Lieutenant");
+
+        this.canRequestClosure =
+            (await CaseService.roleAtLeast("Sergeant")) ||
+            (await CaseService.isLead(row));
 
         this.renderHeader();
         this.renderTabs();

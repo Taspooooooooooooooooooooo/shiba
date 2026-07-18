@@ -2,6 +2,37 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.31.0 — 2026-07-18 · Sprint 6.4: review workflow + related cases + Explorer evidence
+
+### Added
+- **Review workflow** — closing a case is no longer a free status pick:
+  the **Lead Investigator or a Sergeant+** clicks 📨 *Request closure*
+  (with a closing summary) → *Supervisor Review* → a **Lieutenant+**
+  ✅ *Approves* → 🔒 *Closes* (or ↩ *returns it to investigation* with a
+  reason). Closed cases can be 🔓 *reopened* (reason required) or 📦
+  *archived* — both Lieutenant+. Every step notifies the lead, hits the
+  case timeline and the audit log. The generic "Move to…" control now
+  only moves between working statuses (Draft/Open/Investigation/
+  Evidence Collection).
+- **Priority control** — Sergeant+ can change a case's priority right
+  from the header (audited, on the case timeline).
+- **Related Cases** — link cases (same suspect, follow-up…) by CASE id;
+  links show on **both** files with status + priority, one click opens
+  the other case. Needs `lapd/SETUP-PATCH-14.sql` (in RUN-ALL-PENDING).
+- **Explorer-style Evidence browser** — the Evidence tab now looks like
+  the Windows file manager: a toolbar (➕ Add evidence, ☰ details / ⊞
+  large-icons toggle), a column view (Name · Type · Size · Logged · By)
+  with file-type icons 🖼🎞🎙📄📹, zebra rows, and an icon grid. Clicking
+  an item opens a *properties* dialog with the full hash, Open file and
+  the 🏷 barcode label.
+
+### Verified live
+The full workflow ran on CASE-2026-000001 end-to-end: Request closure →
+Supervisor Review → Approve → Close (`closed_at` set) → Reopen
+(`closed_at` cleared, reason logged). Rank gates verified with the
+Permission Simulator: a plain Officer cannot approve, while the case's
+Lead can still request closure.
+
 ## v0.30.0 — 2026-07-18 · Sprint 6.3: Evidence & People + PDF417 everywhere + session guard
 
 ### Added

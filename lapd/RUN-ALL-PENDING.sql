@@ -456,4 +456,21 @@ grant execute on function public.verify_scan_token(text)
   to anon, authenticated;
 
 
-select 'ALL PENDING PATCHES applied (3, 5, 6, 7, 8, 9, 10, 11, 12, 13)' as result;
+-- ---------- PATCH 14 : related cases (Phase 6.4) ----------
+
+create table if not exists public.case_relationships (
+  id uuid not null default gen_random_uuid(),
+  case_id uuid references public.cases(id) on delete cascade,
+  related_case_id uuid references public.cases(id) on delete cascade,
+  created_by text,
+  created_at timestamp with time zone default now(),
+  constraint case_relationships_pkey primary key (id),
+  constraint case_relationships_unique unique (case_id, related_case_id)
+);
+create index if not exists case_relationships_case_idx
+  on public.case_relationships (case_id);
+create index if not exists case_relationships_related_idx
+  on public.case_relationships (related_case_id);
+
+
+select 'ALL PENDING PATCHES applied (3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)' as result;

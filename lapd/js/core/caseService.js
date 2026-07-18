@@ -108,29 +108,52 @@ const CaseService = {
 
     },
 
-    /* status transitions offered in the UI (forward + a couple
-       of supervisor moves). The full review workflow — Request
-       Closure / Approve / Reopen — is Sprint 6.4. */
+    /* WORKING statuses can be moved freely by Sergeant+ with the
+       generic "Move to…" control. Everything from Supervisor
+       Review onward goes ONLY through the review workflow
+       (Request Closure → Approve → Close → Reopen). */
+
+    WORKING: ["Draft", "Open", "Investigation", "Evidence Collection"],
 
     nextStatuses(current) {
 
-        const i = this.STATUSES.indexOf(current);
+        if (!this.WORKING.includes(current)) return [];
 
-        const out = [];
+        return this.WORKING.filter(s => s !== current);
 
-        if (i >= 0 && i < this.STATUSES.length - 1) {
+    },
 
-            out.push(this.STATUSES[i + 1]);          /* advance one step */
+    /* ----------------------------------------------------- */
+    /* rank-tier ladder — the review workflow is gated by     */
+    /* WHO you are, not just a permission string:             */
+    /*   Sergeant+  (or the case's Lead)  request closure     */
+    /*   Lieutenant+ approve / close / return / reopen        */
+    /* ----------------------------------------------------- */
 
-        }
+    TIER_ORDER: [
+        "Cadet", "Officer", "Senior Officer", "Sergeant",
+        "Lieutenant", "Captain", "Commander", "Chief",
+        "Super Administrator"
+    ],
 
-        if (current !== "Draft" && current !== "Open") {
+    async roleAtLeast(minRole) {
 
-            out.push("Open");                        /* send back to Open */
+        const role = await PermissionService.role();
 
-        }
+        const mine = this.TIER_ORDER.indexOf(role);
 
-        return [...new Set(out)].filter(s => s !== current);
+        const min = this.TIER_ORDER.indexOf(minRole);
+
+        return mine >= 0 && min >= 0 && mine >= min;
+
+    },
+
+    async isLead(caseRow) {
+
+        if (!caseRow?.lead_officer_id) return false;
+
+        return (await PermissionService.myOfficerId()) ===
+            caseRow.lead_officer_id;
 
     },
 
@@ -256,23 +279,23 @@ const CaseService = {
     /* status change                                          */
     /* ----------------------------------------------------- */
 
-    async setStatus(caseRow, newStatus, actorLabel) {
+    /* internal: write the status + full fan-out. Gating happens
+       in the callers (setStatus / the workflow methods). */
 
-        if (!window.db) return false;
-
-        if (!(await PermissionService.can("cases.assign"))) {
-
-            UI?.error("Requires Sergeant or above.");
-
-            return false;
-
-        }
+    async _applyStatus(caseRow, newStatus, reason) {
 
         const patch = { status: newStatus, updated_at: new Date().toISOString() };
 
         if (newStatus === "Closed" || newStatus === "Archived") {
 
             patch.closed_at = new Date().toISOString();
+
+        }
+
+        if (newStatus === "Open" &&
+            ["Closed", "Archived"].includes(caseRow.status)) {
+
+            patch.closed_at = null;      /* reopened */
 
         }
 
@@ -283,24 +306,280 @@ const CaseService = {
 
         if (error) { UI?.error("Could not update the status."); return false; }
 
-        this.caseEvent(caseRow.id, "Status changed",
-            (caseRow.status || "—") + " → " + newStatus);
+        const detail = (caseRow.status || "—") + " → " + newStatus +
+            (reason ? " · " + reason : "");
 
-        AuditService.log({
-            action: "CASE_STATUS_CHANGED",
-            target: caseRow.case_id,
-            details: (caseRow.status || "—") + " → " + newStatus,
-            officerId: caseRow.lead_officer_id || null
-        });
+        const fanout = [
+
+            this.caseEvent(caseRow.id, "Status changed", detail),
+
+            AuditService.log({
+                action: "CASE_STATUS_CHANGED",
+                target: caseRow.case_id,
+                details: detail,
+                officerId: caseRow.lead_officer_id || null
+            })
+
+        ];
 
         if (caseRow.lead_officer_id) {
 
-            TimelineService.add(caseRow.lead_officer_id, "Case status changed",
-                caseRow.case_id + " · " + newStatus);
+            fanout.push(TimelineService.add(caseRow.lead_officer_id,
+                "Case status changed",
+                caseRow.case_id + " · " + newStatus));
 
         }
 
+        await Promise.allSettled(fanout);
+
         UI?.success(caseRow.case_id + " · " + newStatus);
+
+        return true;
+
+    },
+
+    /* notify the lead investigator's account (if linked) */
+
+    async notifyLead(caseRow, title, message) {
+
+        if (!caseRow.lead_officer_id) return;
+
+        try {
+
+            const { data } = await db
+                .from("officers")
+                .select("user_id")
+                .eq("id", caseRow.lead_officer_id)
+                .maybeSingle();
+
+            if (data?.user_id) {
+
+                await NotificationService.send({
+                    to: data.user_id, title: title, message: message });
+
+            }
+
+        } catch (e) { /* best effort */ }
+
+    },
+
+    /* generic mover — Sergeant+, WORKING statuses only */
+
+    async setStatus(caseRow, newStatus) {
+
+        if (!window.db) return false;
+
+        if (!this.WORKING.includes(newStatus)) {
+
+            UI?.error("Use the review workflow for that step.");
+
+            return false;
+
+        }
+
+        if (!(await PermissionService.can("cases.assign"))) {
+
+            UI?.error("Requires Sergeant or above.");
+
+            return false;
+
+        }
+
+        return this._applyStatus(caseRow, newStatus, null);
+
+    },
+
+    /* ----------------------------------------------------- */
+    /* the review workflow (Sprint 6.4)                       */
+    /*   Lead / Sergeant+  →  Request Closure                 */
+    /*   Lieutenant+       →  Approve → Close · Return ·      */
+    /*                        Reopen · Archive                */
+    /* ----------------------------------------------------- */
+
+    async requestClosure(caseRow, summary) {
+
+        if (!window.db) return false;
+
+        const allowed = (await this.roleAtLeast("Sergeant")) ||
+            (await this.isLead(caseRow));
+
+        if (!allowed) {
+
+            UI?.error("Only the Lead Investigator or a Sergeant+ can " +
+                "request closure.");
+
+            return false;
+
+        }
+
+        const ok = await this._applyStatus(
+            caseRow, "Supervisor Review", summary || "closure requested");
+
+        if (!ok) return false;
+
+        /* let the case's supervisors (and the lead) know */
+
+        try {
+
+            const { rows } = await this.assignments(caseRow.id);
+
+            for (const a of (rows || [])) {
+
+                if (a.role === "Supervisor" && a.officers?.user_id) {
+
+                    await NotificationService.send({
+                        to: a.officers.user_id,
+                        title: "Case awaiting review",
+                        message: caseRow.case_id + " (" + caseRow.title +
+                            ") was submitted for closure review."
+                    });
+
+                }
+
+            }
+
+        } catch (e) { /* best effort */ }
+
+        await this.notifyLead(caseRow, "Closure requested",
+            caseRow.case_id + " is now under supervisor review.");
+
+        return true;
+
+    },
+
+    async approveClosure(caseRow) {
+
+        if (!(await this.roleAtLeast("Lieutenant"))) {
+
+            UI?.error("Approving closure requires Lieutenant or above.");
+
+            return false;
+
+        }
+
+        const ok = await this._applyStatus(
+            caseRow, "Approved For Closing", null);
+
+        if (ok) await this.notifyLead(caseRow, "Closure approved",
+            caseRow.case_id + " was approved for closing.");
+
+        return ok;
+
+    },
+
+    async closeCase(caseRow) {
+
+        if (!(await this.roleAtLeast("Lieutenant"))) {
+
+            UI?.error("Closing a case requires Lieutenant or above.");
+
+            return false;
+
+        }
+
+        const ok = await this._applyStatus(caseRow, "Closed", null);
+
+        if (ok) await this.notifyLead(caseRow, "Case closed",
+            caseRow.case_id + " (" + caseRow.title + ") is closed.");
+
+        return ok;
+
+    },
+
+    async returnToInvestigation(caseRow, reason) {
+
+        if (!(await this.roleAtLeast("Lieutenant"))) {
+
+            UI?.error("Returning a case requires Lieutenant or above.");
+
+            return false;
+
+        }
+
+        if (!reason) { UI?.error("A reason is required."); return false; }
+
+        const ok = await this._applyStatus(
+            caseRow, "Investigation", reason);
+
+        if (ok) await this.notifyLead(caseRow, "Case returned",
+            caseRow.case_id + " was returned to investigation: " + reason);
+
+        return ok;
+
+    },
+
+    async reopen(caseRow, reason) {
+
+        if (!(await this.roleAtLeast("Lieutenant"))) {
+
+            UI?.error("Reopening a case requires Lieutenant or above.");
+
+            return false;
+
+        }
+
+        if (!reason) { UI?.error("A reason is required."); return false; }
+
+        const ok = await this._applyStatus(caseRow, "Open", reason);
+
+        if (ok) await this.notifyLead(caseRow, "Case reopened",
+            caseRow.case_id + " was reopened: " + reason);
+
+        return ok;
+
+    },
+
+    async archive(caseRow) {
+
+        if (!(await this.roleAtLeast("Lieutenant"))) {
+
+            UI?.error("Archiving requires Lieutenant or above.");
+
+            return false;
+
+        }
+
+        return this._applyStatus(caseRow, "Archived", null);
+
+    },
+
+    /* priority — Sergeant+ (spec: "Change Priority") */
+
+    async setPriority(caseRow, newPriority) {
+
+        if (!window.db || newPriority === caseRow.priority) return false;
+
+        if (!(await PermissionService.can("cases.assign"))) {
+
+            UI?.error("Requires Sergeant or above.");
+
+            return false;
+
+        }
+
+        const { error } = await db
+            .from("cases")
+            .update({ priority: newPriority,
+                      updated_at: new Date().toISOString() })
+            .eq("id", caseRow.id);
+
+        if (error) { UI?.error("Could not change the priority."); return false; }
+
+        const detail = (caseRow.priority || "—") + " → " + newPriority;
+
+        await Promise.allSettled([
+
+            this.caseEvent(caseRow.id, "Priority changed", detail),
+
+            AuditService.log({
+                action: "CASE_PRIORITY_CHANGED",
+                target: caseRow.case_id,
+                details: detail
+            })
+
+        ]);
+
+        UI?.success(caseRow.case_id + " · priority " + newPriority);
 
         return true;
 
@@ -962,6 +1241,159 @@ const CaseService = {
         ]);
 
         UI?.success(person.person_id + " removed");
+
+        return true;
+
+    },
+
+    /* ----------------------------------------------------- */
+    /* related cases (Sprint 6.4) — links work both ways      */
+    /* ----------------------------------------------------- */
+
+    SETUP_HINT_64:
+        "Related cases need a one-time setup — run " +
+        "lapd/SETUP-PATCH-14.sql (or RUN-ALL-PENDING.sql) in the " +
+        "Supabase SQL Editor.",
+
+    async related(caseUuid) {
+
+        const { data, error } = await db
+            .from("case_relationships")
+            .select("*")
+            .or("case_id.eq." + caseUuid +
+                ",related_case_id.eq." + caseUuid);
+
+        if (error) return { error };
+
+        const rows = data || [];
+
+        const otherIds = [...new Set(rows.map(r =>
+            r.case_id === caseUuid ? r.related_case_id : r.case_id))]
+            .filter(Boolean);
+
+        if (!otherIds.length) return { rows: [] };
+
+        const { data: cases } = await db
+            .from("cases")
+            .select("id, case_id, title, status, priority")
+            .in("id", otherIds);
+
+        const byId = {};
+
+        (cases || []).forEach(c => byId[c.id] = c);
+
+        return { rows: rows.map(r => {
+
+            const otherId = r.case_id === caseUuid
+                ? r.related_case_id : r.case_id;
+
+            return { link: r, other: byId[otherId] };
+
+        }).filter(r => r.other) };
+
+    },
+
+    async relate(caseRow, otherPublicId) {
+
+        if (!window.db || !otherPublicId?.trim()) return false;
+
+        if (!(await PermissionService.can("cases.assign"))) {
+
+            UI?.error("Requires Sergeant or above.");
+
+            return false;
+
+        }
+
+        const { data: other } = await db
+            .from("cases")
+            .select("id, case_id, title")
+            .ilike("case_id", otherPublicId.trim())
+            .maybeSingle();
+
+        if (!other) { UI?.error("No case with that ID."); return false; }
+
+        if (other.id === caseRow.id) {
+
+            UI?.error("A case can't relate to itself.");
+
+            return false;
+
+        }
+
+        const { error } = await db
+            .from("case_relationships")
+            .insert([{
+                case_id: caseRow.id,
+                related_case_id: other.id,
+                created_by: localStorage.getItem("username") || null
+            }]);
+
+        if (error) {
+
+            if ((error.code || "") === "23505" ||
+                /duplicate|unique/i.test(error.message || "")) {
+
+                UI?.error("Those cases are already linked.");
+
+            } else {
+
+                UI?.error(this.SETUP_HINT_64);
+
+            }
+
+            return false;
+
+        }
+
+        await Promise.allSettled([
+
+            this.caseEvent(caseRow.id, "Case linked", other.case_id),
+
+            this.caseEvent(other.id, "Case linked", caseRow.case_id),
+
+            AuditService.log({
+                action: "CASE_LINKED",
+                target: caseRow.case_id + " ↔ " + other.case_id
+            })
+
+        ]);
+
+        UI?.success(caseRow.case_id + " ↔ " + other.case_id);
+
+        return true;
+
+    },
+
+    async unrelate(caseRow, rel) {
+
+        if (!window.db) return false;
+
+        if (!(await PermissionService.can("cases.assign"))) {
+
+            UI?.error("Requires Sergeant or above.");
+
+            return false;
+
+        }
+
+        const { error } = await db
+            .from("case_relationships")
+            .delete()
+            .eq("id", rel.link.id);
+
+        if (error) { UI?.error("Could not unlink."); return false; }
+
+        await Promise.allSettled([
+
+            this.caseEvent(caseRow.id, "Case unlinked", rel.other.case_id),
+
+            AuditService.log({
+                action: "CASE_UNLINKED",
+                target: caseRow.case_id + " ↔ " + rel.other.case_id
+            })
+
+        ]);
 
         return true;
 

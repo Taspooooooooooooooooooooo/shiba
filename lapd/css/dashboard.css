@@ -3069,3 +3069,216 @@ a.pfCaseLink:hover{ background:#2e8bff14; }
     display:block;
 
 }
+
+/* ---------- EXPLORER-STYLE EVIDENCE BROWSER (Sprint 6.4) ---------- */
+
+.exToolbar{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:8px;
+
+    padding:8px;
+
+    margin-bottom:12px;
+
+    background:#15283d55;
+
+    border:1px solid rgba(255,255,255,.07);
+
+    border-radius:10px;
+
+}
+
+.exSpacer{ flex:1; }
+
+.exBtn{
+
+    padding:8px 13px;
+
+    border:1px solid transparent;
+
+    border-radius:8px;
+
+    background:transparent;
+
+    color:#b8c5d6;
+
+    cursor:pointer;
+
+    font-size:13px;
+
+    font-family:inherit;
+
+    transition:.15s;
+
+}
+
+.exBtn:hover{ background:#2e8bff22; color:#fff; }
+
+.exBtn.exView{ font-size:15px; padding:6px 11px; }
+
+.exBtn.exView.on{
+
+    background:#2e8bff33;
+
+    border-color:#2e8bff66;
+
+    color:#fff;
+
+}
+
+/* details view — column header + rows */
+
+.exHeader, .exRow{
+
+    display:grid;
+
+    grid-template-columns:minmax(0,1fr) 100px 80px 100px 110px;
+
+    gap:10px;
+
+    align-items:center;
+
+    padding:8px 12px;
+
+}
+
+.exHeader{
+
+    color:#5a6b80;
+
+    font-size:10px;
+
+    text-transform:uppercase;
+
+    letter-spacing:1px;
+
+    border-bottom:1px solid rgba(255,255,255,.08);
+
+}
+
+.exRow{
+
+    border-radius:8px;
+
+    cursor:pointer;
+
+    font-size:12.5px;
+
+    color:#8fa6c4;
+
+    transition:.12s;
+
+}
+
+.exRow:hover{ background:#2e8bff1a; }
+
+.exRow:nth-child(even):not(:hover){ background:rgba(255,255,255,.02); }
+
+.exName{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+
+    min-width:0;
+
+}
+
+.exIcon{ font-size:20px; flex-shrink:0; }
+
+.exNameText{ min-width:0; }
+
+.exNameText b{
+
+    display:block;
+
+    color:#dbe4f0;
+
+    font-size:13px;
+
+    white-space:nowrap;
+
+    overflow:hidden;
+
+    text-overflow:ellipsis;
+
+}
+
+.exNameText small{ color:#5a6b80; font-size:10.5px; }
+
+/* grid view — large icon tiles */
+
+.exGrid{
+
+    display:grid;
+
+    grid-template-columns:repeat(auto-fill, minmax(130px, 1fr));
+
+    gap:10px;
+
+}
+
+.exTile{
+
+    display:flex;
+
+    flex-direction:column;
+
+    align-items:center;
+
+    gap:6px;
+
+    padding:16px 10px 12px;
+
+    background:transparent;
+
+    border:1px solid transparent;
+
+    border-radius:10px;
+
+    cursor:pointer;
+
+    font-family:inherit;
+
+    transition:.15s;
+
+}
+
+.exTile:hover{ background:#2e8bff1a; border-color:#2e8bff44; }
+
+.exTileIcon{ font-size:38px; line-height:1; }
+
+.exTileName{
+
+    color:#dbe4f0;
+
+    font-size:12px;
+
+    max-width:100%;
+
+    white-space:nowrap;
+
+    overflow:hidden;
+
+    text-overflow:ellipsis;
+
+}
+
+.exTile small{ color:#5a6b80; font-size:10px; }
+
+@media(max-width:700px){
+
+    .exHeader{ display:none; }
+
+    .exRow{ grid-template-columns:minmax(0,1fr) 80px; }
+
+    .exRow span:nth-child(3), .exRow span:nth-child(4),
+    .exRow span:nth-child(5){ display:none; }
+
+}
