@@ -2,6 +2,17 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.31.1 — 2026-07-19 · Explorer everywhere in the case file
+
+### Changed
+- **Explorer-style tab strip** — the case file's tab selection (General ·
+  Assignments · People · Timeline · Evidence · Notes · History · Audit)
+  is now a flat, icon-labelled tab strip joined to the content panel,
+  like the Windows file manager — replacing the round pill chips.
+- **People tab matches the Evidence browser** — ➕ toolbar, a details
+  view with columns (Name · Role · ID · Added · By), role icons, and a
+  click-to-open *properties* dialog (remove lives in there now).
+
 ## v0.31.0 — 2026-07-18 · Sprint 6.4: review workflow + related cases + Explorer evidence
 
 ### Added

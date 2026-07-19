@@ -25,14 +25,14 @@ const CaseFile = {
     tab: "general",
 
     TABS: [
-        { key: "general", label: "General", live: true },
-        { key: "assignments", label: "Assignments", live: true },
-        { key: "people", label: "People", live: true },
-        { key: "timeline", label: "Timeline", live: true },
-        { key: "evidence", label: "Evidence", live: true },
-        { key: "notes", label: "Notes", live: true },
-        { key: "history", label: "History", live: true },
-        { key: "audit", label: "Audit", live: true }
+        { key: "general", label: "General", icon: "📋", live: true },
+        { key: "assignments", label: "Assignments", icon: "👮", live: true },
+        { key: "people", label: "People", icon: "🧑‍🤝‍🧑", live: true },
+        { key: "timeline", label: "Timeline", icon: "📜", live: true },
+        { key: "evidence", label: "Evidence", icon: "🧰", live: true },
+        { key: "notes", label: "Notes", icon: "🗒", live: true },
+        { key: "history", label: "History", icon: "🧭", live: true },
+        { key: "audit", label: "Audit", icon: "🧾", live: true }
     ],
 
     esc(s) {
@@ -302,7 +302,9 @@ const CaseFile = {
             const b = document.createElement("button");
             b.className = "caseTab" + (t.key === this.tab ? " on" : "") +
                 (t.live ? "" : " soon");
-            b.textContent = t.label + (t.live ? "" : " · soon");
+            b.innerHTML =
+                `<span class="caseTabIcon">${t.icon || ""}</span>` +
+                this.esc(t.label) + (t.live ? "" : " · soon");
             if (t.live) b.onclick = () => {
                 this.tab = t.key;
                 this.renderTabs();
@@ -632,10 +634,21 @@ const CaseFile = {
             "Victims, witnesses and suspects on this case — each with " +
             "their own ID.");
 
+        /* ---- Explorer toolbar ---- */
+
+        const toolbar = document.createElement("div");
+        toolbar.className = "exToolbar";
+
         if (this.canAssign) {
 
-            const bar = document.createElement("div");
-            bar.className = "personBar";
+            const addBtn = document.createElement("button");
+            addBtn.className = "exBtn";
+            addBtn.textContent = "➕ Add person";
+
+            toolbar.appendChild(addBtn);
+
+            const panel = document.createElement("div");
+            panel.className = "personBar hidden";
 
             const name = document.createElement("input");
             name.className = "uiModalInput";
@@ -644,7 +657,7 @@ const CaseFile = {
             const role = document.createElement("select");
             role.className = "uiModalInput";
             role.innerHTML = CaseService.PERSON_ROLES.map(r =>
-                `<option>${r}</option>`).join("");
+                `<option>${this.ROLE_ICONS[r]} ${r}</option>`).join("");
 
             const details = document.createElement("input");
             details.className = "uiModalInput";
@@ -657,17 +670,23 @@ const CaseFile = {
                 if (!name.value.trim()) { UI.error("A name is required."); return; }
                 add.disabled = true;
                 const ok = await CaseService.addPerson(this.caseRow, {
-                    name: name.value, role: role.value,
+                    name: name.value,
+                    role: role.value.replace(/^\S+\s/, ""),
                     details: details.value
                 });
                 add.disabled = false;
                 if (ok) this.renderBody();
             };
 
-            bar.append(name, role, details, add);
-            card.appendChild(bar);
+            panel.append(name, role, details, add);
+
+            addBtn.onclick = () => panel.classList.toggle("hidden");
+
+            card.append(toolbar, panel);
 
         }
+
+        /* ---- Explorer details view ---- */
 
         const { rows, error } = await CaseService.persons(this.id);
 
@@ -684,56 +703,35 @@ const CaseFile = {
 
         } else {
 
+            const head = document.createElement("div");
+            head.className = "exHeader exPeople";
+            head.innerHTML =
+                "<span>Name</span><span>Role</span><span>ID</span>" +
+                "<span>Added</span><span>By</span>";
+            card.appendChild(head);
+
             rows.forEach(person => {
 
                 const row = document.createElement("div");
-                row.className = "certItem";
+                row.className = "exRow exPeople";
 
-                const info = document.createElement("div");
-                info.className = "certInfo";
-                info.innerHTML =
-                    `<strong>${this.ROLE_ICONS[person.role] || "👤"} ` +
-                    `${this.esc(person.name)}</strong>
-                     <span class="grantKind">${this.esc(person.role)}</span>
-                     <small>${this.esc(person.person_id || "")}
-                     · added ${new Date(person.created_at).toLocaleDateString()}
-                     ${person.added_by ? " · by " + this.esc(person.added_by) : ""}</small>` +
-                    (person.details
-                        ? `<div class="apQa">${this.esc(person.details)}</div>` : "");
+                row.innerHTML =
+                    `<span class="exName">
+                        <span class="exIcon">` +
+                        `${this.ROLE_ICONS[person.role] || "👤"}</span>
+                        <span class="exNameText">
+                            <b>${this.esc(person.name)}</b>
+                            ${person.details
+                                ? `<small>${this.esc(person.details)}</small>`
+                                : ""}
+                        </span>
+                    </span>` +
+                    `<span>${this.esc(person.role)}</span>` +
+                    `<span>${this.esc(person.person_id || "—")}</span>` +
+                    `<span>${new Date(person.created_at).toLocaleDateString()}</span>` +
+                    `<span>${this.esc(person.added_by || "—")}</span>`;
 
-                row.appendChild(info);
-
-                if (this.canAssign) {
-
-                    const actions = document.createElement("div");
-                    actions.className = "certActions";
-
-                    const del = document.createElement("button");
-                    del.className = "dangerBtn";
-                    del.textContent = "Remove";
-                    del.onclick = async () => {
-
-                        const ok = await UI.confirm({
-                            title: "Remove this person?",
-                            message: person.name + " (" + person.role +
-                                ") will be removed from " +
-                                this.caseRow.case_id + ". The case history " +
-                                "keeps a record.",
-                            confirmText: "Remove",
-                            danger: true
-                        });
-
-                        if (!ok) return;
-
-                        if (await CaseService.removePerson(this.caseRow, person))
-                            this.renderBody();
-
-                    };
-
-                    actions.appendChild(del);
-                    row.appendChild(actions);
-
-                }
+                row.onclick = () => this.showPersonDetail(person);
 
                 card.appendChild(row);
 
@@ -742,6 +740,68 @@ const CaseFile = {
         }
 
         body.appendChild(card);
+
+    },
+
+    /* Explorer "properties" dialog for a person */
+
+    showPersonDetail(person) {
+
+        UI.modal({
+
+            title: (this.ROLE_ICONS[person.role] || "👤") + " " + person.name,
+
+            render: () => {
+
+                const wrap = document.createElement("div");
+
+                const line = (k, v) =>
+                    `<div class="rvRow"><small>${k}</small>` +
+                    `<div>${this.esc(v || "—")}</div></div>`;
+
+                wrap.innerHTML =
+                    `<div class="rvGrid">
+                        ${line("Person ID", person.person_id)}
+                        ${line("Role", person.role)}
+                        ${line("Added", new Date(person.created_at).toLocaleString())}
+                        ${line("Added by", person.added_by)}
+                        ${line("Case", this.caseRow.case_id)}
+                    </div>` +
+                    (person.details
+                        ? `<div class="apMot" style="margin-top:10px">` +
+                          `${this.esc(person.details)}</div>` : "");
+
+                return wrap;
+
+            },
+
+            buttons: [
+                { label: "Close", kind: "ghost", value: null },
+                ...(this.canAssign
+                    ? [{ label: "Remove from case", kind: "danger",
+                         value: "remove" }]
+                    : [])
+            ]
+
+        }).then(async choice => {
+
+            if (choice !== "remove") return;
+
+            const ok = await UI.confirm({
+                title: "Remove this person?",
+                message: person.name + " (" + person.role +
+                    ") will be removed from " + this.caseRow.case_id +
+                    ". The case history keeps a record.",
+                confirmText: "Remove",
+                danger: true
+            });
+
+            if (!ok) return;
+
+            if (await CaseService.removePerson(this.caseRow, person))
+                this.renderBody();
+
+        });
 
     },
 
