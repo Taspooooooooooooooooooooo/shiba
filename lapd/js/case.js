@@ -49,28 +49,83 @@ const CaseFile = {
 
     },
 
-    feedItem(time, action, detail, small) {
+    EVENT_ICONS: {
+        "Case created": "🆕", "Status changed": "🔁",
+        "Officer assigned": "👮", "Officer removed": "👮",
+        "Priority changed": "🚩", "Note added": "🗒",
+        "Evidence uploaded": "🧰", "Person added": "🧑",
+        "Person removed": "🧑", "Case linked": "🔗",
+        "Case unlinked": "🔗"
+    },
 
-        const item = document.createElement("div");
-        item.className = "feedItem";
+    /* Explorer details view for event-style rows (Timeline +
+       History) — click a row for its properties */
 
-        const t = document.createElement("span");
-        t.className = "feedTime";
-        t.textContent = time;
+    buildEventExplorer(card, rows) {
 
-        const a = document.createElement("strong");
-        a.textContent = action;
+        const head = document.createElement("div");
+        head.className = "exHeader exCols3";
+        head.innerHTML = "<span>Event</span><span>By</span><span>When</span>";
+        card.appendChild(head);
 
-        const d = document.createElement("span");
-        d.className = "feedTarget";
-        d.textContent = detail || "";
+        rows.forEach(e => {
 
-        const i = document.createElement("small");
-        i.textContent = small || "";
+            const row = document.createElement("div");
+            row.className = "exRow exCols3";
 
-        item.append(t, a, d, i);
+            row.innerHTML =
+                `<span class="exName">
+                    <span class="exIcon">` +
+                    `${this.EVENT_ICONS[e.event] || "📌"}</span>
+                    <span class="exNameText">
+                        <b>${this.esc(e.event)}</b>
+                        ${e.details
+                            ? `<small>${this.esc(e.details)}</small>` : ""}
+                    </span>
+                </span>` +
+                `<span>${this.esc(e.actor || "—")}</span>` +
+                `<span>${new Date(e.created_at).toLocaleString()}</span>`;
 
-        return item;
+            row.onclick = () => this.showEventDetail(e);
+
+            card.appendChild(row);
+
+        });
+
+    },
+
+    showEventDetail(e) {
+
+        UI.modal({
+
+            title: (this.EVENT_ICONS[e.event] || "📌") + " " + e.event,
+
+            render: () => {
+
+                const wrap = document.createElement("div");
+
+                const line = (k, v) =>
+                    `<div class="rvRow"><small>${k}</small>` +
+                    `<div>${this.esc(v || "—")}</div></div>`;
+
+                wrap.innerHTML =
+                    `<div class="rvGrid">
+                        ${line("Event", e.event)}
+                        ${line("By", e.actor)}
+                        ${line("When", new Date(e.created_at).toLocaleString())}
+                        ${line("Case", this.caseRow.case_id)}
+                    </div>` +
+                    (e.details
+                        ? `<div class="apMot" style="margin-top:10px">` +
+                          `${this.esc(e.details)}</div>` : "");
+
+                return wrap;
+
+            },
+
+            buttons: [{ label: "Close", kind: "primary", value: null }]
+
+        });
 
     },
 
@@ -1155,9 +1210,7 @@ const CaseFile = {
 
         } else {
 
-            rows.forEach(e => card.appendChild(this.feedItem(
-                new Date(e.created_at).toLocaleString(),
-                e.event, e.details, e.actor ? "by " + e.actor : "")));
+            this.buildEventExplorer(card, rows);
 
         }
 
@@ -1175,10 +1228,20 @@ const CaseFile = {
 
         const card = this.card("🗒 Notes");
 
-        /* composer — every signed-in officer may write notes */
+        /* ---- Explorer toolbar + collapsible composer ---- */
+
+        const toolbar = document.createElement("div");
+        toolbar.className = "exToolbar";
+
+        const addBtn = document.createElement("button");
+        addBtn.className = "exBtn";
+        addBtn.textContent = "➕ Add note";
+
+        toolbar.appendChild(addBtn);
+        card.appendChild(toolbar);
 
         const composer = document.createElement("div");
-        composer.className = "noteComposer";
+        composer.className = "noteComposer hidden";
 
         const ta = document.createElement("textarea");
         ta.className = "uiModalInput";
@@ -1199,6 +1262,13 @@ const CaseFile = {
         composer.append(ta, send);
         card.appendChild(composer);
 
+        addBtn.onclick = () => {
+            composer.classList.toggle("hidden");
+            if (!composer.classList.contains("hidden")) ta.focus();
+        };
+
+        /* ---- Explorer details view ---- */
+
         const { rows, error } = await CaseService.notes(this.id);
 
         if (error) {
@@ -1214,76 +1284,119 @@ const CaseFile = {
 
         } else {
 
-            const me = localStorage.getItem("username") || "";
+            const head = document.createElement("div");
+            head.className = "exHeader exNotes";
+            head.innerHTML =
+                "<span>Note</span><span>Author</span>" +
+                "<span>Written</span><span>Status</span>";
+            card.appendChild(head);
 
             rows.forEach(n => {
 
-                const item = document.createElement("div");
-                item.className = "noteItem" + (n.pinned ? " pinned" : "");
+                const excerpt = (n.body || "").split("\n")[0].slice(0, 90);
 
-                const head = document.createElement("div");
-                head.className = "noteHead";
-                head.innerHTML =
-                    `<b>${this.esc(n.author || "unknown")}</b>
-                     <small>${new Date(n.created_at).toLocaleString()}
-                     ${n.edited_at ? " · edited" : ""}
-                     ${n.pinned ? " · 📌 pinned" : ""}</small>`;
+                const flags = [
+                    n.pinned ? "📌 pinned" : "",
+                    n.edited_at ? "✏️ edited" : ""
+                ].filter(Boolean).join(" · ") || "—";
 
-                const bodyEl = document.createElement("div");
-                bodyEl.className = "noteBody";
-                bodyEl.textContent = n.body;
+                const row = document.createElement("div");
+                row.className = "exRow exNotes";
 
-                const actions = document.createElement("div");
-                actions.className = "noteActions";
+                row.innerHTML =
+                    `<span class="exName">
+                        <span class="exIcon">${n.pinned ? "📌" : "🗒"}</span>
+                        <span class="exNameText">
+                            <b>${this.esc(excerpt)}` +
+                            `${(n.body || "").length > excerpt.length ? "…" : ""}</b>
+                        </span>
+                    </span>` +
+                    `<span>${this.esc(n.author || "—")}</span>` +
+                    `<span>${new Date(n.created_at).toLocaleDateString()}</span>` +
+                    `<span>${flags}</span>`;
 
-                if (this.canAssign) {
+                row.onclick = () => this.showNoteDetail(n);
 
-                    const pin = document.createElement("button");
-                    pin.className = "ghostBtn";
-                    pin.textContent = n.pinned ? "Unpin" : "📌 Pin";
-                    pin.onclick = async () => {
-                        if (await CaseService.togglePin(n)) this.renderBody();
-                    };
-                    actions.appendChild(pin);
-
-                }
-
-                if (n.author === me) {
-
-                    const edit = document.createElement("button");
-                    edit.className = "ghostBtn";
-                    edit.textContent = "✏️ Edit";
-                    edit.onclick = async () => {
-
-                        const text = await UI.promptText({
-                            title: "Edit note",
-                            value: n.body,
-                            multiline: true,
-                            required: true,
-                            confirmText: "Save"
-                        });
-
-                        if (text === null) return;
-
-                        if (await CaseService.editNote(n, text))
-                            this.renderBody();
-
-                    };
-                    actions.appendChild(edit);
-
-                }
-
-                item.append(head, bodyEl);
-
-                if (actions.childNodes.length) item.appendChild(actions);
-
-                card.appendChild(item);
+                card.appendChild(row);
 
             });
 
         }
 
         body.appendChild(card);
+
+    },
+
+    /* Explorer "properties" dialog for a note — pin + edit live
+       in here now */
+
+    showNoteDetail(n) {
+
+        const me = localStorage.getItem("username") || "";
+
+        UI.modal({
+
+            title: (n.pinned ? "📌" : "🗒") + " Note by " +
+                (n.author || "unknown"),
+
+            render: () => {
+
+                const wrap = document.createElement("div");
+
+                const line = (k, v) =>
+                    `<div class="rvRow"><small>${k}</small>` +
+                    `<div>${this.esc(v || "—")}</div></div>`;
+
+                wrap.innerHTML =
+                    `<div class="rvGrid">
+                        ${line("Author", n.author)}
+                        ${line("Written", new Date(n.created_at).toLocaleString())}
+                        ${line("Edited", n.edited_at
+                            ? new Date(n.edited_at).toLocaleString() : "Never")}
+                        ${line("Pinned", n.pinned ? "Yes" : "No")}
+                        ${line("Case", this.caseRow.case_id)}
+                    </div>
+                    <div class="caseDesc" style="margin-top:12px">` +
+                    `${this.esc(n.body)}</div>`;
+
+                return wrap;
+
+            },
+
+            buttons: [
+                { label: "Close", kind: "ghost", value: null },
+                ...(this.canAssign
+                    ? [{ label: n.pinned ? "Unpin" : "📌 Pin",
+                         kind: "ghost", value: "pin" }]
+                    : []),
+                ...(n.author === me
+                    ? [{ label: "✏️ Edit", kind: "primary", value: "edit" }]
+                    : [])
+            ]
+
+        }).then(async choice => {
+
+            if (choice === "pin") {
+
+                if (await CaseService.togglePin(n)) this.renderBody();
+
+            } else if (choice === "edit") {
+
+                const text = await UI.promptText({
+                    title: "Edit note",
+                    value: n.body,
+                    multiline: true,
+                    required: true,
+                    confirmText: "Save"
+                });
+
+                if (text === null) return;
+
+                if (await CaseService.editNote(n, text)) this.renderBody();
+
+            }
+
+        });
 
     },
 
@@ -1318,9 +1431,7 @@ const CaseFile = {
 
             } else {
 
-                lifecycle.forEach(e => card.appendChild(this.feedItem(
-                    new Date(e.created_at).toLocaleString(),
-                    e.event, e.details, e.actor ? "by " + e.actor : "")));
+                this.buildEventExplorer(card, lifecycle);
 
             }
 
@@ -1354,14 +1465,74 @@ const CaseFile = {
 
         } else {
 
-            rows.forEach(e => card.appendChild(this.feedItem(
-                new Date(e.created_at).toLocaleString(),
-                (e.action || "").replace(/_/g, " "),
-                e.details || e.target, e.action_id || "")));
+            const head = document.createElement("div");
+            head.className = "exHeader exCols3";
+            head.innerHTML =
+                "<span>Action</span><span>Entry</span><span>When</span>";
+            card.appendChild(head);
+
+            rows.forEach(e => {
+
+                const row = document.createElement("div");
+                row.className = "exRow exCols3";
+
+                row.innerHTML =
+                    `<span class="exName">
+                        <span class="exIcon">🧾</span>
+                        <span class="exNameText">
+                            <b>${this.esc((e.action || "").replace(/_/g, " "))}</b>
+                            ${(e.details || e.target)
+                                ? `<small>${this.esc(e.details || e.target)}</small>`
+                                : ""}
+                        </span>
+                    </span>` +
+                    `<span>${this.esc(e.action_id || "—")}</span>` +
+                    `<span>${new Date(e.created_at).toLocaleString()}</span>`;
+
+                row.onclick = () => this.showAuditDetail(e);
+
+                card.appendChild(row);
+
+            });
 
         }
 
         body.appendChild(card);
+
+    },
+
+    showAuditDetail(e) {
+
+        UI.modal({
+
+            title: "🧾 " + (e.action || "").replace(/_/g, " "),
+
+            render: () => {
+
+                const wrap = document.createElement("div");
+
+                const line = (k, v) =>
+                    `<div class="rvRow"><small>${k}</small>` +
+                    `<div>${this.esc(v || "—")}</div></div>`;
+
+                wrap.innerHTML =
+                    `<div class="rvGrid">
+                        ${line("Action", (e.action || "").replace(/_/g, " "))}
+                        ${line("Entry ID", e.action_id)}
+                        ${line("When", new Date(e.created_at).toLocaleString())}
+                        ${line("Target", e.target)}
+                    </div>` +
+                    (e.details
+                        ? `<div class="apMot" style="margin-top:10px">` +
+                          `${this.esc(e.details)}</div>` : "");
+
+                return wrap;
+
+            },
+
+            buttons: [{ label: "Close", kind: "primary", value: null }]
+
+        });
 
     },
 

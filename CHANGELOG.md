@@ -2,6 +2,27 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.32.0 — 2026-07-19 · Explorer for every tab + properties everywhere
+
+### Changed
+- **Timeline, Notes, History and Audit now use the Explorer details
+  view** (People and Evidence already did) — column headers, per-row
+  icons, zebra striping. Notes get a ➕ toolbar with a collapsible
+  composer; the note excerpt, author, date and 📌/✏️ status show as
+  columns.
+- **Properties on everything** — clicking ANY row (a note, a timeline
+  event, a history step, an audit entry) opens its *properties* dialog:
+  a note shows author, written/edited timestamps, pinned state and the
+  full text — with **Pin/Unpin and Edit moved into the dialog**; events
+  show who/when/what; audit entries show their `AUDIT-…` id and target.
+- **Navigation sidebar is scrollable** — with 13+ links the fixed
+  sidebar used to clip on shorter screens with no way to scroll; it now
+  scrolls (thin themed scrollbar).
+
+### Note
+The emoji on buttons/tabs are placeholders — swap-ready for the user's
+own icon designs when provided.
+
 ## v0.31.1 — 2026-07-19 · Explorer everywhere in the case file
 
 ### Changed

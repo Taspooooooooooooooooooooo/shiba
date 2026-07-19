@@ -78,6 +78,14 @@ body{
 
     padding:25px;
 
+    overflow-y:auto;
+
+    overscroll-behavior:contain;
+
+    scrollbar-width:thin;
+
+    scrollbar-color:#2e8bff44 transparent;
+
 }
 
 .sidebar h3{
@@ -3326,6 +3334,22 @@ a.pfCaseLink:hover{ background:#2e8bff14; }
 .exHeader.exPeople, .exRow.exPeople{
 
     grid-template-columns:minmax(0,1fr) 90px 150px 90px 100px;
+
+}
+
+/* Timeline / History / Audit — Event|By|When (or Action|Entry|When) */
+
+.exHeader.exCols3, .exRow.exCols3{
+
+    grid-template-columns:minmax(0,1fr) 150px 165px;
+
+}
+
+/* Notes — Note|Author|Written|Status */
+
+.exHeader.exNotes, .exRow.exNotes{
+
+    grid-template-columns:minmax(0,1fr) 110px 100px 120px;
 
 }
 
