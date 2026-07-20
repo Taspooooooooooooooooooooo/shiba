@@ -15,65 +15,7 @@
 </head>
 <body>
 
-<header class="topbar">
-
-    <div>
-
-        <h2>SHIBA PIMS</h2>
-
-        <span>Police Information Management System</span>
-
-    </div>
-
-    <div class="userInfo">
-
-        <div id="welcomeUser">
-
-            Welcome
-
-        </div>
-
-        <button id="logoutButton">
-
-            Logout
-
-        </button>
-
-    </div>
-
-</header>
-
-<nav class="sidebar">
-
-    <h3>Navigation</h3>
-
-    <a href="dashboard.html">🏠 Dashboard</a>
-
-    <a href="officers.html">👮 Officers</a>
-
-    <a href="../cloud/">☁️ Cloud</a>
-
-    <a href="#">📂 Cases</a>
-
-    <a href="#">📄 Reports</a>
-
-    <a href="#">📷 Bodycam</a>
-
-    <a href="#">🚔 Vehicles</a>
-
-    <a href="certificates.html">🏆 Certificates</a>
-
-    <a href="scanner.html">📷 Scanner</a>
-
-    <a href="applications.html">📝 Applications</a>
-
-    <a href="#">📅 Shifts</a>
-
-    <a href="#">💬 Messages</a>
-
-    <a href="settings.html">⚙ Settings</a>
-
-</nav>
+<div id="layoutTop"></div>
 
 <main class="content">
 
@@ -98,9 +40,9 @@
 
         <button id="qaCreateOfficer" onclick="location.href='officers.html?create=1'">＋ Create Officer</button>
 
-        <button onclick="location.href='officers.html'">🔍 Search Officers</button>
+        <button onclick="location.href='officers.html'"><svg class="pIcon" width="17" height="17" aria-hidden="true"><use href="assets/pims-sprite.svg#pims-search"></use></svg> Search Officers</button>
 
-        <button onclick="location.href='../cloud/'">☁️ Upload File</button>
+        <button onclick="location.href='../cloud/'"><svg class="pIcon" width="17" height="17" aria-hidden="true"><use href="assets/pims-sprite.svg#pims-cloud"></use></svg> Upload File</button>
 
     </section>
 
@@ -109,7 +51,7 @@
 
         <div class="card">
 
-            <h3>👮 Officers</h3>
+            <h3><svg class="pIcon" width="17" height="17" aria-hidden="true"><use href="assets/pims-sprite.svg#pims-officers"></use></svg> Officers</h3>
 
             <h1 id="statOfficers">…</h1>
 
@@ -117,7 +59,7 @@
 
         <div class="card">
 
-            <h3>🟢 On Duty</h3>
+            <h3><svg class="pIcon" width="17" height="17" aria-hidden="true"><use href="assets/pims-sprite.svg#pims-shifts"></use></svg> On Duty</h3>
 
             <h1 id="statOnDuty">…</h1>
 
@@ -125,7 +67,7 @@
 
         <div class="card">
 
-            <h3>🟢 Online Now</h3>
+            <h3><svg class="pIcon" width="17" height="17" aria-hidden="true"><use href="assets/pims-sprite.svg#pims-dispatch"></use></svg> Online Now</h3>
 
             <h1 id="statOnline">…</h1>
 
@@ -133,7 +75,7 @@
 
         <div class="card">
 
-            <h3>📁 Open Cases</h3>
+            <h3><svg class="pIcon" width="17" height="17" aria-hidden="true"><use href="assets/pims-sprite.svg#pims-cases"></use></svg> Open Cases</h3>
 
             <h1 id="statCases">…</h1>
 
@@ -141,7 +83,7 @@
 
         <div class="card">
 
-            <h3>📄 Reports</h3>
+            <h3><svg class="pIcon" width="17" height="17" aria-hidden="true"><use href="assets/pims-sprite.svg#pims-reports"></use></svg> Reports</h3>
 
             <h1 id="statReports">…</h1>
 
@@ -149,7 +91,7 @@
 
         <div class="card">
 
-            <h3>☁️ Cloud Files</h3>
+            <h3><svg class="pIcon" width="17" height="17" aria-hidden="true"><use href="assets/pims-sprite.svg#pims-cloud"></use></svg> Cloud Files</h3>
 
             <h1 id="statCloud">…</h1>
 
@@ -157,7 +99,7 @@
 
         <div class="card">
 
-            <h3>🔔 Unread</h3>
+            <h3><svg class="pIcon" width="17" height="17" aria-hidden="true"><use href="assets/pims-sprite.svg#pims-notifications"></use></svg> Unread</h3>
 
             <h1 id="statNotifs">…</h1>
 
@@ -170,7 +112,7 @@
 
         <h2>
 
-            📊 Weekly Activity
+            <svg class="pIcon" width="20" height="20" aria-hidden="true"><use href="assets/pims-sprite.svg#pims-analytics"></use></svg> Weekly Activity
 
         </h2>
 
@@ -183,7 +125,7 @@
 
         <h2>
 
-            ⚡ Live Activity
+            <svg class="pIcon" width="20" height="20" aria-hidden="true"><use href="assets/pims-sprite.svg#pims-history"></use></svg> Live Activity
 
         </h2>
 
@@ -213,6 +155,10 @@
 <script src="js/core/timelineService.js"></script>
 <script src="js/core/notificationService.js"></script>
 
+<script src="js/auth.js"></script>
+<script src="js/session.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/layout.js"></script>
 <script src="js/commandPalette.js"></script>
 <script src="js/dashboard.js"></script>
 
@@ -224,19 +170,7 @@ if(localStorage.getItem("loggedIn")!="true"){
 
 }
 
-document.getElementById("welcomeUser").innerHTML=
-
-localStorage.getItem("username")+"<br>"+localStorage.getItem("role");
-
-document.getElementById("logoutButton").onclick=function(){
-
-    localStorage.clear();
-
-    sessionStorage.clear();
-
-    window.location.href="index.html";
-
-}
+document.getElementById("layoutTop").innerHTML = AppLayout.createTopbar();
 
 </script>
 

@@ -163,7 +163,7 @@ const Scanner = {
             box.innerHTML = `
                 <div class="scanBad">
 
-                    <div class="scanIcon">❌</div>
+                    <div class="scanIcon scanIconBad">${pimsIcon("delete", 46)}</div>
 
                     <h2>NOT A VALID SHIBA CREDENTIAL</h2>
 
@@ -191,7 +191,7 @@ const Scanner = {
             html = `
                 <div class="${bad ? "scanWarn" : "scanGood"}">
 
-                    <div class="scanIcon">${bad ? "⚠️" : "👮"}</div>
+                    <div class="scanIcon">${pimsIcon(bad ? "alerts" : "officers", 46)}</div>
 
                     <h2>${bad
                         ? "GENUINE ID — OFFICER " +
@@ -214,7 +214,7 @@ const Scanner = {
             html = `
                 <div class="scanGood">
 
-                    <div class="scanIcon">🧰</div>
+                    <div class="scanIcon">${pimsIcon("evidence", 46)}</div>
 
                     <h2>VERIFIED EVIDENCE ITEM</h2>
 
@@ -246,17 +246,22 @@ const Scanner = {
 
             const good = !revoked && !pending && !rejected;
 
-            const headline = revoked ? "⚫ DOCUMENT REVOKED"
-                : rejected ? "🔴 DOCUMENT REJECTED"
-                : pending ? "🟡 GENUINE — AWAITING APPROVAL"
-                : "✅ VERIFIED SHIBA DOCUMENT";
+            const headline = revoked ? "DOCUMENT REVOKED"
+                : rejected ? "DOCUMENT REJECTED"
+                : pending ? "GENUINE — AWAITING APPROVAL"
+                : "VERIFIED SHIBA DOCUMENT";
+
+            const icon = revoked ? "archive"
+                : rejected ? "delete"
+                : pending ? "alerts"
+                : "verified";
 
             html = `
                 <div class="${good ? "scanGood" : "scanWarn"}">
 
-                    <div class="scanIcon">${headline.slice(0, 2)}</div>
+                    <div class="scanIcon">${pimsIcon(icon, 46)}</div>
 
-                    <h2>${headline.slice(2).trim()}</h2>
+                    <h2>${headline}</h2>
 
                     ${this.fieldGrid([
                         ["Certificate", result.certificate_id],

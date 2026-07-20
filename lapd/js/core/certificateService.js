@@ -387,13 +387,14 @@ const CertificateService = {
 
     statusChip(status, revoked) {
 
-        if (revoked) return "⚫ Revoked";
+        const [color, label] =
+            revoked ? ["#6b7280", "Revoked"]
+            : status === "Approved" ? ["#22c55e", "Approved"]
+            : status === "Rejected" ? ["#ef4444", "Rejected"]
+            : ["#eab308", "Pending"];
 
-        if (status === "Approved") return "🟢 Approved";
-
-        if (status === "Rejected") return "🔴 Rejected";
-
-        return "🟡 Pending";
+        return `<span class="dotChip"><i style="background:${color}"></i>` +
+            `${label}</span>`;
 
     }
 

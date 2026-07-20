@@ -18,7 +18,7 @@
 
     <div class="modalBox">
 
-        <h2 id="officerModalTitle">👮 Create Officer</h2>
+        <h2 id="officerModalTitle">Create Officer</h2>
 
         <p id="wizardStepLabel">Step 1 of 5 — Full name</p>
 
@@ -68,13 +68,13 @@
 
             <div style="display:flex;gap:8px">
 
-                <input id="offPhoto" placeholder="Photo URL or ☁️ Cloud link" style="flex:1">
+                <input id="offPhoto" placeholder="Photo URL or Cloud link" style="flex:1">
 
                 <button
                     type="button"
                     id="pickFromCloud"
                     title="Pick from SHIBA CLOUD"
-                    style="padding:12px;border:none;border-radius:10px;background:#15283d;color:white;cursor:pointer">☁️</button>
+                    style="padding:12px;border:none;border-radius:10px;background:#15283d;color:white;cursor:pointer"><svg class="pIcon" width="16" height="16" aria-hidden="true"><use href="assets/pims-sprite.svg#pims-cloud"></use></svg></button>
 
             </div>
 
@@ -113,7 +113,7 @@
 
         <h2 id="drawerName">Officer</h2>
 
-        <button id="closeDrawer">✖</button>
+        <button id="closeDrawer">✕</button>
 
     </div>
 
@@ -143,19 +143,19 @@
 
             <h4>Quick Actions</h4>
 
-            <button onclick="location.href='personnel.html?id='+currentOfficerId">📂 Personnel File</button>
+            <button onclick="location.href='personnel.html?id='+currentOfficerId"><svg class="pIcon" width="15" height="15" aria-hidden="true"><use href="assets/pims-sprite.svg#pims-fingerprint"></use></svg> Personnel File</button>
 
-            <button id="drawerPromoteBtn" onclick="location.href='cert-studio.html?officer='+currentOfficerId">🎖 Issue Certificate</button>
+            <button id="drawerPromoteBtn" onclick="location.href='cert-studio.html?officer='+currentOfficerId"><svg class="pIcon" width="15" height="15" aria-hidden="true"><use href="assets/pims-sprite.svg#pims-verified"></use></svg> Issue Certificate</button>
 
-            <button id="drawerResetBtn" onclick="Officers.resetAccess(currentOfficerId)">🔑 Reset Access</button>
+            <button id="drawerResetBtn" onclick="Officers.resetAccess(currentOfficerId)"><svg class="pIcon" width="15" height="15" aria-hidden="true"><use href="assets/pims-sprite.svg#pims-access"></use></svg> Reset Access</button>
 
-            <button>📂 Cases</button>
+            <button><svg class="pIcon" width="15" height="15" aria-hidden="true"><use href="assets/pims-sprite.svg#pims-cases"></use></svg> Cases</button>
 
-            <button>📄 Reports</button>
+            <button><svg class="pIcon" width="15" height="15" aria-hidden="true"><use href="assets/pims-sprite.svg#pims-reports"></use></svg> Reports</button>
 
-            <button>📷 Bodycam</button>
+            <button><svg class="pIcon" width="15" height="15" aria-hidden="true"><use href="assets/pims-sprite.svg#pims-surveillance"></use></svg> Bodycam</button>
 
-            <button>🏆 Certificates</button>
+            <button><svg class="pIcon" width="15" height="15" aria-hidden="true"><use href="assets/pims-sprite.svg#pims-verified"></use></svg> Certificates</button>
 
         </div>
 
@@ -185,7 +185,7 @@
     <!-- HEADER -->
     <div class="card">
 
-        <h1>👮 Officer Management</h1>
+        <h1><svg class="pIcon" width="24" height="24" aria-hidden="true"><use href="assets/pims-sprite.svg#pims-officers"></use></svg> Officer Management</h1>
 
         <p>
             Manage personnel, ranks, permissions, and operational status.
@@ -198,11 +198,11 @@
 
         <button id="createOfficerBtn">＋ Create Officer</button>
 
-        <button>📤 Export</button>
+        <button><svg class="pIcon" width="15" height="15" aria-hidden="true"><use href="assets/pims-sprite.svg#pims-export"></use></svg> Export</button>
 
-        <button>🖨️ Print</button>
+        <button><svg class="pIcon" width="15" height="15" aria-hidden="true"><use href="assets/pims-sprite.svg#pims-print"></use></svg> Print</button>
 
-        <button>🔍 Advanced Search</button>
+        <button><svg class="pIcon" width="15" height="15" aria-hidden="true"><use href="assets/pims-sprite.svg#pims-search"></use></svg> Advanced Search</button>
 
     </div>
 
@@ -251,7 +251,7 @@
 
                 <tr>
 
-                    <td>🟢 On Duty</td>
+                    <td>On Duty</td>
                     <td>John Smith</td>
                     <td>SH-2026-00421</td>
                     <td>Sergeant II</td>

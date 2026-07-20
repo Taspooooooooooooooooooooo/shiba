@@ -217,16 +217,16 @@ const CertStudio = {
         if (!result.ok) return;
 
         document.getElementById("studioStatus").textContent =
-            "🟡 Pending Approval";
+            "Pending Approval";
 
         document.getElementById("pvId").textContent =
             result.row.certificate_id;
 
-        document.getElementById("pvStatus").textContent = "🟡 Pending";
+        document.getElementById("pvStatus").textContent = "Pending";
 
         /* offer the real document (with its secure QR) */
 
-        btn.textContent = "📄 Open the certificate";
+        btn.textContent = "Open the certificate";
 
         btn.onclick = () =>
             location.href = "certificates.html?view=" + result.row.id;

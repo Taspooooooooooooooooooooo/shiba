@@ -505,7 +505,7 @@
 
     <div class="cloud-header">
 
-        <h1>☁️ SHIBA CLOUD</h1>
+        <h1><img src="../lapd/assets/pims-badge.svg" alt="badge" style="width:40px;height:auto;vertical-align:-10px;margin-right:8px">SHIBA CLOUD</h1>
 
         <span>Upload a file, get a link, share it anywhere.</span>
 
@@ -546,7 +546,7 @@
 
         <div id="dropZone">
 
-            <h2>📤 Drop files here</h2>
+            <h2>Drop files here</h2>
 
             <p>or click to choose (max 50 MB per file)</p>
 
@@ -564,7 +564,7 @@
 
     <div class="cloud-card" id="recentCard">
 
-        <h2>🗂️ Recent uploads</h2>
+        <h2>Recent uploads</h2>
 
         <div id="recentList"><p style="color:var(--text2)">Loading...</p></div>
 
@@ -856,7 +856,7 @@
 
         const use = document.createElement("button");
 
-        use.innerText = "✅ Use";
+        use.innerText = "Use";
 
         use.onclick = () => sendPick(id, name, path);
 
@@ -920,15 +920,15 @@
         } else {
 
             preview.innerHTML =
-                `<p style="font-size:60px;margin:20px 0">📄</p>`;
+                `<p style="font-size:34px;margin:26px 0;color:#8fa6c4;letter-spacing:2px">FILE</p>`;
 
         }
 
         const actions = document.getElementById("viewerActions");
 
         actions.innerHTML = `
-            <button id="doDownload">⬇️ Watch ad & download</button>
-            <button id="copyShare">💬 Copy share link</button>
+            <button id="doDownload">Watch ad &amp; download</button>
+            <button id="copyShare">Copy share link</button>
         `;
 
         document.getElementById("doDownload").onclick = async (e) => {
@@ -1040,13 +1040,13 @@
 
         const share = document.createElement("button");
 
-        share.innerText = "💬 Copy share link";
+        share.innerText = "Copy share link";
 
         share.onclick = (e) => copyText(shareLink(id), e.target);
 
         const direct = document.createElement("button");
 
-        direct.innerText = "🔗 Copy direct link";
+        direct.innerText = "Copy direct link";
 
         direct.onclick = (e) => copyText(directLink(path), e.target);
 
@@ -1126,13 +1126,13 @@
 
             const share = document.createElement("button");
 
-            share.innerText = "💬 Share";
+            share.innerText = "Share";
 
             share.onclick = (e) => copyText(shareLink(f.id), e.target);
 
             const direct = document.createElement("button");
 
-            direct.innerText = "⬇️ Download link";
+            direct.innerText = "Download link";
 
             direct.onclick = (e) => copyText(downloadLink(f.id), e.target);
 
@@ -1140,7 +1140,7 @@
 
             del.className = "danger";
 
-            del.innerText = "🗑️";
+            del.innerText = "Delete";
 
             del.onclick = async () => {
 
@@ -1237,7 +1237,7 @@
                 "Shared links work without login. To upload files, sign in with your SHIBA PIMS account — one account for all SHIBA services.");
 
             banner.innerHTML +=
-                '<div style="margin-top:12px"><button class="btn" id="pimsLogin">🔐 Login with PIMS account</button></div>';
+                '<div style="margin-top:12px"><button class="btn" id="pimsLogin">Login with PIMS account</button></div>';
 
             document.getElementById("pimsLogin").onclick = () => {
 
@@ -1279,7 +1279,7 @@
         if (PICK_SID) {
 
             showBanner(document.getElementById("uploadBanner"), "info",
-                "📸 Picking a photo for SHIBA PIMS — upload a new file or press ✅ Use on an existing one.");
+                "Picking a photo for SHIBA PIMS — upload a new file or press Use on an existing one.");
 
         } else {
 

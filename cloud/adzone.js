@@ -138,7 +138,7 @@ window.AdZone = {
 
         const label = document.createElement("span");
 
-        label.textContent = "🛡 Admin · Ads " + (on ? "ON" : "OFF");
+        label.textContent = "Admin · Ads " + (on ? "ON" : "OFF");
 
         const btn = document.createElement("button");
 

@@ -2,6 +2,31 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.34.0 — 2026-07-20 · The great emoji sweep — 100% brand icons
+
+### Changed
+- **Every emoji in the app is gone** (~240 across 30 files), replaced by
+  the PIMS icon system: page headers, tab bars, toolbars, drawer and
+  quick-action buttons, the command palette, wizard steps, the scanner
+  result cards, the update banner, activation screen and both cloud
+  pages (which now carry the badge in their header).
+- **Status dots are real markup now** — officer status, case status &
+  priority, certificate and application statuses render as colored CSS
+  dot-chips instead of 🟢/🔴-style circle emojis, with a subtle glow.
+- **Dashboard joined the shared layout** — it had a hard-coded 2016-era
+  sidebar; it now uses the branded topbar/sidebar like every other page
+  **and finally loads the session guard** (it was the one page still
+  skipping the real-session check).
+- **Certificate rejection** now uses the in-app dialog (the last
+  surviving native browser `prompt()` is gone).
+- Certificate & Studio documents wear the badge artwork instead of a
+  shield emoji.
+
+Verified page-by-page with a DOM emoji scan: 0 pictographs on all 9 PIMS
+pages + the cloud (the © in footers is typography, not emoji), sprite
+icons rendering everywhere, dot-chips confirmed in the personnel header,
+case header/board/General, certificate document and scanner results.
+
 ## v0.33.0 — 2026-07-20 · Sprint 6.5: Case Board + stats + PIMS brand — PHASE 6 COMPLETE 🚔
 
 ### Added

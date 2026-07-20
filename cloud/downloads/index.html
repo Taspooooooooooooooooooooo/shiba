@@ -72,7 +72,7 @@
 
 <div class="dlCard">
 
-    <h1>☁️ SHIBA CLOUD</h1>
+    <h1><img src="../../lapd/assets/pims-badge.svg" alt="badge" style="width:40px;height:auto;vertical-align:-10px;margin-right:8px">SHIBA CLOUD</h1>
 
     <p class="dlName" id="dlName">Locating file…</p>
 
@@ -171,12 +171,12 @@ function fmt(bytes){
             clearInterval(iv);
             timer.classList.add("hidden");
             btn.disabled = false;
-            btn.textContent = "⬇️ Download " + data.name;
+            btn.textContent = "Download " + data.name;
             btn.onclick = () => {
                 btn.disabled = true; btn.textContent = "Downloading…";
                 forceDownload(publicUrl(data.path), data.name).then(() => {
                     btn.disabled = false;
-                    btn.textContent = "⬇️ Download " + data.name;
+                    btn.textContent = "Download " + data.name;
                 });
             };
         }

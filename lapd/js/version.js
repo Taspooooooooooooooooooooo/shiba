@@ -10,7 +10,7 @@
    "newer version available" prompt.
 ========================================================== */
 
-window.SHIBA_VERSION = "0.33.0";
+window.SHIBA_VERSION = "0.34.0";
 window.SHIBA_CHANNEL = "Alpha";
 
 (function () {
@@ -71,7 +71,7 @@ window.SHIBA_CHANNEL = "Alpha";
             "box-shadow:0 -6px 20px rgba(0,0,0,.4)";
 
         bar.innerHTML =
-            "🔄 A newer version (v" + newVersion + ") is available — " +
+            "A newer version (v" + newVersion + ") is available — " +
             "you're on v" + window.SHIBA_VERSION + ". " +
             "<button id='updateReload' style='margin-left:12px;padding:7px 14px;" +
             "border:none;border-radius:8px;background:rgba(0,0,0,.35);color:#fff;" +

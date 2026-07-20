@@ -15,7 +15,8 @@ const ApplicationService = {
     TYPES: {
 
         "SWAT": {
-            label: "🔫 SWAT",
+            label: "SWAT",
+            icon: "ballistics",
             questions: [
                 "Why do you want to join SWAT?",
                 "Relevant tactical experience?",
@@ -26,7 +27,8 @@ const ApplicationService = {
         },
 
         "K9": {
-            label: "🐕 K9 Unit",
+            label: "K9 Unit",
+            icon: "k9",
             questions: [
                 "Why the K9 unit?",
                 "Experience handling animals?"
@@ -36,7 +38,8 @@ const ApplicationService = {
         },
 
         "Detective": {
-            label: "🕵️ Detective",
+            label: "Detective",
+            icon: "forensics",
             questions: [
                 "Why do you want to become a Detective?",
                 "Notable cases you've worked?"
@@ -46,14 +49,16 @@ const ApplicationService = {
         },
 
         "Traffic": {
-            label: "🚦 Traffic",
+            label: "Traffic",
+            icon: "patrol",
             questions: ["Why the Traffic division?"],
             grantsDivision: "Traffic",
             grantsGroup: null
         },
 
         "Transfer": {
-            label: "🔄 Division Transfer",
+            label: "Division Transfer",
+            icon: "sync",
             questions: [
                 "Which division do you want to transfer to?",
                 "Reason for the transfer?"
@@ -63,7 +68,8 @@ const ApplicationService = {
         },
 
         "Training": {
-            label: "🎓 Training Program",
+            label: "Training Program",
+            icon: "bookings",
             questions: [
                 "Which training program?",
                 "Why should you be selected?"
@@ -73,7 +79,8 @@ const ApplicationService = {
         },
 
         "Special Permission": {
-            label: "🛡 Special Permission",
+            label: "Special Permission",
+            icon: "access",
             questions: [
                 "Which permission or duty are you requesting?",
                 "Justification?"
@@ -90,11 +97,15 @@ const ApplicationService = {
 
     statusChip(status) {
 
-        if (status === "Accepted") return "🟢 Accepted";
-        if (status === "Denied") return "🔴 Denied";
-        if (status === "Changes Requested") return "🟠 Changes Requested";
-        if (status === "Under Review") return "🔵 Under Review";
-        return "🟡 Submitted";
+        const color =
+            status === "Accepted" ? "#22c55e"
+            : status === "Denied" ? "#ef4444"
+            : status === "Changes Requested" ? "#f97316"
+            : status === "Under Review" ? "#3b82f6"
+            : "#eab308";
+
+        return `<span class="dotChip"><i style="background:${color}"></i>` +
+            `${status || "Submitted"}</span>`;
 
     },
 

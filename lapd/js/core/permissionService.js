@@ -84,33 +84,33 @@ const PermissionService = {
     GROUPS: {
 
         "training-officer": {
-            label: "🎓 Training Officer",
+            label: "Training Officer",
             description: "Runs training and can approve reports.",
             permissions: ["reports.approve", "notes.write", "cases.view"]
         },
 
         "fleet-manager": {
-            label: "🚔 Fleet Manager",
+            label: "Fleet Manager",
             description: "Manages vehicles and bodycam footage.",
             permissions: ["bodycam.view", "bodycam.download", "bodycam.delete"]
         },
 
         "evidence-custodian": {
-            label: "📦 Evidence Custodian",
+            label: "Evidence Custodian",
             description: "Handles case evidence and bodycam.",
             permissions: ["cases.view", "cases.assign", "bodycam.view",
                           "bodycam.download"]
         },
 
         "recruiter": {
-            label: "🧑‍✈️ Recruiter",
+            label: "Recruiter",
             description: "Creates and activates new officers.",
             permissions: ["officers.create", "officers.reset_access",
                           "applications.review"]
         },
 
         "dispatcher": {
-            label: "📻 Dispatcher",
+            label: "Dispatcher",
             description: "Assigns cases and sees the roster.",
             permissions: ["officers.view", "cases.view", "cases.assign"]
         }
@@ -738,7 +738,7 @@ const PermissionService = {
         bar.id = "simBanner";
 
         bar.innerHTML =
-            "👁 Previewing as <b>" + role + "</b> — you are seeing what " +
+            "Previewing as <b>" + role + "</b> — you are seeing what " +
             "this role sees. <button id='simExit'>Exit preview</button>";
 
         document.body.appendChild(bar);

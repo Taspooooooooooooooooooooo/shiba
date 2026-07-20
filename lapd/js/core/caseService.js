@@ -78,33 +78,47 @@ const CaseService = {
     /* display helpers                                        */
     /* ----------------------------------------------------- */
 
+    /* colored status dot as real markup (no emoji) — safe in any
+       innerHTML context */
+
+    STATUS_COLORS: {
+        "Draft": "#9ca3af",
+        "Open": "#22c55e",
+        "Investigation": "#3b82f6",
+        "Evidence Collection": "#a855f7",
+        "Supervisor Review": "#f97316",
+        "Approved For Closing": "#eab308",
+        "Closed": "#ef4444",
+        "Archived": "#6b7280"
+    },
+
+    PRIORITY_COLORS: {
+        "Low": "#22c55e",
+        "Medium": "#eab308",
+        "High": "#f97316",
+        "Critical": "#ef4444"
+    },
+
+    dot(color, label) {
+
+        return `<span class="dotChip"><i style="background:${color}"></i>` +
+            `${label}</span>`;
+
+    },
+
     statusChip(status) {
 
-        const map = {
-            "Draft": "⚪ Draft",
-            "Open": "🟢 Open",
-            "Investigation": "🔵 Investigation",
-            "Evidence Collection": "🟣 Evidence Collection",
-            "Supervisor Review": "🟠 Supervisor Review",
-            "Approved For Closing": "🟡 Approved For Closing",
-            "Closed": "🔴 Closed",
-            "Archived": "⚫ Archived"
-        };
+        if (!status) return "—";
 
-        return map[status] || status || "—";
+        return this.dot(this.STATUS_COLORS[status] || "#9ca3af", status);
 
     },
 
     priorityChip(priority) {
 
-        const map = {
-            "Low": "🟢 Low",
-            "Medium": "🟡 Medium",
-            "High": "🟠 High",
-            "Critical": "🔴 Critical"
-        };
+        if (!priority) return "—";
 
-        return map[priority] || priority || "—";
+        return this.dot(this.PRIORITY_COLORS[priority] || "#9ca3af", priority);
 
     },
 
@@ -1354,12 +1368,12 @@ const CaseService = {
 
             AuditService.log({
                 action: "CASE_LINKED",
-                target: caseRow.case_id + " ↔ " + other.case_id
+                target: caseRow.case_id + " <-> " + other.case_id
             })
 
         ]);
 
-        UI?.success(caseRow.case_id + " ↔ " + other.case_id);
+        UI?.success(caseRow.case_id + " <-> " + other.case_id);
 
         return true;
 
@@ -1390,7 +1404,7 @@ const CaseService = {
 
             AuditService.log({
                 action: "CASE_UNLINKED",
-                target: caseRow.case_id + " ↔ " + rel.other.case_id
+                target: caseRow.case_id + " <-> " + rel.other.case_id
             })
 
         ]);

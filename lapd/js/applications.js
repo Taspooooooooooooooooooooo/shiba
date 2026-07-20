@@ -164,7 +164,7 @@ const Applications = {
 
         label.className = "wizLabel";
 
-        label.textContent = "🔗 Link a certificate (optional)";
+        label.innerHTML = pimsIcon("attach", 14) + " Link a certificate (optional)";
 
         const sel = document.createElement("select");
 
@@ -312,7 +312,7 @@ const Applications = {
 
             edit.className = "primaryBtn";
 
-            edit.textContent = "✏️ Edit & resubmit";
+            edit.textContent = "Edit & resubmit";
 
             edit.onclick = () => this.openEdit(app);
 
@@ -389,7 +389,7 @@ const Applications = {
 
                 addBtn.className = "formAddQ";
 
-                addBtn.textContent = "➕ Add a question";
+                addBtn.innerHTML = pimsIcon("add", 14) + " Add a question";
 
                 addBtn.onclick = () =>
                     this.addQuestionCard(qBox, "", "", true, true);
@@ -490,7 +490,7 @@ const Applications = {
             ApplicationService.statusChip(app.status) + `</span></div>` +
             `<div class="rrSub">${this.esc(app.officer_label)} · ` +
             `${new Date(app.created_at).toLocaleDateString()}` +
-            `${app.linked_certificate ? " · 🔗 " +
+            `${app.linked_certificate ? " · " +
                 this.esc(app.linked_certificate) : ""}</div>`;
 
         const open = document.createElement("button");
@@ -569,7 +569,7 @@ const Applications = {
 
                     lc.className = "linkedCert";
 
-                    lc.textContent = "🔗 Linked certificate: " +
+                    lc.innerHTML = pimsIcon("attach", 13) + " Linked certificate: " +
                         app.linked_certificate;
 
                     wrap.appendChild(lc);
@@ -801,7 +801,7 @@ const Applications = {
 
         } else {
 
-            banner.querySelector(".aaAvatar").textContent = "⚠️";
+            banner.querySelector(".aaAvatar").innerHTML = pimsIcon("alerts", 20);
 
             banner.querySelector(".aaName").textContent =
                 "No officer linked to this account";
@@ -829,7 +829,8 @@ const Applications = {
 
             chip.className = "typeChip";
 
-            chip.textContent = def.label;
+            chip.innerHTML = (def.icon ? pimsIcon(def.icon, 15) + " " : "") +
+                Applications.esc(def.label);
 
             chip.onclick = () => {
 

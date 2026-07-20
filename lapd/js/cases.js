@@ -506,7 +506,7 @@ const Cases = {
         } else {
             const create = document.createElement("button");
             create.className = "primaryBtn";
-            create.textContent = "✅ Create Case";
+            create.innerHTML = pimsIcon("add", 15) + " Create Case";
             create.onclick = () => this.submit(create);
             foot.appendChild(create);
         }
@@ -586,7 +586,7 @@ const Cases = {
         } else {
             html += `<label class="wizLabel" style="margin-top:14px">Additional officers</label>
                      <div id="wAssignees"></div>
-                     <button type="button" id="wAddOfficer" class="formAddQ">➕ Add an officer</button>`;
+                     <button type="button" id="wAddOfficer" class="formAddQ">${pimsIcon("add", 14)} Add an officer</button>`;
         }
 
         body.innerHTML = html;
@@ -792,7 +792,7 @@ const Cases = {
             btn.onclick = () => this.openWizard();
         }
 
-        /* table ↔ board view toggle */
+        /* table / board view toggle */
 
         document.getElementById("caseViewTable").onclick = () => {
             this.view = "table";

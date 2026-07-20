@@ -3647,6 +3647,36 @@ a.pfCaseLink:hover{ background:#2e8bff14; }
 
 }
 
+/* colored status dot — replaces the old circle emojis */
+
+.dotChip{
+
+    display:inline-flex;
+
+    align-items:center;
+
+    gap:6px;
+
+    white-space:nowrap;
+
+}
+
+.dotChip i{
+
+    width:8px;
+
+    height:8px;
+
+    border-radius:50%;
+
+    display:inline-block;
+
+    flex-shrink:0;
+
+    box-shadow:0 0 6px currentColor;
+
+}
+
 /* badge artwork on the ID card header */
 
 .idCardShield img{

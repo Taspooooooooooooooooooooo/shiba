@@ -34,7 +34,7 @@ const Personnel = {
 
         const status = document.getElementById("pfStatus");
 
-        status.textContent = Officers.getStatus(o.status);
+        status.innerHTML = Officers.getStatus(o.status);
 
         status.classList.toggle("onduty", o.status === "On Duty");
 
@@ -265,7 +265,8 @@ const Personnel = {
 
             const detail = document.createElement("span");
             detail.className = "feedTarget";
-            detail.textContent = (c.title || "") + " · " + chip(c.status);
+            detail.textContent = (c.title || "") + " · ";
+            detail.insertAdjacentHTML("beforeend", chip(c.status));
 
             const role = document.createElement("small");
             role.textContent = r.role;
@@ -377,12 +378,12 @@ const Personnel = {
             .filter(e => /promot/i.test(e.action)).length;
 
         const stats = [
-            ["📁 Cases", await countEq("case_assignments", "officer_id", id)],
-            ["📄 Reports", await countEq("reports", "officer_id", id)],
-            ["🎖 Promotions", promotions],
-            ["📜 Timeline Events", timeline.length],
-            ["📋 Audit Events", (await AuditService.list(500, id)).length],
-            ["🏅 Certificates", "—"]
+            ["Cases", await countEq("case_assignments", "officer_id", id)],
+            ["Reports", await countEq("reports", "officer_id", id)],
+            ["Promotions", promotions],
+            ["Timeline Events", timeline.length],
+            ["Audit Events", (await AuditService.list(500, id)).length],
+            ["Certificates", "—"]
         ];
 
         box.innerHTML = "";
@@ -651,7 +652,7 @@ const Personnel = {
 
         const gh = document.createElement("h4");
 
-        gh.textContent = "🧩 Permission Groups";
+        gh.textContent = "Permission Groups";
 
         gh.style.marginBottom = "8px";
 
@@ -766,7 +767,7 @@ const Personnel = {
 
             issueBtn.style.marginBottom = "14px";
 
-            issueBtn.textContent = "🎖 Issue certificate for " +
+            issueBtn.textContent = "Issue certificate for " +
                 this.officer.name;
 
             issueBtn.onclick = () =>
@@ -812,7 +813,7 @@ const Personnel = {
 
             const view = document.createElement("button");
 
-            view.textContent = "📄 View";
+            view.textContent = "View";
 
             view.className = "primaryBtn";
 
@@ -861,7 +862,7 @@ const Personnel = {
 
         applyBtn.style.marginBottom = "14px";
 
-        applyBtn.textContent = "📝 New application for " + this.officer.name;
+        applyBtn.textContent = "New application for " + this.officer.name;
 
         applyBtn.onclick = () =>
             location.href = "applications.html?officer=" + this.officer.id;
@@ -960,7 +961,7 @@ const Personnel = {
         if (!wrap) return;
 
         wrap.innerHTML =
-            "<h4 style='margin-bottom:8px'>⏳ Temporary Permissions</h4>";
+            "<h4 style='margin-bottom:8px'>Temporary Permissions</h4>";
 
         /* grant form (admins) */
 
@@ -1328,7 +1329,7 @@ const Personnel = {
 
         if (!Officers.perms.edit) editBtn.style.display = "none";
 
-        /* ✏️ EDIT EVERYTHING — every change is audited field by field */
+        /* EDIT EVERYTHING — every change is audited field by field */
 
         const editModal = document.getElementById("pfEditModal");
 
@@ -1442,7 +1443,7 @@ const Personnel = {
 
         resetBtn.onclick = () => Officers.resetAccess(id);
 
-        /* 🪪 IDENTITY CARD */
+        /* IDENTITY CARD */
 
         document.getElementById("pfIdCardBtn").onclick = () =>
             this.openIdCard();

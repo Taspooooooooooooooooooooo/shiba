@@ -203,7 +203,7 @@ const Certificates = {
 
         const view = document.createElement("button");
 
-        view.textContent = "📄 View";
+        view.textContent = "View";
 
         view.onclick = () => this.openDocument(cert);
 
@@ -215,7 +215,7 @@ const Certificates = {
 
             approve.className = "primaryBtn";
 
-            approve.textContent = "✅ Approve";
+            approve.innerHTML = pimsIcon("verified", 14) + " Approve";
 
             approve.onclick = async () => {
 
@@ -231,7 +231,12 @@ const Certificates = {
 
             reject.onclick = async () => {
 
-                const reason = prompt("Reason for rejection:");
+                const reason = await UI.promptText({
+                    title: "Reject " + (cert.certificate_id || "certificate"),
+                    label: "Reason (the officer will see this)",
+                    multiline: true, required: true,
+                    confirmText: "Reject certificate"
+                });
 
                 if (reason === null) return;
 
@@ -335,7 +340,7 @@ const Certificates = {
         document.getElementById("cdId").textContent =
             cert.certificate_id || "—";
 
-        document.getElementById("cdStatus").textContent =
+        document.getElementById("cdStatus").innerHTML =
             CertificateService.statusChip(cert.status, cert.revoked_at);
 
         document.getElementById("cdIssuedBy").textContent =

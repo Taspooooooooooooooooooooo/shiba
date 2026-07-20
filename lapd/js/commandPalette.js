@@ -11,34 +11,34 @@ class CommandPalette {
         this.commands = [
 
             /* --- navigation --- */
-            { title: "🏠 Dashboard",
+            { title: "Dashboard", icon: "dashboard",
               action: () => location.href = "dashboard.html" },
 
-            { title: "👮 Officers",
+            { title: "Officers", icon: "officers",
               action: () => location.href = "officers.html" },
 
-            { title: "📂 Cases",
+            { title: "Cases", icon: "cases",
               action: () => location.href = "cases.html" },
 
-            { title: "🏆 Certificates",
+            { title: "Certificates", icon: "verified",
               action: () => location.href = "certificates.html" },
 
-            { title: "🎖 Certificate Studio",
+            { title: "Certificate Studio", icon: "verified",
               action: () => location.href = "cert-studio.html" },
 
-            { title: "📷 Scanner — verify a QR",
+            { title: "Scanner — verify a credential", icon: "scanner",
               action: () => location.href = "scanner.html" },
 
-            { title: "📝 Applications",
+            { title: "Applications", icon: "bookings",
               action: () => location.href = "applications.html" },
 
-            { title: "🛡 Permissions Reference",
+            { title: "Permissions Reference", icon: "access",
               action: () => location.href = "permissions.html" },
 
-            { title: "☁️ Cloud",
+            { title: "Cloud", icon: "cloud",
               action: () => location.href = "../cloud/" },
 
-            { title: "⚙️ Settings",
+            { title: "Settings", icon: "settings",
               action: () => location.href = "settings.html" },
 
             /* --- quick actions --- */
@@ -48,14 +48,14 @@ class CommandPalette {
             { title: "＋ Create Case",
               action: () => location.href = "cases.html" },
 
-            { title: "🎖 Issue Certificate",
+            { title: "Issue Certificate", icon: "verified",
               action: () => location.href = "cert-studio.html" },
 
-            { title: "🔍 Search Officers",
+            { title: "Search Officers", icon: "search",
               action: () => location.href = "officers.html" },
 
             /* --- account --- */
-            { title: "🚪 Log out",
+            { title: "Log out", icon: "signout",
               action: () => { if (window.Auth) Auth.logout();
                   else { localStorage.clear(); location.href = "index.html"; } } }
 
@@ -149,7 +149,7 @@ class CommandPalette {
 
             item.className="commandItem";
 
-            item.innerText=command.title;
+            item.innerHTML=(window.pimsIcon && command.icon ? pimsIcon(command.icon, 15) + " " : "") + command.title;
 
             item.onclick=()=>{
 

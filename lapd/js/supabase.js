@@ -40,7 +40,7 @@ async function testConnection(){
 
         }
 
-        console.log("✅ Database Connected");
+        console.log("Database Connected");
 
         return true;
 

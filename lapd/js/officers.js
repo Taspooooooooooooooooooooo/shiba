@@ -121,7 +121,7 @@ function ensureActivationModal() {
 
     <div class="modalBox">
 
-        <h2>🔑 Access Code</h2>
+        <h2>${pimsIcon("access", 18)} Access Code</h2>
 
         <p id="activationFor"></p>
 
@@ -491,7 +491,7 @@ class OfficersEngine {
         editingOfficerId = id;
 
         document.getElementById("officerModalTitle").innerText =
-            "👮 Edit Officer";
+            "Edit Officer";
 
         wizSetEditMode();
 
@@ -977,7 +977,7 @@ class OfficersEngine {
 
             if (this.perms.promote) {
                 actions +=
-                    `<button onclick="location.href='cert-studio.html?officer=${officer.id}'">🎖 Cert</button>`;
+                    `<button onclick="location.href='cert-studio.html?officer=${officer.id}'">${pimsIcon("verified", 13)} Cert</button>`;
             }
 
             if (this.perms.archive && officer.status !== "Retired"
@@ -1024,14 +1024,15 @@ class OfficersEngine {
 
     getStatus(status) {
 
-        if (status === "On Duty") return "🟢 On Duty";
-        if (status === "Off Duty") return "⚫ Off Duty";
-        if (status === "Training") return "🔵 Training";
-        if (status === "Suspended") return "🔴 Suspended";
-        if (status === "Retired") return "🌙 Retired";
-        if (status === "Terminated") return "❌ Terminated";
+        const colors = {
+            "On Duty": "#22c55e", "Off Duty": "#6b7280",
+            "Training": "#3b82f6", "Suspended": "#ef4444",
+            "Retired": "#a855f7", "Terminated": "#991b1b"
+        };
 
-        return "⚪ Unknown";
+        return `<span class="dotChip"><i style="background:` +
+            `${colors[status] || "#9ca3af"}"></i>` +
+            `${status || "Unknown"}</span>`;
 
     }
 
@@ -1220,12 +1221,12 @@ function wizBuildSummary() {
     box.innerHTML = "";
 
     const rows = [
-        ["👮 Name", document.getElementById("offName").value.trim() || "—"],
-        ["📞 Phone", document.getElementById("offPhone").value.trim() || "—"],
-        ["✉️ Email", document.getElementById("offEmail").value.trim() || "—"],
-        ["🏢 Division", document.getElementById("offDivision").value.trim() || "—"],
-        ["🎖 Rank", document.getElementById("offRank").value],
-        ["📷 Photo", document.getElementById("offPhoto").value.trim() ? "✓ set" : "—"]
+        ["Name", document.getElementById("offName").value.trim() || "—"],
+        ["Phone", document.getElementById("offPhone").value.trim() || "—"],
+        ["Email", document.getElementById("offEmail").value.trim() || "—"],
+        ["Division", document.getElementById("offDivision").value.trim() || "—"],
+        ["Rank", document.getElementById("offRank").value],
+        ["Photo", document.getElementById("offPhoto").value.trim() ? "✓ set" : "—"]
     ];
 
     rows.forEach(([key, value]) => {
@@ -1257,7 +1258,7 @@ async function wizBuildSuccess(result) {
     if (!box) return;
 
     box.innerHTML = `
-        <div style="text-align:center;font-size:44px">✅</div>
+        <div style="text-align:center;color:#22c55e">${pimsIcon("verified", 44)}</div>
         <h3 style="text-align:center;margin:6px 0" id="wizSuccessName"></h3>
         <p style="text-align:center;color:var(--text2)" id="wizSuccessId"></p>
     `;
@@ -1285,7 +1286,7 @@ async function wizBuildSuccess(result) {
         meta.style.cssText = "color:var(--text2);font-size:13px;text-align:center";
 
         meta.textContent =
-            "🔑 Activation code — give it to the officer (valid 48 hours, " +
+            "Activation code — give it to the officer (valid 48 hours, " +
             code.activation_id + ")";
 
         const copy = document.createElement("button");
@@ -1425,7 +1426,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         editingOfficerId = null;
 
         document.getElementById("officerModalTitle").innerText =
-            "👮 Create Officer";
+            "Create Officer";
 
         document.getElementById("offName").value = "";
         document.getElementById("offPhone").value = "";

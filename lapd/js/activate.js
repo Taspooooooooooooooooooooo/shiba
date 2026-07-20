@@ -32,8 +32,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
         advancedToggle.innerText =
             advanced.classList.contains("step-hidden")
-                ? "⚙ Advanced settings"
-                : "⚙ Hide advanced settings";
+                ? "Advanced settings"
+                : "Hide advanced settings";
 
     });
 
@@ -87,7 +87,7 @@ document.addEventListener("DOMContentLoaded", () => {
         checkedInfo = data;
 
         document.getElementById("officerHello").innerText =
-            "👮 " + data.officer_name + " · " + data.role +
+            data.officer_name + " · " + data.role +
             (data.purpose === "reset" ? " · access reset" : "");
 
         codeForm.classList.add("step-hidden");

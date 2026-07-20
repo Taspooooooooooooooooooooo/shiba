@@ -432,13 +432,18 @@ const CaseFile = {
         const line = (k, v) =>
             `<div class="rvRow"><small>${k}</small><div>${this.esc(v || "—")}</div></div>`;
 
+        /* chips are trusted markup (dot spans) — don't escape them */
+
+        const rawLine = (k, v) =>
+            `<div class="rvRow"><small>${k}</small><div>${v || "—"}</div></div>`;
+
         return `
             <div class="card">
-                <h2>📋 General</h2>
+                <h2>General</h2>
                 <div class="rvGrid">
                     ${line("Case ID", c.case_id)}
-                    ${line("Status", CaseService.statusChip(c.status))}
-                    ${line("Priority", CaseService.priorityChip(c.priority))}
+                    ${rawLine("Status", CaseService.statusChip(c.status))}
+                    ${rawLine("Priority", CaseService.priorityChip(c.priority))}
                     ${line("Incident type", c.incident_type)}
                     ${line("Division", c.divisions?.name)}
                     ${line("Location", c.location)}
@@ -520,7 +525,7 @@ const CaseFile = {
 
     async buildRelatedCard() {
 
-        const card = this.card("🔗 Related Cases",
+        const card = this.card("Related Cases",
             "Same suspect, same location, a follow-up — linked cases " +
             "show up on both files.");
 
@@ -624,7 +629,7 @@ const CaseFile = {
 
         body.innerHTML = "";
 
-        const card = this.card("👮 Assignments");
+        const card = this.card("Assignments");
 
         /* add-officer bar (Sergeant+) */
 
@@ -754,7 +759,7 @@ const CaseFile = {
 
         body.innerHTML = "";
 
-        const card = this.card("🧑‍🤝‍🧑 People",
+        const card = this.card("People",
             "Victims, witnesses and suspects on this case — each with " +
             "their own ID.");
 
@@ -967,7 +972,7 @@ const CaseFile = {
 
         body.innerHTML = "";
 
-        const card = this.card("🧰 Evidence",
+        const card = this.card("Evidence",
             "Every piece is its own object — typed, hashed (SHA-256) and " +
             "never deleted.");
 
@@ -987,13 +992,13 @@ const CaseFile = {
         listBtn.className = "exBtn exView" +
             (this.evView === "list" ? " on" : "");
         listBtn.title = "Details view";
-        listBtn.textContent = "☰";
+        listBtn.innerHTML = pimsIcon("reports", 16);
 
         const gridBtn = document.createElement("button");
         gridBtn.className = "exBtn exView" +
             (this.evView === "grid" ? " on" : "");
         gridBtn.title = "Large icons";
-        gridBtn.textContent = "⊞";
+        gridBtn.innerHTML = pimsIcon("dashboard", 16);
 
         listBtn.onclick = () => {
             this.evView = "list";
@@ -1186,7 +1191,7 @@ const CaseFile = {
             buttons: [
                 { label: "Close", kind: "ghost", value: null },
                 ...(ev.scan_token
-                    ? [{ label: "🏷 Barcode", kind: "ghost", value: "barcode" }]
+                    ? [{ label: "Barcode", kind: "ghost", value: "barcode" }]
                     : []),
                 ...(this.evFileHref(ev)
                     ? [{ label: "Open file", kind: "primary", value: "open" }]
@@ -1225,7 +1230,7 @@ const CaseFile = {
 
         UI.modal({
 
-            title: "🏷 " + ev.evidence_id + " · evidence label",
+            title: ev.evidence_id + " · evidence label",
 
             render: () => {
 
@@ -1264,7 +1269,7 @@ const CaseFile = {
 
         body.innerHTML = "";
 
-        const card = this.card("📜 Timeline",
+        const card = this.card("Timeline",
             "Everything that happened on this case, newest first.");
 
         const { rows, error } = await CaseService.timeline(this.id);
@@ -1298,7 +1303,7 @@ const CaseFile = {
 
         body.innerHTML = "";
 
-        const card = this.card("🗒 Notes");
+        const card = this.card("Notes");
 
         /* ---- Explorer toolbar + collapsible composer ---- */
 
@@ -1482,7 +1487,7 @@ const CaseFile = {
 
         body.innerHTML = "";
 
-        const card = this.card("🧭 History",
+        const card = this.card("History",
             "The case's lifecycle — creation and every status change.");
 
         const { rows, error } = await CaseService.timeline(this.id);
@@ -1523,7 +1528,7 @@ const CaseFile = {
 
         body.innerHTML = "";
 
-        const card = this.card("🧾 Audit",
+        const card = this.card("Audit",
             "Audit-log entries that reference " + this.caseRow.case_id + ".");
 
         const { rows, error } = await CaseService.audit(this.caseRow.case_id);
@@ -1552,7 +1557,7 @@ const CaseFile = {
 
                 row.innerHTML =
                     `<span class="exName">
-                        <span class="exIcon">🧾</span>
+                        <span class="exIcon">${pimsIcon("search", 18)}</span>
                         <span class="exNameText">
                             <b>${this.esc((e.action || "").replace(/_/g, " "))}</b>
                             ${(e.details || e.target)
@@ -1579,7 +1584,7 @@ const CaseFile = {
 
         UI.modal({
 
-            title: "🧾 " + (e.action || "").replace(/_/g, " "),
+            title: (e.action || "").replace(/_/g, " "),
 
             render: () => {
 
