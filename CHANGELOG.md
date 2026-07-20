@@ -2,6 +2,40 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.33.0 — 2026-07-20 · Sprint 6.5: Case Board + stats + PIMS brand — PHASE 6 COMPLETE 🚔
+
+### Added
+- **📋 Case Board (Kanban)** — a `⊞` toggle on the Cases page opens a
+  board with a column per lifecycle status. Commanders **drag & drop**
+  cases between columns (Sergeant+); every move routes through the SAME
+  review-workflow gates as the case-file buttons — requesting closure
+  asks for the summary, reopening asks for a reason, and illegal jumps
+  (e.g. Open → Closed) are refused with a clear message. Every move
+  hits the case timeline + audit. View choice persists.
+- **Stats strip** — Total · Working · In review · Closed · Archived ·
+  Critical, computed live from the current filter.
+- **Case age + item counters** — the General tab now shows the case's
+  age (days open / days to closure) and live counts of evidence,
+  people, notes and timeline events.
+
+### Changed — the PIMS brand lands (designer handoff in `lapd/assets/`)
+- **Badge logo** (eagle + scales, navy/gold) on the **sidebar**, the
+  **login card** and the **Digital ID card** (replacing the 🛡 emoji).
+- **44 professional stroke icons** replace emojis across the sidebar
+  navigation, case-file tabs, toolbars, workflow buttons and
+  timeline/history/audit rows — gold in the nav, inheriting text color
+  everywhere else.
+- **33 multi-color file-type icons** power the Explorer views: evidence
+  files (image/video/audio/document), people dossiers
+  (victim/witness/suspect) and notes.
+- Board cards + stat chips use the brand **tile gradient** and gold
+  accents; drop zones highlight gold while dragging.
+
+**Phase 6 (Case Management) is complete:** container case files,
+create-wizard cascade, timeline/notes/history/audit, evidence with
+hashes + cloud storage + PDF417 labels, people, review workflow,
+related cases, Explorer UI, and the Case Board.
+
 ## v0.32.0 — 2026-07-19 · Explorer for every tab + properties everywhere
 
 ### Changed

@@ -3353,6 +3353,312 @@ a.pfCaseLink:hover{ background:#2e8bff14; }
 
 }
 
+.exRow.exPinned{ background:#c9a24a14; }
+
+/* ---------- PIMS BRAND (designer handoff, lapd/assets) ---------- */
+
+:root{
+
+    --pims-navy:#0b1f3a;
+
+    --pims-gold:#c9a24a;
+
+    --pims-bone:#f4efe2;
+
+    --pims-tile-a:#16233b;
+
+    --pims-tile-b:#0b0f16;
+
+    --pims-border:#232c3a;
+
+    --pims-danger:#e08a5a;
+
+}
+
+.pIcon{
+
+    vertical-align:-3px;
+
+    flex-shrink:0;
+
+}
+
+.pFileIcon{
+
+    vertical-align:middle;
+
+    flex-shrink:0;
+
+}
+
+.sideBrand{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:12px;
+
+    margin-bottom:26px;
+
+}
+
+.sideBrand img{
+
+    width:42px;
+
+    height:auto;
+
+    filter:drop-shadow(0 2px 6px rgba(0,0,0,.5));
+
+}
+
+.sideBrand h3{
+
+    margin:0 !important;
+
+    color:var(--pims-gold) !important;
+
+    letter-spacing:1px;
+
+}
+
+.sidebar a{
+
+    display:flex !important;
+
+    align-items:center;
+
+    gap:11px;
+
+}
+
+.sidebar a .pIcon{ color:var(--pims-gold); opacity:.85; }
+
+.sidebar a:hover .pIcon{ opacity:1; }
+
+.caseTabIcon .pIcon{ color:var(--pims-gold); }
+
+.exBtn .pIcon, .primaryBtn .pIcon, .ghostBtn .pIcon{
+
+    vertical-align:-3px;
+
+    margin-right:2px;
+
+}
+
+/* ---------- CASE STATS STRIP (Sprint 6.5) ---------- */
+
+.caseStats{
+
+    display:flex;
+
+    flex-wrap:wrap;
+
+    gap:10px;
+
+    margin-bottom:16px;
+
+}
+
+.statChip{
+
+    display:flex;
+
+    align-items:baseline;
+
+    gap:8px;
+
+    padding:8px 14px;
+
+    border-radius:10px;
+
+    background:linear-gradient(160deg, var(--pims-tile-a), var(--pims-tile-b));
+
+    border:1px solid var(--pims-border);
+
+}
+
+.statChip b{ font-size:16px; color:#fff; }
+
+.statChip span{
+
+    font-size:10.5px;
+
+    color:#8fa6c4;
+
+    text-transform:uppercase;
+
+    letter-spacing:1px;
+
+}
+
+.statChip.crit b{ color:var(--pims-danger); }
+
+/* ---------- CASE BOARD (Kanban, Sprint 6.5) ---------- */
+
+.boardWrap{
+
+    display:flex;
+
+    gap:12px;
+
+    overflow-x:auto;
+
+    padding-bottom:10px;
+
+    scrollbar-width:thin;
+
+    align-items:flex-start;
+
+}
+
+.boardCol{
+
+    flex:0 0 235px;
+
+    min-width:235px;
+
+    background:#0d1520aa;
+
+    border:1px solid rgba(255,255,255,.06);
+
+    border-radius:12px;
+
+}
+
+.boardColHead{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    padding:11px 13px;
+
+    font-size:12.5px;
+
+    border-bottom:1px solid rgba(255,255,255,.07);
+
+}
+
+.boardColHead small{
+
+    background:#15283d;
+
+    border-radius:999px;
+
+    padding:2px 9px;
+
+    color:#8fa6c4;
+
+}
+
+.boardDrop{
+
+    min-height:70px;
+
+    padding:10px;
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:9px;
+
+    border-radius:0 0 12px 12px;
+
+    transition:.15s;
+
+}
+
+.boardDrop.over{
+
+    background:#c9a24a14;
+
+    outline:2px dashed var(--pims-gold);
+
+    outline-offset:-4px;
+
+}
+
+.boardCard{
+
+    background:linear-gradient(160deg, var(--pims-tile-a), var(--pims-tile-b));
+
+    border:1px solid var(--pims-border);
+
+    border-radius:10px;
+
+    padding:11px 13px;
+
+    cursor:pointer;
+
+    transition:.15s;
+
+}
+
+.boardCard:hover{
+
+    border-color:var(--pims-gold);
+
+    transform:translateY(-1px);
+
+}
+
+.boardCard.dragging{ opacity:.45; }
+
+.boardCard b{
+
+    color:var(--pims-gold);
+
+    font-size:11.5px;
+
+    letter-spacing:.5px;
+
+    font-family:monospace;
+
+}
+
+.boardCard .bcTitle{
+
+    color:#dbe4f0;
+
+    font-size:13px;
+
+    margin:4px 0 6px;
+
+    line-height:1.35;
+
+}
+
+.boardCard .bcMeta{ color:#8fa6c4; font-size:11px; }
+
+/* item counters block on the case General tab */
+
+.caseCounts{
+
+    margin-top:12px;
+
+    padding-top:12px;
+
+    border-top:1px solid rgba(255,255,255,.07);
+
+}
+
+/* badge artwork on the ID card header */
+
+.idCardShield img{
+
+    width:46px;
+
+    height:auto;
+
+    display:block;
+
+}
+
 @media(max-width:700px){
 
     .exHeader{ display:none; }

@@ -88,6 +88,10 @@ const Cases = {
     /* dashboard table                                           */
     /* --------------------------------------------------------- */
 
+    view: localStorage.getItem("shiba_cases_view") || "table",
+
+    lastRows: [],
+
     async refresh() {
 
         const body = document.getElementById("caseRows");
@@ -102,8 +106,16 @@ const Cases = {
         if (error) {
             body.innerHTML =
                 `<tr><td colspan="7" class="muted">${CaseService.SETUP_HINT}</td></tr>`;
+            document.getElementById("caseStats").innerHTML = "";
+            document.getElementById("caseBoard").innerHTML = "";
             return;
         }
+
+        this.lastRows = rows;
+
+        this.renderStats(rows);
+
+        if (this.view === "board") this.renderBoard(rows);
 
         if (!rows.length) {
             body.innerHTML =
@@ -114,6 +126,257 @@ const Cases = {
         body.innerHTML = "";
 
         rows.forEach(c => body.appendChild(this.rowEl(c)));
+
+    },
+
+    /* --------------------------------------------------------- */
+    /* stats strip (Sprint 6.5)                                  */
+    /* --------------------------------------------------------- */
+
+    renderStats(rows) {
+
+        const W = CaseService.WORKING;
+
+        const stat = (label, n, cls = "") =>
+            `<div class="statChip ${cls}"><b>${n}</b>` +
+            `<span>${label}</span></div>`;
+
+        document.getElementById("caseStats").innerHTML =
+            stat("Total", rows.length) +
+            stat("Working", rows.filter(c => W.includes(c.status)).length) +
+            stat("In review", rows.filter(c =>
+                ["Supervisor Review", "Approved For Closing"]
+                    .includes(c.status)).length) +
+            stat("Closed", rows.filter(c => c.status === "Closed").length) +
+            stat("Archived", rows.filter(c => c.status === "Archived").length) +
+            stat("Critical", rows.filter(c =>
+                c.priority === "Critical" &&
+                !["Closed", "Archived"].includes(c.status)).length, "crit");
+
+    },
+
+    /* --------------------------------------------------------- */
+    /* Case Board (Kanban) — drag & drop between statuses; every */
+    /* move goes THROUGH the review workflow gates, so nothing   */
+    /* can skip a step and every move hits timeline + audit.     */
+    /* --------------------------------------------------------- */
+
+    applyView() {
+
+        document.getElementById("caseTableWrap")
+            .classList.toggle("hidden", this.view === "board");
+
+        document.getElementById("caseBoard")
+            .classList.toggle("hidden", this.view !== "board");
+
+        document.getElementById("caseViewTable")
+            .classList.toggle("on", this.view === "table");
+
+        document.getElementById("caseViewBoard")
+            .classList.toggle("on", this.view === "board");
+
+        if (this.view === "board") this.renderBoard(this.lastRows || []);
+
+    },
+
+    renderBoard(rows) {
+
+        const board = document.getElementById("caseBoard");
+
+        board.innerHTML = "";
+
+        CaseService.STATUSES.forEach(status => {
+
+            const items = rows.filter(c => c.status === status);
+
+            const col = document.createElement("div");
+            col.className = "boardCol";
+
+            const head = document.createElement("div");
+            head.className = "boardColHead";
+            head.innerHTML =
+                `<span>${CaseService.statusChip(status)}</span>` +
+                `<small>${items.length}</small>`;
+            col.appendChild(head);
+
+            const drop = document.createElement("div");
+            drop.className = "boardDrop";
+            drop.dataset.status = status;
+
+            if (this.canAssign) {
+
+                drop.ondragover = e => {
+                    e.preventDefault();
+                    drop.classList.add("over");
+                };
+
+                drop.ondragleave = () => drop.classList.remove("over");
+
+                drop.ondrop = e => {
+                    e.preventDefault();
+                    drop.classList.remove("over");
+                    const id = e.dataTransfer.getData("text/plain");
+                    if (id) this.moveCase(id, status);
+                };
+
+            }
+
+            items.forEach(c => drop.appendChild(this.boardCard(c)));
+
+            col.appendChild(drop);
+
+            board.appendChild(col);
+
+        });
+
+    },
+
+    boardCard(c) {
+
+        const card = document.createElement("div");
+        card.className = "boardCard";
+        card.draggable = !!this.canAssign;
+
+        const lead = c.lead_officer_id
+            ? (this.officerMap[c.lead_officer_id]?.officer_id || "") : "";
+
+        card.innerHTML =
+            `<b>${this.esc(c.case_id)}</b>
+             <div class="bcTitle">${this.esc(c.title)}</div>
+             <div class="bcMeta">${CaseService.priorityChip(c.priority)}` +
+             `${lead ? " · " + this.esc(lead) : ""}</div>`;
+
+        card.onclick = () =>
+            location.href = "case.html?id=" + encodeURIComponent(c.id);
+
+        if (this.canAssign) {
+
+            card.ondragstart = e => {
+                e.dataTransfer.setData("text/plain", c.id);
+                e.dataTransfer.effectAllowed = "move";
+                card.classList.add("dragging");
+            };
+
+            card.ondragend = () => card.classList.remove("dragging");
+
+        }
+
+        return card;
+
+    },
+
+    /* routes a board drop to the RIGHT service call — the same
+       gates and cascades as the case-file buttons */
+
+    async moveCase(caseUuid, target) {
+
+        const c = (this.lastRows || []).find(r => r.id === caseUuid);
+
+        if (!c || c.status === target) return;
+
+        const cur = c.status;
+
+        const W = CaseService.WORKING;
+
+        let ok = false;
+
+        if (W.includes(target)) {
+
+            if (["Closed", "Archived"].includes(cur)) {
+
+                if (target !== "Open") {
+                    UI.error("Reopened cases go back to Open.");
+                    return;
+                }
+
+                const reason = await UI.promptText({
+                    title: "Reopen " + c.case_id,
+                    label: "Reason for reopening",
+                    multiline: true, required: true,
+                    confirmText: "Reopen case"
+                });
+
+                if (reason === null) return;
+
+                ok = await CaseService.reopen(c, reason);
+
+            } else if (!W.includes(cur)) {
+
+                if (target === "Investigation") {
+
+                    const reason = await UI.promptText({
+                        title: "Return to investigation · " + c.case_id,
+                        label: "What still needs work?",
+                        multiline: true, required: true,
+                        confirmText: "Return case"
+                    });
+
+                    if (reason === null) return;
+
+                    ok = await CaseService.returnToInvestigation(c, reason);
+
+                } else {
+
+                    UI.error("From review, a case goes back to " +
+                        "Investigation or forward in the workflow.");
+                    return;
+
+                }
+
+            } else {
+
+                ok = await CaseService.setStatus(c, target);
+
+            }
+
+        } else if (target === "Supervisor Review") {
+
+            if (!W.includes(cur)) {
+                UI.error("Only working cases can be submitted for review.");
+                return;
+            }
+
+            const summary = await UI.promptText({
+                title: "Request closure · " + c.case_id,
+                label: "Closing summary (the supervisor sees this)",
+                multiline: true,
+                confirmText: "Submit for review"
+            });
+
+            if (summary === null) return;
+
+            ok = await CaseService.requestClosure(c, summary);
+
+        } else if (target === "Approved For Closing") {
+
+            if (cur !== "Supervisor Review") {
+                UI.error("Approval comes after Supervisor Review.");
+                return;
+            }
+
+            ok = await CaseService.approveClosure(c);
+
+        } else if (target === "Closed") {
+
+            if (cur !== "Approved For Closing") {
+                UI.error("Close after approval (Approved For Closing).");
+                return;
+            }
+
+            ok = await CaseService.closeCase(c);
+
+        } else if (target === "Archived") {
+
+            if (cur !== "Closed") {
+                UI.error("Only closed cases can be archived.");
+                return;
+            }
+
+            ok = await CaseService.archive(c);
+
+        }
+
+        if (ok) this.refresh();
 
     },
 
@@ -525,8 +788,25 @@ const Cases = {
         if (this.canCreate) {
             const btn = document.getElementById("caseCreate");
             btn.classList.remove("hidden");
+            btn.innerHTML = pimsIcon("add", 16) + " Create Case";
             btn.onclick = () => this.openWizard();
         }
+
+        /* table ↔ board view toggle */
+
+        document.getElementById("caseViewTable").onclick = () => {
+            this.view = "table";
+            localStorage.setItem("shiba_cases_view", "table");
+            this.applyView();
+        };
+
+        document.getElementById("caseViewBoard").onclick = () => {
+            this.view = "board";
+            localStorage.setItem("shiba_cases_view", "board");
+            this.applyView();
+        };
+
+        this.applyView();
 
         let t = null;
         document.getElementById("caseSearch").addEventListener("input", () => {

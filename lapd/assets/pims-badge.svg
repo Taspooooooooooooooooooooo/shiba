@@ -1,0 +1,124 @@
+<?xml version="1.0"?>
+
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 470" width="400" height="470" style="display:block; overflow:visible; font-family:&#39;Oswald&#39;, sans-serif;" role="img" aria-label="LAPD PIMS badge">
+  <defs>
+    <path id="pb-top" d="M52 235 A148 148 0 0 1 348 235" fill="none"></path>
+    <path id="pb-bot" d="M56 235 A148 148 0 0 0 344 235" fill="none"></path>
+  </defs>
+  
+
+  
+  <path d="M200 30 C150 30 90 42 68 50 C60 53 58 58 58 66 L58 210 C58 320 130 400 200 442 C270 400 342 320 342 210 L342 66 C342 58 340 53 332 50 C310 42 250 30 200 30 Z" fill="#c9a24a"></path>
+  
+  <path d="M200 44 C154 44 98 55 78 62 C72 65 70 68 70 76 L70 208 C70 312 136 386 200 425 C264 386 330 312 330 208 L330 76 C330 68 328 65 322 62 C302 55 246 44 200 44 Z" fill="#0b1f3a" stroke="#c9a24a" stroke-width="2"></path>
+
+  
+  <g fill="#c9a24a" opacity="0.9">
+    <circle cx="200" cy="52" r="3"></circle>
+    <circle cx="112" cy="66" r="3"></circle>
+    <circle cx="288" cy="66" r="3"></circle>
+    <circle cx="80" cy="120" r="3"></circle>
+    <circle cx="320" cy="120" r="3"></circle>
+    <circle cx="78" cy="196" r="3"></circle>
+    <circle cx="322" cy="196" r="3"></circle>
+    <circle cx="104" cy="300" r="3"></circle>
+    <circle cx="296" cy="300" r="3"></circle>
+    <circle cx="152" cy="384" r="3"></circle>
+    <circle cx="248" cy="384" r="3"></circle>
+  </g>
+
+  
+  <circle cx="200" cy="235" r="160" fill="none" stroke="#c9a24a" stroke-width="2"></circle>
+  <circle cx="200" cy="235" r="120" fill="none" stroke="#f4efe2" stroke-width="1" opacity="0.55"></circle>
+
+  
+  <text fill="#c9a24a" font-size="18" font-weight="600" letter-spacing="3.5">
+    <textPath href="#pb-top" startOffset="50%" text-anchor="middle">LAPD ★ POLICE INFORMATION</textPath>
+  </text>
+  <text fill="#c9a24a" font-size="16" font-weight="500" letter-spacing="4">
+    <textPath href="#pb-bot" startOffset="50%" text-anchor="middle">MANAGEMENT SYSTEM · EST. 2026</textPath>
+  </text>
+
+  
+  <g fill="#c9a24a">
+    
+    <path d="M198 12 C193 12 189 16 189 22 C189 27 192 30 196 31 L188 33 C185 34 185 37 188 38 L198 37 C202 37 206 34 207 30 C210 30 213 28 213 25 C213 23 211 21 209 21 C209 15 204 12 198 12 Z"></path>
+    
+    <path d="M196 31 C194 40 195 48 200 55 C205 48 206 40 204 31 Z"></path>
+    
+    <path d="M198 40 C176 40 150 44 128 36 C108 29 92 22 78 26 C96 33 108 42 120 50 C104 46 92 44 82 48 C100 54 114 60 128 63 C116 62 106 63 98 68 C118 72 140 74 162 70 C176 68 190 62 198 54 Z"></path>
+    
+    <path d="M202 40 C224 40 250 44 272 36 C292 29 308 22 322 26 C304 33 292 42 280 50 C296 46 308 44 318 48 C300 54 286 60 272 63 C284 62 294 63 302 68 C282 72 260 74 238 70 C224 68 210 62 202 54 Z"></path>
+    
+    <g fill="#0b1f3a">
+      <path d="M120 50 C110 48 100 46 90 44 L92 47 C102 49 111 51 120 53 Z"></path>
+      <path d="M128 63 C118 62 108 61 100 60 L101 63 C110 64 119 65 128 66 Z"></path>
+      <path d="M280 50 C290 48 300 46 310 44 L308 47 C298 49 289 51 280 53 Z"></path>
+      <path d="M272 63 C282 62 292 61 300 60 L299 63 C290 64 281 65 272 66 Z"></path>
+    </g>
+    
+    <path d="M200 52 C205 52 208 56 208 62 C208 68 205 74 200 80 C195 74 192 68 192 62 C192 56 195 52 200 52 Z"></path>
+    <path d="M200 74 L184 92 L191 90 L192 98 L197 88 L200 96 L203 88 L208 98 L209 90 L216 92 Z"></path>
+  </g>
+
+  
+  
+  <g fill="none" stroke="#c9a24a" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="200" y1="164" x2="200" y2="298"></line>
+    <line x1="118" y1="184" x2="282" y2="184"></line>
+  </g>
+  
+  <g fill="#c9a24a">
+    <path d="M200 146 L204 154 L200 152 L196 154 Z"></path>
+    <circle cx="200" cy="158" r="6"></circle>
+    <circle cx="200" cy="184" r="7"></circle>
+    <circle cx="118" cy="184" r="5"></circle>
+    <circle cx="282" cy="184" r="5"></circle>
+    
+    <rect x="192" y="200" width="16" height="5" rx="2"></rect>
+    <rect x="194" y="250" width="12" height="5" rx="2"></rect>
+  </g>
+  
+  <g fill="none" stroke="#c9a24a" stroke-width="2.4" stroke-linecap="round">
+    <path d="M118 189 C112 197 112 205 118 213 C124 205 124 197 118 189 Z"></path>
+    <path d="M118 213 C112 219 112 225 118 231"></path>
+    <path d="M118 189 C124 194 130 199 137 214"></path>
+    <path d="M118 189 C112 194 106 199 99 214"></path>
+    <path d="M282 189 C276 197 276 205 282 213 C288 205 288 197 282 189 Z"></path>
+    <path d="M282 213 C276 219 276 225 282 231"></path>
+    <path d="M282 189 C288 194 294 199 301 214"></path>
+    <path d="M282 189 C276 194 270 199 263 214"></path>
+  </g>
+  
+  <g>
+    <path d="M92 214 L144 214 L134 236 Q118 248 102 236 Z" fill="#c9a24a"></path>
+    <rect x="90" y="211" width="56" height="5" rx="2.5" fill="#c9a24a"></rect>
+    <path d="M100 218 L136 218 L132 226 Q118 233 104 226 Z" fill="#0b1f3a" opacity="0.35"></path>
+  </g>
+  
+  <g>
+    <path d="M256 214 L308 214 L298 236 Q282 248 266 236 Z" fill="#c9a24a"></path>
+    <rect x="254" y="211" width="56" height="5" rx="2.5" fill="#c9a24a"></rect>
+    <path d="M264 218 L300 218 L296 226 Q282 233 268 226 Z" fill="#0b1f3a" opacity="0.35"></path>
+  </g>
+  
+  <g fill="#c9a24a">
+    <rect x="174" y="296" width="52" height="8" rx="3"></rect>
+    <rect x="182" y="304" width="36" height="7" rx="2"></rect>
+    <path d="M186 288 L214 288 L210 296 L190 296 Z"></path>
+  </g>
+
+  
+  <g>
+    <path d="M92 326 L118 320 L118 358 L92 366 L100 342 Z" fill="#f4efe2" opacity="0.85"></path>
+    <path d="M308 326 L282 320 L282 358 L308 366 L300 342 Z" fill="#f4efe2" opacity="0.85"></path>
+    <path d="M114 320 L286 320 L274 340 L286 360 L114 360 L126 340 Z" fill="#c9a24a"></path>
+    <text x="200" y="348" text-anchor="middle" fill="#0b1f3a" font-size="27" font-weight="700" letter-spacing="6">PIMS</text>
+  </g>
+
+  
+  <g fill="#c9a24a">
+    <polygon points="70,235 73,244 82,244 75,250 78,259 70,253 62,259 65,250 58,244 67,244"></polygon>
+    <polygon points="330,235 333,244 342,244 335,250 338,259 330,253 322,259 325,250 318,244 327,244"></polygon>
+  </g>
+</svg>

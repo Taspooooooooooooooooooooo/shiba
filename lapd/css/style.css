@@ -1205,3 +1205,19 @@ background:#2e8bff33;
 color:var(--text);
 
 }
+
+/* PIMS badge on the login card (brand handoff) */
+
+.loginBadge{
+
+    width:86px;
+
+    height:auto;
+
+    margin:0 auto 14px;
+
+    display:block;
+
+    filter:drop-shadow(0 4px 14px rgba(0,0,0,.5));
+
+}

@@ -33,7 +33,7 @@
 
         <div class="caseBar">
 
-            <button id="caseCreate" class="primaryBtn hidden">➕ Create Case</button>
+            <button id="caseCreate" class="primaryBtn hidden">Create Case</button>
 
             <input id="caseSearch" class="caseSearch"
                    placeholder="Search case ID, title or location…">
@@ -44,9 +44,15 @@
 
             <select id="caseFilterDivision" class="caseFilter"></select>
 
+            <button id="caseViewTable" class="exBtn exView" title="Table view">☰</button>
+
+            <button id="caseViewBoard" class="exBtn exView" title="Case Board">⊞</button>
+
         </div>
 
-        <div class="table caseTableWrap">
+        <div class="caseStats" id="caseStats"></div>
+
+        <div class="table caseTableWrap" id="caseTableWrap">
 
             <table>
 
@@ -69,6 +75,8 @@
             </table>
 
         </div>
+
+        <div class="boardWrap hidden" id="caseBoard"></div>
 
     </div>
 

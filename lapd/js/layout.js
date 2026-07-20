@@ -1,15 +1,63 @@
 /* ==========================================================
    SHIBA PIMS
    Shared Page Layout (topbar + sidebar + footer)
+   + the PIMS brand icon helpers (navy/gold designer handoff
+   in lapd/assets/ — 44 UI icons + 33 file-type icons + badge)
 ========================================================== */
 
+/* UI icon (currentColor — takes the CSS color of its parent).
+   Names: dashboard officers cases reports search cloud analytics
+   shifts scanner fingerprint evidence patrol location surveillance
+   dispatch warrants add alerts access archive notifications settings
+   export signout bookings bolo ballistics k9 custody forensics
+   suspects incidents messages call email print history filter tags
+   attach sync verified help delete */
+
+window.pimsIcon = function (name, size = 18, cls = "") {
+
+    return `<svg class="pIcon ${cls}" width="${size}" height="${size}"` +
+        ` aria-hidden="true"><use href="assets/pims-sprite.svg#pims-` +
+        `${name}"></use></svg>`;
+
+};
+
+/* multi-color file-type icon (Explorer browser) */
+
+window.pimsFileIcon = function (name, size = 22) {
+
+    return `<svg class="pFileIcon" width="${size}" height="${size}"` +
+        ` aria-hidden="true"><use href="assets/pims-file-sprite.svg#pfile-` +
+        `${name}"></use></svg>`;
+
+};
+
 const AppLayout = {
+
+    NAV: [
+        ["dashboard.html", "dashboard", "Dashboard"],
+        ["officers.html", "officers", "Officers"],
+        ["../cloud/", "cloud", "Cloud"],
+        ["cases.html", "cases", "Cases"],
+        ["#", "reports", "Reports"],
+        ["#", "surveillance", "Bodycam"],
+        ["#", "patrol", "Vehicles"],
+        ["certificates.html", "verified", "Certificates"],
+        ["scanner.html", "scanner", "Scanner"],
+        ["applications.html", "bookings", "Applications"],
+        ["#", "shifts", "Shifts"],
+        ["#", "messages", "Messages"],
+        ["settings.html", "settings", "Settings"]
+    ],
 
     createTopbar() {
 
         const username = localStorage.getItem("username") || "Guest";
 
         const role = localStorage.getItem("role") || "";
+
+        const links = this.NAV.map(([href, icon, label]) =>
+            `<a href="${href}">${pimsIcon(icon, 19)}<span>${label}</span></a>`
+        ).join("\n    ");
 
         return `
 
@@ -35,33 +83,15 @@ const AppLayout = {
 
 <nav class="sidebar">
 
-    <h3>Navigation</h3>
+    <div class="sideBrand">
 
-    <a href="dashboard.html">🏠 Dashboard</a>
+        <img src="assets/pims-badge.svg" alt="SHIBA PIMS badge">
 
-    <a href="officers.html">👮 Officers</a>
+        <h3>SHIBA PIMS</h3>
 
-    <a href="../cloud/">☁️ Cloud</a>
+    </div>
 
-    <a href="cases.html">📂 Cases</a>
-
-    <a href="#">📄 Reports</a>
-
-    <a href="#">📷 Bodycam</a>
-
-    <a href="#">🚔 Vehicles</a>
-
-    <a href="certificates.html">🏆 Certificates</a>
-
-    <a href="scanner.html">📷 Scanner</a>
-
-    <a href="applications.html">📝 Applications</a>
-
-    <a href="#">📅 Shifts</a>
-
-    <a href="#">💬 Messages</a>
-
-    <a href="settings.html">⚙ Settings</a>
+    ${links}
 
 </nav>
 

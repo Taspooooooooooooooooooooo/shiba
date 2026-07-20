@@ -24,15 +24,17 @@ const CaseFile = {
 
     tab: "general",
 
+    /* icons come from the PIMS sprite (assets/pims-sprite.svg) */
+
     TABS: [
-        { key: "general", label: "General", icon: "📋", live: true },
-        { key: "assignments", label: "Assignments", icon: "👮", live: true },
-        { key: "people", label: "People", icon: "🧑‍🤝‍🧑", live: true },
-        { key: "timeline", label: "Timeline", icon: "📜", live: true },
-        { key: "evidence", label: "Evidence", icon: "🧰", live: true },
-        { key: "notes", label: "Notes", icon: "🗒", live: true },
-        { key: "history", label: "History", icon: "🧭", live: true },
-        { key: "audit", label: "Audit", icon: "🧾", live: true }
+        { key: "general", label: "General", icon: "cases", live: true },
+        { key: "assignments", label: "Assignments", icon: "officers", live: true },
+        { key: "people", label: "People", icon: "suspects", live: true },
+        { key: "timeline", label: "Timeline", icon: "history", live: true },
+        { key: "evidence", label: "Evidence", icon: "evidence", live: true },
+        { key: "notes", label: "Notes", icon: "messages", live: true },
+        { key: "history", label: "History", icon: "archive", live: true },
+        { key: "audit", label: "Audit", icon: "search", live: true }
     ],
 
     esc(s) {
@@ -50,12 +52,12 @@ const CaseFile = {
     },
 
     EVENT_ICONS: {
-        "Case created": "🆕", "Status changed": "🔁",
-        "Officer assigned": "👮", "Officer removed": "👮",
-        "Priority changed": "🚩", "Note added": "🗒",
-        "Evidence uploaded": "🧰", "Person added": "🧑",
-        "Person removed": "🧑", "Case linked": "🔗",
-        "Case unlinked": "🔗"
+        "Case created": "cases", "Status changed": "sync",
+        "Officer assigned": "officers", "Officer removed": "officers",
+        "Priority changed": "alerts", "Note added": "tags",
+        "Evidence uploaded": "evidence", "Person added": "suspects",
+        "Person removed": "suspects", "Case linked": "attach",
+        "Case unlinked": "attach"
     },
 
     /* Explorer details view for event-style rows (Timeline +
@@ -76,7 +78,7 @@ const CaseFile = {
             row.innerHTML =
                 `<span class="exName">
                     <span class="exIcon">` +
-                    `${this.EVENT_ICONS[e.event] || "📌"}</span>
+                    `${pimsIcon(this.EVENT_ICONS[e.event] || "history", 18)}</span>
                     <span class="exNameText">
                         <b>${this.esc(e.event)}</b>
                         ${e.details
@@ -98,7 +100,7 @@ const CaseFile = {
 
         UI.modal({
 
-            title: (this.EVENT_ICONS[e.event] || "📌") + " " + e.event,
+            title: e.event,
 
             render: () => {
 
@@ -161,11 +163,18 @@ const CaseFile = {
 
     },
 
+    WF_ICONS: {
+        "Request closure": "export", "Approve closure": "verified",
+        "Return": "history", "Close case": "custody",
+        "Reopen": "sync", "Archive": "archive"
+    },
+
     wfBtn(wrap, label, cls, fn) {
 
         const b = document.createElement("button");
         b.className = cls;
-        b.textContent = label;
+        b.innerHTML = (this.WF_ICONS[label]
+            ? pimsIcon(this.WF_ICONS[label], 15) + " " : "") + label;
         b.onclick = async () => {
             b.disabled = true;
             const ok = await fn();
@@ -233,7 +242,7 @@ const CaseFile = {
 
             if (this.canRequestClosure && c.status !== "Draft") {
 
-                this.wfBtn(wrap, "📨 Request closure", "primaryBtn",
+                this.wfBtn(wrap, "Request closure", "primaryBtn",
                     async () => {
                         const summary = await UI.promptText({
                             title: "Request closure · " + c.case_id,
@@ -251,7 +260,7 @@ const CaseFile = {
 
             if (this.isLieutenant) {
 
-                this.wfBtn(wrap, "✅ Approve closure", "primaryBtn",
+                this.wfBtn(wrap, "Approve closure", "primaryBtn",
                     () => UI.confirm({
                         title: "Approve closure?",
                         message: c.case_id + " will move to Approved For " +
@@ -259,7 +268,7 @@ const CaseFile = {
                         confirmText: "Approve"
                     }).then(ok => ok && CaseService.approveClosure(c)));
 
-                this.wfBtn(wrap, "↩ Return", "ghostBtn",
+                this.wfBtn(wrap, "Return", "ghostBtn",
                     async () => {
                         const reason = await UI.promptText({
                             title: "Return to investigation · " + c.case_id,
@@ -284,7 +293,7 @@ const CaseFile = {
 
             if (this.isLieutenant) {
 
-                this.wfBtn(wrap, "🔒 Close case", "primaryBtn",
+                this.wfBtn(wrap, "Close case", "primaryBtn",
                     () => UI.confirm({
                         title: "Close " + c.case_id + "?",
                         message: "The case stays in the archive forever — " +
@@ -292,7 +301,7 @@ const CaseFile = {
                         confirmText: "Close case", danger: true
                     }).then(ok => ok && CaseService.closeCase(c)));
 
-                this.wfBtn(wrap, "↩ Return", "ghostBtn",
+                this.wfBtn(wrap, "Return", "ghostBtn",
                     async () => {
                         const reason = await UI.promptText({
                             title: "Return to investigation · " + c.case_id,
@@ -310,7 +319,7 @@ const CaseFile = {
 
             if (this.isLieutenant) {
 
-                this.wfBtn(wrap, "🔓 Reopen", "ghostBtn",
+                this.wfBtn(wrap, "Reopen", "ghostBtn",
                     async () => {
                         const reason = await UI.promptText({
                             title: "Reopen " + c.case_id,
@@ -324,7 +333,7 @@ const CaseFile = {
 
                 if (c.status === "Closed") {
 
-                    this.wfBtn(wrap, "📦 Archive", "ghostBtn",
+                    this.wfBtn(wrap, "Archive", "ghostBtn",
                         () => UI.confirm({
                             title: "Archive " + c.case_id + "?",
                             message: "Archived is the final state — the " +
@@ -358,7 +367,7 @@ const CaseFile = {
             b.className = "caseTab" + (t.key === this.tab ? " on" : "") +
                 (t.live ? "" : " soon");
             b.innerHTML =
-                `<span class="caseTabIcon">${t.icon || ""}</span>` +
+                `<span class="caseTabIcon">${pimsIcon(t.icon, 16)}</span>` +
                 this.esc(t.label) + (t.live ? "" : " · soon");
             if (t.live) b.onclick = () => {
                 this.tab = t.key;
@@ -378,6 +387,7 @@ const CaseFile = {
         if (this.tab === "general") {
             body.innerHTML = this.viewGeneral();
             body.appendChild(await this.buildRelatedCard());
+            this.fillCounts();
         }
         else if (this.tab === "assignments") await this.viewAssignments(body);
         else if (this.tab === "people") await this.viewPeople(body);
@@ -439,11 +449,68 @@ const CaseFile = {
                     ${line("Created", new Date(c.created_at).toLocaleString())}
                     ${line("Last updated",
                         new Date(c.updated_at || c.created_at).toLocaleString())}
+                    ${line("Age", this.caseAge())}
+                </div>
+                <div class="rvGrid caseCounts" id="cgCounts">
+                    <div class="rvRow"><small>Evidence</small><div id="cgEvid">…</div></div>
+                    <div class="rvRow"><small>People</small><div id="cgPeople">…</div></div>
+                    <div class="rvRow"><small>Notes</small><div id="cgNotes">…</div></div>
+                    <div class="rvRow"><small>Timeline events</small><div id="cgEvents">…</div></div>
                 </div>
                 ${c.description
                     ? `<label class="wizLabel" style="margin-top:14px">Description</label>
                        <div class="caseDesc">${this.esc(c.description)}</div>` : ""}
             </div>`;
+
+    },
+
+    caseAge() {
+
+        const c = this.caseRow;
+
+        const start = new Date(c.created_at).getTime();
+
+        const end = c.closed_at
+            ? new Date(c.closed_at).getTime() : Date.now();
+
+        const days = Math.max(0, Math.floor((end - start) / 86400000));
+
+        return days + (days === 1 ? " day" : " days") +
+            (c.closed_at ? " (to closure)" : " open");
+
+    },
+
+    /* item counters on the General tab (Sprint 6.5 stats) */
+
+    async fillCounts() {
+
+        const count = async table => {
+
+            try {
+
+                const { count: n, error } = await db
+                    .from(table)
+                    .select("*", { count: "exact", head: true })
+                    .eq("case_id", this.id);
+
+                return error ? "—" : (n || 0);
+
+            } catch (e) { return "—"; }
+
+        };
+
+        const [ev, pe, no, tl] = await Promise.all([
+            count("case_evidence"), count("case_persons"),
+            count("case_notes"), count("case_timeline")
+        ]);
+
+        const set = (id, v) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = v;
+        };
+
+        set("cgEvid", ev); set("cgPeople", pe);
+        set("cgNotes", no); set("cgEvents", tl);
 
     },
 
@@ -678,8 +745,10 @@ const CaseFile = {
     /* PEOPLE — victims, witnesses, suspects (Sergeant+ edits)   */
     /* --------------------------------------------------------- */
 
-    ROLE_ICONS: { "Victim": "🤕", "Witness": "👁", "Suspect": "🚨",
-                  "Other": "👤" },
+    /* multi-color file-type icons (assets/pims-file-sprite.svg) */
+
+    ROLE_ICONS: { "Victim": "people", "Witness": "statement",
+                  "Suspect": "suspect", "Other": "people" },
 
     async viewPeople(body) {
 
@@ -698,7 +767,7 @@ const CaseFile = {
 
             const addBtn = document.createElement("button");
             addBtn.className = "exBtn";
-            addBtn.textContent = "➕ Add person";
+            addBtn.innerHTML = pimsIcon("add", 16) + " Add person";
 
             toolbar.appendChild(addBtn);
 
@@ -712,7 +781,7 @@ const CaseFile = {
             const role = document.createElement("select");
             role.className = "uiModalInput";
             role.innerHTML = CaseService.PERSON_ROLES.map(r =>
-                `<option>${this.ROLE_ICONS[r]} ${r}</option>`).join("");
+                `<option>${r}</option>`).join("");
 
             const details = document.createElement("input");
             details.className = "uiModalInput";
@@ -726,7 +795,7 @@ const CaseFile = {
                 add.disabled = true;
                 const ok = await CaseService.addPerson(this.caseRow, {
                     name: name.value,
-                    role: role.value.replace(/^\S+\s/, ""),
+                    role: role.value,
                     details: details.value
                 });
                 add.disabled = false;
@@ -773,7 +842,8 @@ const CaseFile = {
                 row.innerHTML =
                     `<span class="exName">
                         <span class="exIcon">` +
-                        `${this.ROLE_ICONS[person.role] || "👤"}</span>
+                        `${pimsFileIcon(this.ROLE_ICONS[person.role] ||
+                            "people", 24)}</span>
                         <span class="exNameText">
                             <b>${this.esc(person.name)}</b>
                             ${person.details
@@ -804,7 +874,7 @@ const CaseFile = {
 
         UI.modal({
 
-            title: (this.ROLE_ICONS[person.role] || "👤") + " " + person.name,
+            title: person.role + " · " + person.name,
 
             render: () => {
 
@@ -876,8 +946,9 @@ const CaseFile = {
 
     },
 
-    EVIDENCE_ICONS: { "Photo": "🖼", "Video": "🎞", "Audio": "🎙",
-                      "Document": "📄", "Bodycam": "📹", "Other": "📦" },
+    EVIDENCE_ICONS: { "Photo": "image", "Video": "video", "Audio": "audio",
+                      "Document": "document", "Bodycam": "video",
+                      "Other": "evidence" },
 
     evView: localStorage.getItem("shiba_ev_view") || "list",
 
@@ -907,7 +978,7 @@ const CaseFile = {
 
         const addBtn = document.createElement("button");
         addBtn.className = "exBtn";
-        addBtn.textContent = "➕ Add evidence";
+        addBtn.innerHTML = pimsIcon("add", 16) + " Add evidence";
 
         const spacer = document.createElement("div");
         spacer.className = "exSpacer";
@@ -951,7 +1022,7 @@ const CaseFile = {
         const type = document.createElement("select");
         type.className = "uiModalInput";
         type.innerHTML = CaseService.EVIDENCE_TYPES.map(t =>
-            `<option>${this.EVIDENCE_ICONS[t]} ${t}</option>`).join("");
+            `<option>${t}</option>`).join("");
 
         const desc = document.createElement("input");
         desc.className = "uiModalInput";
@@ -974,7 +1045,7 @@ const CaseFile = {
 
             const ok = await CaseService.addEvidence(this.caseRow, {
                 file: file,
-                type: type.value.replace(/^\S+\s/, ""),
+                type: type.value,
                 description: desc.value
             });
 
@@ -1016,7 +1087,8 @@ const CaseFile = {
                 tile.className = "exTile";
                 tile.innerHTML =
                     `<span class="exTileIcon">` +
-                    `${this.EVIDENCE_ICONS[ev.type] || "📦"}</span>` +
+                    `${pimsFileIcon(this.EVIDENCE_ICONS[ev.type] ||
+                        "unknown", 44)}</span>` +
                     `<span class="exTileName">` +
                     `${this.esc(ev.file_name || ev.evidence_id)}</span>` +
                     `<small>${this.esc(ev.evidence_id)}</small>`;
@@ -1046,7 +1118,8 @@ const CaseFile = {
                 row.innerHTML =
                     `<span class="exName">
                         <span class="exIcon">` +
-                        `${this.EVIDENCE_ICONS[ev.type] || "📦"}</span>
+                        `${pimsFileIcon(this.EVIDENCE_ICONS[ev.type] ||
+                            "unknown", 24)}</span>
                         <span class="exNameText">
                             <b>${this.esc(ev.file_name || ev.evidence_id)}</b>
                             <small>${this.esc(ev.evidence_id)}` +
@@ -1078,8 +1151,7 @@ const CaseFile = {
 
         UI.modal({
 
-            title: (this.EVIDENCE_ICONS[ev.type] || "📦") + " " +
-                (ev.file_name || ev.evidence_id),
+            title: ev.type + " · " + (ev.file_name || ev.evidence_id),
 
             render: () => {
 
@@ -1235,7 +1307,7 @@ const CaseFile = {
 
         const addBtn = document.createElement("button");
         addBtn.className = "exBtn";
-        addBtn.textContent = "➕ Add note";
+        addBtn.innerHTML = pimsIcon("add", 16) + " Add note";
 
         toolbar.appendChild(addBtn);
         card.appendChild(toolbar);
@@ -1296,16 +1368,18 @@ const CaseFile = {
                 const excerpt = (n.body || "").split("\n")[0].slice(0, 90);
 
                 const flags = [
-                    n.pinned ? "📌 pinned" : "",
-                    n.edited_at ? "✏️ edited" : ""
+                    n.pinned ? "Pinned" : "",
+                    n.edited_at ? "Edited" : ""
                 ].filter(Boolean).join(" · ") || "—";
 
                 const row = document.createElement("div");
-                row.className = "exRow exNotes";
+                row.className = "exRow exNotes" + (n.pinned ? " exPinned" : "");
 
                 row.innerHTML =
                     `<span class="exName">
-                        <span class="exIcon">${n.pinned ? "📌" : "🗒"}</span>
+                        <span class="exIcon">` +
+                        `${n.pinned ? pimsIcon("tags", 20)
+                                    : pimsFileIcon("text", 22)}</span>
                         <span class="exNameText">
                             <b>${this.esc(excerpt)}` +
                             `${(n.body || "").length > excerpt.length ? "…" : ""}</b>
@@ -1336,8 +1410,8 @@ const CaseFile = {
 
         UI.modal({
 
-            title: (n.pinned ? "📌" : "🗒") + " Note by " +
-                (n.author || "unknown"),
+            title: "Note by " + (n.author || "unknown") +
+                (n.pinned ? " · pinned" : ""),
 
             render: () => {
 
@@ -1366,11 +1440,11 @@ const CaseFile = {
             buttons: [
                 { label: "Close", kind: "ghost", value: null },
                 ...(this.canAssign
-                    ? [{ label: n.pinned ? "Unpin" : "📌 Pin",
+                    ? [{ label: n.pinned ? "Unpin" : "Pin",
                          kind: "ghost", value: "pin" }]
                     : []),
                 ...(n.author === me
-                    ? [{ label: "✏️ Edit", kind: "primary", value: "edit" }]
+                    ? [{ label: "Edit", kind: "primary", value: "edit" }]
                     : [])
             ]
 
