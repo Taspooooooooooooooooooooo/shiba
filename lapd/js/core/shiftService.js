@@ -97,6 +97,73 @@ const ShiftService = {
 
     },
 
+    /* an officer's shift history, newest first */
+
+    async forOfficer(officerId, limit = 100) {
+
+        const { data, error } = await db
+            .from("shifts")
+            .select("*")
+            .eq("officer_id", officerId)
+            .order("started_at", { ascending: false })
+            .limit(limit);
+
+        if (error) return { error };
+
+        return { rows: data || [] };
+
+    },
+
+    /* ----------------------------------------------------- */
+    /* summary maths — used by the End Shift wizard, history  */
+    /* and (later) statistics                                 */
+    /* ----------------------------------------------------- */
+
+    summary(shift) {
+
+        const start = new Date(shift.started_at).getTime();
+
+        const end = shift.ended_at
+            ? new Date(shift.ended_at).getTime() : Date.now();
+
+        /* if the shift is still on an open break, count it */
+
+        let breakSec = shift.break_seconds || 0;
+
+        if (!shift.ended_at && shift.status === "Break" &&
+            shift.break_started_at) {
+
+            breakSec += Math.max(0, Math.round(
+                (Date.now() - new Date(shift.break_started_at).getTime())
+                / 1000));
+
+        }
+
+        const durationSec = Math.max(0, Math.round((end - start) / 1000));
+
+        const activeSec = Math.max(0, durationSec - breakSec);
+
+        return {
+            durationSec,
+            breakSec,
+            activeSec,
+            hours: durationSec / 3600,
+            overtime: durationSec / 3600 > 8,
+            bodycamSession: shift.bodycam_session_id || null
+        };
+
+    },
+
+    hm(sec) {
+
+        const h = Math.floor((sec || 0) / 3600);
+
+        const m = Math.floor(((sec || 0) % 3600) / 60);
+
+        return (h ? h + "h " : "") + m + "m";
+
+    },
+
     /* ----------------------------------------------------- */
     /* start — the cascade                                    */
     /* ----------------------------------------------------- */
@@ -365,14 +432,28 @@ const ShiftService = {
     },
 
     /* ----------------------------------------------------- */
-    /* minimal end (the full End Shift wizard is Sprint 7.1b) */
+    /* end — the close cascade (driven by the End Shift wizard */
+    /* in js/shift.js; all args optional so a bare end works)  */
     /* ----------------------------------------------------- */
 
-    async end(shift, comments) {
+    _missingCol(error, col) {
+
+        const s = ((error?.message || "") + " " + (error?.code || ""))
+            .toLowerCase();
+
+        return s.includes("pgrst204") ||
+            (s.includes(col.toLowerCase()) &&
+             (s.includes("does not exist") ||
+              s.includes("could not find") ||
+              s.includes("schema cache")));
+
+    },
+
+    async end(shift, { comments, bodycamUploaded, vehicleReturned } = {}) {
 
         if (!window.db || shift.ended_at) return false;
 
-        /* a shift ending while on break banks the open break */
+        /* a shift ending mid-break banks the open break first */
 
         let breakSeconds = shift.break_seconds || 0;
 
@@ -384,34 +465,66 @@ const ShiftService = {
 
         }
 
-        const hours = (Date.now() -
-            new Date(shift.started_at).getTime()) / 3600000;
+        const merged = { ...shift, break_seconds: breakSeconds,
+            break_started_at: null, ended_at: new Date().toISOString() };
 
-        const { error } = await db
-            .from("shifts")
-            .update({
-                status: "Closed",
-                ended_at: new Date().toISOString(),
-                end_comments: comments || null,
-                break_seconds: breakSeconds,
-                break_started_at: null,
-                overtime: hours > 8
-            })
-            .eq("id", shift.id);
+        const sum = this.summary(merged);
+
+        /* base fields exist since PATCH-15 */
+
+        const base = {
+            status: "Closed",
+            ended_at: merged.ended_at,
+            end_comments: comments || null,
+            break_seconds: breakSeconds,
+            break_started_at: null,
+            overtime: sum.overtime
+        };
+
+        /* extra fields need PATCH-16 — degrade if not run yet */
+
+        const extended = {
+            ...base,
+            bodycam_uploaded: bodycamUploaded ?? null,
+            vehicle_returned: vehicleReturned ?? null,
+            end_summary: {
+                duration_sec: sum.durationSec,
+                active_sec: sum.activeSec,
+                break_sec: sum.breakSec,
+                overtime: sum.overtime,
+                bodycam_session: sum.bodycamSession,
+                vehicle_unit: shift.vehicle_unit || null
+            }
+        };
+
+        let { error } = await db
+            .from("shifts").update(extended).eq("id", shift.id);
+
+        if (error && (this._missingCol(error, "bodycam_uploaded") ||
+                      this._missingCol(error, "vehicle_returned") ||
+                      this._missingCol(error, "end_summary"))) {
+
+            ({ error } = await db
+                .from("shifts").update(base).eq("id", shift.id));
+
+        }
 
         if (error) { UI?.error("Could not end the shift."); return false; }
+
+        const dur = this.hm(sum.durationSec);
 
         await Promise.allSettled([
 
             this.shiftEvent(shift.id, "Shift ended",
-                shift.shift_id + " · " + hours.toFixed(1) + " h" +
-                (hours > 8 ? " · OVERTIME" : "")),
+                shift.shift_id + " · " + dur +
+                (sum.overtime ? " · OVERTIME" : "")),
 
             AuditService.log({
                 action: "SHIFT_ENDED",
                 target: shift.shift_id,
-                details: hours.toFixed(1) + " h" +
-                    (hours > 8 ? " · overtime" : ""),
+                details: dur + " (active " + this.hm(sum.activeSec) +
+                    ", break " + this.hm(sum.breakSec) + ")" +
+                    (sum.overtime ? " · overtime" : ""),
                 officerId: shift.officer_id
             }),
 
@@ -420,7 +533,7 @@ const ShiftService = {
                 .eq("id", shift.officer_id),
 
             TimelineService.add(shift.officer_id, "Shift ended",
-                shift.shift_id + " · " + hours.toFixed(1) + " h")
+                shift.shift_id + " · " + dur)
 
         ]);
 

@@ -13,7 +13,7 @@ const Personnel = {
     loaded: {
         timeline: false, audit: false, cases: false,
         career: false, stats: false, inbox: false, notes: false,
-        perms: false, certs: false, apps: false
+        perms: false, certs: false, apps: false, shifts: false
     },
 
     /* ----------------------------------------------------- */
@@ -907,6 +907,136 @@ const Personnel = {
     },
 
     /* ----------------------------------------------------- */
+    /* shifts tab (Phase 7.1b) — this officer's duty history  */
+    /* ----------------------------------------------------- */
+
+    esc(s) {
+        return (s == null ? "" : String(s)).replace(/[&<>"]/g,
+            c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;",
+                    '"': "&quot;" }[c]));
+    },
+
+    async renderShifts() {
+
+        if (this.loaded.shifts) return;
+
+        this.loaded.shifts = true;
+
+        const box = document.getElementById("pfShifts");
+
+        if (!window.ShiftService) {
+
+            box.innerHTML = "<p class='muted'>Shift module not loaded.</p>";
+
+            return;
+
+        }
+
+        const { rows, error } =
+            await ShiftService.forOfficer(this.officer.id);
+
+        if (error) {
+
+            box.innerHTML =
+                `<p class="muted">${ShiftService.SETUP_HINT}</p>`;
+
+            return;
+
+        }
+
+        box.innerHTML = "";
+
+        if (!rows.length) {
+
+            box.innerHTML = "<p class='muted'>No shifts on record yet.</p>";
+
+            return;
+
+        }
+
+        const head = document.createElement("div");
+        head.className = "exHeader exCols3";
+        head.innerHTML =
+            "<span>Shift</span><span>Duration</span><span>When</span>";
+        box.appendChild(head);
+
+        rows.forEach(sh => {
+
+            const sum = ShiftService.summary(sh);
+
+            const open = !sh.ended_at;
+
+            const row = document.createElement("div");
+            row.className = "exRow exCols3";
+
+            const dotColor = open ? "#22c55e" : (sh.overtime ? "#e08a5a" : "#6b7280");
+
+            row.innerHTML =
+                `<span class="exName">
+                    <span class="exIcon">${pimsIcon("shifts", 18)}</span>
+                    <span class="exNameText">
+                        <b>${this.esc(sh.shift_id || "—")}</b>
+                        <small>${this.esc(sh.vehicle_unit || "no vehicle")}` +
+                        `${sh.callsign ? " · " + this.esc(sh.callsign) : ""}</small>
+                    </span>
+                </span>` +
+                `<span><span class="dotChip"><i style="background:${dotColor}"></i>` +
+                    `${ShiftService.hm(sum.durationSec)}` +
+                    `${open ? " (open)" : ""}${sh.overtime ? " · OT" : ""}</span></span>` +
+                `<span>${new Date(sh.started_at).toLocaleDateString()}</span>`;
+
+            row.onclick = () => this.showShiftDetail(sh, sum);
+
+            box.appendChild(row);
+
+        });
+
+    },
+
+    showShiftDetail(sh, sum) {
+
+        UI.modal({
+
+            title: sh.shift_id + (sh.ended_at ? "" : " · open"),
+
+            render: () => {
+
+                const wrap = document.createElement("div");
+
+                const line = (k, v) =>
+                    `<div class="rvRow"><small>${k}</small>` +
+                    `<div>${this.esc(v || "—")}</div></div>`;
+
+                wrap.innerHTML =
+                    `<div class="rvGrid">
+                        ${line("Started", new Date(sh.started_at).toLocaleString())}
+                        ${line("Ended", sh.ended_at
+                            ? new Date(sh.ended_at).toLocaleString() : "Still open")}
+                        ${line("Total time", ShiftService.hm(sum.durationSec))}
+                        ${line("Active time", ShiftService.hm(sum.activeSec))}
+                        ${line("Break time", ShiftService.hm(sum.breakSec))}
+                        ${line("Vehicle", sh.vehicle_unit
+                            ? sh.vehicle_unit + " · " + (sh.vehicle_type || "") : "None")}
+                        ${line("Callsign", sh.callsign)}
+                        ${line("Bodycam", sh.bodycam_session_id || "Off")}
+                        ${line("Overtime", sh.overtime ? "Yes" : "No")}
+                        ${line("Last activity", sh.activity)}
+                    </div>` +
+                    (sh.end_comments
+                        ? `<div class="apMot" style="margin-top:10px">` +
+                          `${this.esc(sh.end_comments)}</div>` : "");
+
+                return wrap;
+
+            },
+
+            buttons: [{ label: "Close", kind: "primary", value: null }]
+
+        });
+
+    },
+
+    /* ----------------------------------------------------- */
     /* save permission groups (admins)                        */
     /* ----------------------------------------------------- */
 
@@ -1489,6 +1619,8 @@ const Personnel = {
                 if (btn.dataset.tab === "tabCerts") this.renderCerts();
 
                 if (btn.dataset.tab === "tabApps") this.renderApps();
+
+                if (btn.dataset.tab === "tabShifts") this.renderShifts();
 
             };
 

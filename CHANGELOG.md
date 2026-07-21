@@ -2,6 +2,36 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.36.0 — 2026-07-21 · Phase 7 Sprint 7.1b — End Shift wizard + shift history
+
+### Added
+- **End Shift wizard** — 5 steps as specced: **Summary** (auto-computed
+  total / active / break time, vehicle, bodycam, with an overtime flag),
+  **Bodycam** (uploaded? — skipped if no bodycam), **Vehicle** (returned?
+  — skipped if none), **Comments**, and **Finish**. Closing runs the
+  full cascade: shift timeline → audit (with active/break breakdown) →
+  roster back to **Off Duty** → personnel timeline. A shift ending
+  mid-break banks the open break first.
+- **Shift history on the Personnel File** — a new **Shifts** tab lists
+  every duty session (Explorer rows: shift · duration · date, with a
+  green dot for open, amber for overtime) and each opens a properties
+  dialog (started/ended, total/active/break, vehicle, callsign, bodycam,
+  overtime, last activity, comments).
+
+### Setup
+Run **`lapd/SETUP-PATCH-16.sql`** (or re-run `RUN-ALL-PENDING.sql`) —
+adds `bodycam_uploaded` / `vehicle_returned` / `end_summary` to
+`shifts`. **Ending a shift works without it** (it degrades and just
+skips those three fields), so run it whenever convenient.
+
+### Verified live
+Ran a full real shift end-to-end (**SHIFT-2026-000001**): start →
+Traffic Stop → Coffee break → return (banked, activity restored) → the
+5-step End wizard → **Closed**, Off Duty, break time and overtime
+computed, comment saved, and the graceful path confirmed (the PATCH-16
+columns were absent and the close still succeeded). The Personnel Shifts
+tab then listed it.
+
 ## v0.35.0 — 2026-07-20 · Phase 7 Sprint 7.1a — Start Shift + live duty dashboard
 
 ### Added

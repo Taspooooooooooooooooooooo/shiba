@@ -519,4 +519,14 @@ create index if not exists shift_timeline_shift_idx
   on public.shift_timeline (shift_id);
 
 
-select 'ALL PENDING PATCHES applied (3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)' as result;
+-- ---------- PATCH 16 : end-of-shift fields (Phase 7.1b) ----------
+
+alter table public.shifts
+  add column if not exists bodycam_uploaded boolean;
+alter table public.shifts
+  add column if not exists vehicle_returned boolean;
+alter table public.shifts
+  add column if not exists end_summary jsonb;
+
+
+select 'ALL PENDING PATCHES applied (3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16)' as result;

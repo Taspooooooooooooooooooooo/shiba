@@ -236,31 +236,276 @@ const ShiftUI = {
     },
 
     /* --------------------------------------------------------- */
-    /* minimal end (full End Shift wizard = Sprint 7.1b)         */
+    /* the 5-step END SHIFT wizard                               */
     /* --------------------------------------------------------- */
 
-    async endShift() {
+    END_STEPS: ["Summary", "Bodycam", "Vehicle", "Comments", "Finish"],
 
-        const ok = await UI.confirm({
-            title: "End shift " + (this.shift.shift_id || "") + "?",
-            message: "The shift closes, your time is banked and your " +
-                "roster status returns to Off Duty.",
-            confirmText: "End shift",
-            danger: true
+    ewiz: null,
+
+    endShift() {
+
+        const s = this.shift;
+
+        this.ewiz = {
+            step: 0,
+            data: {
+                bodycamUploaded: !!s.bodycam_ready,
+                vehicleReturned: !!s.vehicle_unit,
+                comments: ""
+            }
+        };
+
+        const overlay = document.createElement("div");
+        overlay.className = "uiModalBack";
+        overlay.innerHTML =
+            `<div class="uiModal caseWizard">
+                <div class="uiModalHead" id="ewHead"></div>
+                <div class="wizSteps" id="ewDots"></div>
+                <div class="uiModalBody" id="ewBody"></div>
+                <div class="uiModalFoot" id="ewFoot"></div>
+             </div>`;
+
+        overlay.onclick = e => { if (e.target === overlay) this.closeEnd(); };
+
+        document.body.appendChild(overlay);
+
+        requestAnimationFrame(() => overlay.classList.add("show"));
+
+        this.ewiz.overlay = overlay;
+
+        this.renderEndStep();
+
+    },
+
+    closeEnd() {
+
+        const o = this.ewiz?.overlay;
+
+        if (!o) return;
+
+        o.classList.remove("show");
+
+        setTimeout(() => o.remove(), 160);
+
+        this.ewiz = null;
+
+    },
+
+    renderEndStep() {
+
+        const i = this.ewiz.step;
+
+        document.getElementById("ewHead").textContent =
+            "End Shift — Step " + (i + 1) + " of 5: " + this.END_STEPS[i];
+
+        document.getElementById("ewDots").innerHTML =
+            this.END_STEPS.map((n, k) =>
+                `<span class="wizDot ${k === i ? "on" : ""}` +
+                `${k < i ? " done" : ""}">${k + 1}</span>`).join("");
+
+        const body = document.getElementById("ewBody");
+
+        if (i === 0) this.endSummary(body);
+        else if (i === 1) this.endBodycam(body);
+        else if (i === 2) this.endVehicle(body);
+        else if (i === 3) this.endComments(body);
+        else this.endFinish(body);
+
+        const foot = document.getElementById("ewFoot");
+        foot.innerHTML = "";
+
+        const cancel = document.createElement("button");
+        cancel.className = "ghostBtn";
+        cancel.textContent = "Cancel";
+        cancel.onclick = () => this.closeEnd();
+        foot.appendChild(cancel);
+
+        if (i > 0) {
+            const back = document.createElement("button");
+            back.className = "ghostBtn";
+            back.textContent = "← Back";
+            back.onclick = () => {
+                this.collectEnd(); this.ewiz.step--; this.renderEndStep();
+            };
+            foot.appendChild(back);
+        }
+
+        if (i < 4) {
+            const next = document.createElement("button");
+            next.className = "primaryBtn";
+            next.textContent = "Next →";
+            next.onclick = () => {
+                this.collectEnd(); this.ewiz.step++; this.renderEndStep();
+            };
+            foot.appendChild(next);
+        } else {
+            const go = document.createElement("button");
+            go.className = "dangerBtn";
+            go.innerHTML = pimsIcon("signout", 16) + " Close shift";
+            go.onclick = () => this.submitEnd(go);
+            foot.appendChild(go);
+        }
+
+    },
+
+    endSummary(body) {
+
+        const sum = ShiftService.summary(this.shift);
+
+        const s = this.shift;
+
+        const line = (k, v) =>
+            `<div class="rvRow"><small>${k}</small><div>${this.esc(v)}</div></div>`;
+
+        body.innerHTML =
+            `<p class="uiModalMsg">Here's your shift at a glance.</p>
+            <div class="rvGrid">
+                ${line("Shift", s.shift_id)}
+                ${line("Total time", ShiftService.hm(sum.durationSec))}
+                ${line("Active time", ShiftService.hm(sum.activeSec))}
+                ${line("Break time", ShiftService.hm(sum.breakSec))}
+                ${line("Vehicle", s.vehicle_unit
+                    ? s.vehicle_unit + " · " + (s.vehicle_type || "") : "None")}
+                ${line("Bodycam", s.bodycam_session_id || "Off")}
+            </div>` +
+            (sum.overtime
+                ? `<p class="uiModalMsg" style="color:#e08a5a;margin-top:10px">
+                     ${pimsIcon("alerts", 14)} Over 8 hours — this shift is
+                     flagged as overtime.</p>` : "");
+
+    },
+
+    yesNo(name, val, yesLabel, noLabel) {
+
+        return `<div class="equipGrid">
+            <label class="equipItem">
+                <input type="radio" name="${name}" value="yes" ${val ? "checked" : ""}>
+                <span>${yesLabel}</span>
+            </label>
+            <label class="equipItem">
+                <input type="radio" name="${name}" value="no" ${val ? "" : "checked"}>
+                <span>${noLabel}</span>
+            </label>
+        </div>`;
+
+    },
+
+    endBodycam(body) {
+
+        const s = this.shift;
+
+        if (!s.bodycam_ready) {
+
+            body.innerHTML =
+                `<p class="uiModalMsg">No bodycam was active on this shift —
+                    nothing to upload.</p>`;
+
+            this.ewiz.data.bodycamUploaded = false;
+
+            return;
+
+        }
+
+        body.innerHTML =
+            `<p class="uiModalMsg">Bodycam session
+                <b>${this.esc(s.bodycam_session_id || "")}</b> — has the
+                footage been uploaded? (Full bodycam handling arrives in a
+                later sprint.)</p>` +
+            this.yesNo("ewBodycam", this.ewiz.data.bodycamUploaded,
+                "YES — uploaded", "NO — not yet");
+
+    },
+
+    endVehicle(body) {
+
+        const s = this.shift;
+
+        if (!s.vehicle_unit) {
+
+            body.innerHTML =
+                `<p class="uiModalMsg">No vehicle was assigned on this
+                    shift.</p>`;
+
+            this.ewiz.data.vehicleReturned = true;
+
+            return;
+
+        }
+
+        body.innerHTML =
+            `<p class="uiModalMsg">Vehicle <b>${this.esc(s.vehicle_unit)}</b>
+                — has it been returned / handed off?</p>` +
+            this.yesNo("ewVehicle", this.ewiz.data.vehicleReturned,
+                "YES — returned", "NO");
+
+    },
+
+    endComments(body) {
+
+        body.innerHTML =
+            `<label class="wizLabel">Shift summary / comments (optional)</label>
+             <textarea id="ewComments" class="uiModalInput" rows="5"
+                placeholder="Anything worth noting — incidents, vehicle issues, handover…">${
+                this.esc(this.ewiz.data.comments || "")}</textarea>`;
+
+    },
+
+    endFinish(body) {
+
+        const d = this.ewiz.data;
+
+        const s = this.shift;
+
+        const line = (k, v) =>
+            `<div class="rvRow"><small>${k}</small><div>${this.esc(v)}</div></div>`;
+
+        body.innerHTML =
+            `<p class="uiModalMsg">Closing <b>${this.esc(s.shift_id)}</b> —
+                this returns you to <b>Off Duty</b>.</p>
+            <div class="rvGrid">
+                ${s.bodycam_ready
+                    ? line("Bodycam uploaded", d.bodycamUploaded ? "Yes" : "No") : ""}
+                ${s.vehicle_unit
+                    ? line("Vehicle returned", d.vehicleReturned ? "Yes" : "No") : ""}
+                ${line("Comment", d.comments ? "Added" : "None")}
+            </div>`;
+
+    },
+
+    collectEnd() {
+
+        const d = this.ewiz.data;
+
+        const bc = document.querySelector("input[name=ewBodycam]:checked");
+
+        if (bc) d.bodycamUploaded = bc.value === "yes";
+
+        const vh = document.querySelector("input[name=ewVehicle]:checked");
+
+        if (vh) d.vehicleReturned = vh.value === "yes";
+
+        const c = document.getElementById("ewComments");
+
+        if (c) d.comments = c.value.trim();
+
+    },
+
+    async submitEnd(btn) {
+
+        this.collectEnd();
+
+        btn.disabled = true;
+
+        const ok = await ShiftService.end(this.shift, {
+            comments: this.ewiz.data.comments || null,
+            bodycamUploaded: this.ewiz.data.bodycamUploaded,
+            vehicleReturned: this.ewiz.data.vehicleReturned
         });
 
-        if (!ok) return;
+        btn.disabled = false;
 
-        const comments = await UI.promptText({
-            title: "Shift comment (optional)",
-            label: "Anything worth noting from this shift?",
-            multiline: true,
-            confirmText: "Close shift",
-            cancelText: "Skip"
-        });
-
-        if (await ShiftService.end(this.shift, comments || null))
-            this.render();
+        if (ok) { this.closeEnd(); this.render(); }
 
     },
 
