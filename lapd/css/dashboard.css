@@ -3677,6 +3677,192 @@ a.pfCaseLink:hover{ background:#2e8bff14; }
 
 }
 
+/* ---------- DUTY / SHIFT (Phase 7) ---------- */
+
+.shiftOff{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    gap:18px;
+
+    flex-wrap:wrap;
+
+}
+
+.shiftStartBtn{
+
+    display:inline-flex;
+
+    align-items:center;
+
+    gap:10px;
+
+    padding:16px 30px;
+
+    border:1px solid var(--pims-gold);
+
+    border-radius:14px;
+
+    background:linear-gradient(160deg, #3a2f14, #1a1508);
+
+    color:var(--pims-gold);
+
+    font-size:16px;
+
+    font-weight:700;
+
+    letter-spacing:2px;
+
+    cursor:pointer;
+
+    font-family:inherit;
+
+    transition:.2s;
+
+    box-shadow:0 4px 18px rgba(201,162,74,.15);
+
+}
+
+.shiftStartBtn:hover{
+
+    background:var(--pims-gold);
+
+    color:#0b1f3a;
+
+    transform:translateY(-1px);
+
+}
+
+.shiftHead{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:flex-start;
+
+    gap:16px;
+
+    flex-wrap:wrap;
+
+}
+
+.shiftTimer{
+
+    font-family:monospace;
+
+    font-size:38px;
+
+    font-weight:700;
+
+    color:var(--pims-gold);
+
+    letter-spacing:3px;
+
+    text-shadow:0 0 18px rgba(201,162,74,.35);
+
+}
+
+.shiftMeta{
+
+    display:grid;
+
+    grid-template-columns:repeat(auto-fit, minmax(140px, 1fr));
+
+    gap:10px 16px;
+
+    margin:16px 0;
+
+    padding:14px;
+
+    border-radius:12px;
+
+    background:linear-gradient(160deg, var(--pims-tile-a), var(--pims-tile-b));
+
+    border:1px solid var(--pims-border);
+
+}
+
+.shiftMeta small{
+
+    display:block;
+
+    color:#5a6b80;
+
+    font-size:9.5px;
+
+    text-transform:uppercase;
+
+    letter-spacing:1px;
+
+    margin-bottom:3px;
+
+}
+
+.shiftMeta b{ color:#dbe4f0; font-size:13.5px; }
+
+.shiftControls{
+
+    display:flex;
+
+    flex-wrap:wrap;
+
+    gap:10px;
+
+    align-items:center;
+
+}
+
+.shiftControls .uiModalInput{ width:auto; }
+
+/* equipment / bodycam choices in the wizard */
+
+.equipGrid{
+
+    display:grid;
+
+    grid-template-columns:1fr 1fr;
+
+    gap:10px;
+
+}
+
+.equipItem{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+
+    padding:11px 14px;
+
+    border-radius:10px;
+
+    background:#15283d55;
+
+    border:1px solid rgba(255,255,255,.08);
+
+    cursor:pointer;
+
+    font-size:13.5px;
+
+    color:#dbe4f0;
+
+    transition:.15s;
+
+}
+
+.equipItem:hover{ border-color:var(--pims-gold); }
+
+.equipItem input{ accent-color:#c9a24a; width:16px; height:16px; }
+
+@media(max-width:600px){ .equipGrid{ grid-template-columns:1fr; } }
+
 /* badge artwork on the ID card header */
 
 .idCardShield img{

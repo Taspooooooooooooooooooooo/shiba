@@ -473,4 +473,50 @@ create index if not exists case_relationships_related_idx
   on public.case_relationships (related_case_id);
 
 
-select 'ALL PENDING PATCHES applied (3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)' as result;
+-- ---------- PATCH 15 : shifts + shift timeline (Phase 7.1a) ----------
+
+create table if not exists public.shifts (
+  id uuid not null default gen_random_uuid(),
+  shift_id text unique,
+  officer_id uuid references public.officers(id) on delete cascade,
+  status text not null default 'Active',
+  activity text not null default 'Patrolling',
+  vehicle_unit text,
+  vehicle_type text,
+  callsign text,
+  primary_channel text,
+  secondary_channel text,
+  equipment jsonb,
+  bodycam_ready boolean not null default false,
+  bodycam_session_id text,
+  current_case_id uuid references public.cases(id) on delete set null,
+  break_started_at timestamp with time zone,
+  break_type text,
+  break_prev_activity text,
+  break_seconds integer not null default 0,
+  started_at timestamp with time zone default now(),
+  ended_at timestamp with time zone,
+  end_comments text,
+  overtime boolean not null default false,
+  created_at timestamp with time zone default now(),
+  constraint shifts_pkey primary key (id)
+);
+create index if not exists shifts_officer_idx
+  on public.shifts (officer_id);
+create index if not exists shifts_open_idx
+  on public.shifts (officer_id) where ended_at is null;
+
+create table if not exists public.shift_timeline (
+  id uuid not null default gen_random_uuid(),
+  shift_id uuid references public.shifts(id) on delete cascade,
+  event text not null,
+  details text,
+  actor text,
+  created_at timestamp with time zone default now(),
+  constraint shift_timeline_pkey primary key (id)
+);
+create index if not exists shift_timeline_shift_idx
+  on public.shift_timeline (shift_id);
+
+
+select 'ALL PENDING PATCHES applied (3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)' as result;

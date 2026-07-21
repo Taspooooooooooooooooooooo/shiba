@@ -2,6 +2,37 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.35.0 — 2026-07-20 · Phase 7 Sprint 7.1a — Start Shift + live duty dashboard
+
+### Added
+- **A shift is a digital duty session**, not an online flag. The
+  dashboard gets a **START SHIFT** button (gold, big — as specced) that
+  opens the 6-step wizard: Officer verification (auto) → Vehicle (unit +
+  type, or No Vehicle) → Radio (callsign defaults to your unit, primary
+  + secondary channel) → **Equipment checklist** (you can start with
+  items missing — the shift records it for supervisors) → Bodycam
+  (YES issues a `BODY-…` session id) → Review & start.
+- **The start cascade** — one click: `SHIFT-2026-…` id → shift row →
+  shift timeline → audit → roster status flips to **On Duty** →
+  personnel timeline → notification. One active shift per officer;
+  suspended/retired officers can't start one.
+- **Live duty widget** — per-second **HH:MM:SS timer**, vehicle,
+  callsign, radio, bodycam session, current activity, break total.
+- **Status engine** — Patrolling · Responding · Traffic Stop · Court ·
+  Training · Administrative · Report Writing · Emergency · Unavailable;
+  every change hits the shift timeline + audit.
+- **Break system** — pick Lunch/Coffee/Administrative/Personal, live
+  break timer, and returning restores your previous activity and banks
+  the minutes.
+- **End shift (minimal)** — confirm + optional comment closes the shift,
+  computes break time and overtime (>8 h) and flips you Off Duty. The
+  full End-Shift wizard with the summary is Sprint 7.1b.
+
+### Setup
+Run **`lapd/SETUP-PATCH-15.sql`** (or re-run `RUN-ALL-PENDING.sql`) —
+adds `shifts` + `shift_timeline`. The duty card shows a friendly hint
+until then.
+
 ## v0.34.0 — 2026-07-20 · The great emoji sweep — 100% brand icons
 
 ### Changed
