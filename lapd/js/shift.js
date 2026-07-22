@@ -135,6 +135,8 @@ const ShiftUI = {
                     Math.round((s.break_seconds || 0) / 60)} min</b></div>
             </div>
 
+            <div class="shiftAlerts" id="shiftAlerts"></div>
+
             <div class="shiftControls" id="shiftControls"></div>`;
 
         /* controls */
@@ -180,16 +182,21 @@ const ShiftUI = {
         end.onclick = () => this.endShift();
         box.appendChild(end);
 
-        /* the live per-second timer */
+        /* the live per-second timer + threshold alerts */
 
         const timerEl = document.getElementById("shiftTimer");
+
+        const alertBox = document.getElementById("shiftAlerts");
+
+        this._alerted = this._alerted || {};
 
         const tick = () => {
 
             if (!timerEl.isConnected) { clearInterval(this._timer); return; }
 
-            timerEl.textContent = ShiftService.fmtDuration(
-                Date.now() - new Date(s.started_at).getTime());
+            const durMs = Date.now() - new Date(s.started_at).getTime();
+
+            timerEl.textContent = ShiftService.fmtDuration(durMs);
 
             if (onBreak && s.break_started_at) {
 
@@ -201,11 +208,64 @@ const ShiftUI = {
 
             }
 
+            this.checkAlerts(s, durMs, alertBox);
+
         };
 
         tick();
 
         this._timer = setInterval(tick, 1000);
+
+    },
+
+    /* break-overrun (>30 min) and overtime (>8 h) — banner on the
+       widget + a one-time audit / shift-timeline record when crossed */
+
+    checkAlerts(s, durMs, box) {
+
+        const banners = [];
+
+        const breakMin = ShiftService.breakMinutesNow(s);
+
+        if (breakMin >= ShiftService.BREAK_LIMIT_MIN) {
+
+            banners.push(pimsIcon("alerts", 14) + " Break over " +
+                ShiftService.BREAK_LIMIT_MIN + " min (" + breakMin + " min)");
+
+            if (!this._alerted["break" + s.id]) {
+
+                this._alerted["break" + s.id] = true;
+
+                ShiftService.raiseAlert(s, "BREAK_OVERRUN",
+                    "Break exceeded " + ShiftService.BREAK_LIMIT_MIN +
+                    " minutes");
+
+            }
+
+        }
+
+        if (durMs / 3600000 > ShiftService.OVERTIME_HOURS) {
+
+            banners.push(pimsIcon("history", 14) + " Overtime — past " +
+                ShiftService.OVERTIME_HOURS + " hours on duty");
+
+            if (!this._alerted["ot" + s.id]) {
+
+                this._alerted["ot" + s.id] = true;
+
+                ShiftService.raiseAlert(s, "OVERTIME",
+                    "Shift passed " + ShiftService.OVERTIME_HOURS + " hours");
+
+            }
+
+        }
+
+        if (!box) return;
+
+        const html = banners.map(b =>
+            `<div class="shiftAlert">${b}</div>`).join("");
+
+        if (box.innerHTML !== html) box.innerHTML = html;
 
     },
 

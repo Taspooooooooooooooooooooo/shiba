@@ -141,6 +141,201 @@ const ShiftsList = {
 
         });
 
+        /* calendar */
+
+        this.calMonth = new Date();
+
+        this.canSchedule = await PermissionService.can("cases.assign");
+
+        if (this.canSchedule) {
+
+            await this.loadOfficers();
+
+            const btn = document.getElementById("calSchedule");
+            btn.classList.remove("hidden");
+            btn.onclick = () => this.openSchedule();
+
+        }
+
+        document.getElementById("calPrev").onclick = () => {
+            this.calMonth.setMonth(this.calMonth.getMonth() - 1);
+            this.renderCalendar();
+        };
+
+        document.getElementById("calNext").onclick = () => {
+            this.calMonth.setMonth(this.calMonth.getMonth() + 1);
+            this.renderCalendar();
+        };
+
+        this.renderCalendar();
+
+    },
+
+    async loadOfficers() {
+
+        if (this.officers) return;
+
+        const { data } = await db.from("officers")
+            .select("id, officer_id, first_name, last_name, status")
+            .order("officer_id");
+
+        this.officers = (data || []).filter(o =>
+            o.status !== "Retired" && o.status !== "Terminated");
+
+    },
+
+    ymd(d) {
+        return d.getFullYear() + "-" +
+            String(d.getMonth() + 1).padStart(2, "0") + "-" +
+            String(d.getDate()).padStart(2, "0");
+    },
+
+    async renderCalendar() {
+
+        const grid = document.getElementById("calGrid");
+
+        const m = this.calMonth;
+
+        document.getElementById("calTitle").textContent =
+            m.toLocaleString(undefined, { month: "long", year: "numeric" });
+
+        const first = new Date(m.getFullYear(), m.getMonth(), 1);
+
+        const last = new Date(m.getFullYear(), m.getMonth() + 1, 0);
+
+        const { rows, error } = await ShiftService.scheduledBetween(
+            this.ymd(first), this.ymd(last));
+
+        if (error) {
+
+            grid.innerHTML = `<p class="muted">${ShiftService.SETUP_HINT_73}</p>`;
+
+            return;
+
+        }
+
+        const byDay = {};
+
+        (rows || []).filter(r => r.status !== "Cancelled").forEach(r => {
+            (byDay[r.shift_date] = byDay[r.shift_date] || []).push(r);
+        });
+
+        /* leading blanks (week starts Monday) */
+
+        let startDow = first.getDay() - 1;
+        if (startDow < 0) startDow = 6;
+
+        let html = `<div class="calWeekhead">` +
+            ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+                .map(d => `<span>${d}</span>`).join("") + `</div><div class="calDays">`;
+
+        for (let i = 0; i < startDow; i++) html += `<div class="calCell blank"></div>`;
+
+        const todayStr = this.ymd(new Date());
+
+        for (let day = 1; day <= last.getDate(); day++) {
+
+            const key = this.ymd(new Date(m.getFullYear(), m.getMonth(), day));
+
+            const items = byDay[key] || [];
+
+            const chips = items.slice(0, 3).map(r =>
+                `<span class="calChip" title="${this.esc(r.officer_label)}${
+                    r.start_time ? " · " + r.start_time : ""}">${
+                    this.esc((r.officers?.officer_id) || "shift")}</span>`).join("");
+
+            html += `<div class="calCell${key === todayStr ? " today" : ""}"
+                          data-date="${key}">
+                        <span class="calNum">${day}</span>
+                        ${chips}${items.length > 3
+                            ? `<span class="calMore">+${items.length - 3}</span>` : ""}
+                     </div>`;
+
+        }
+
+        html += `</div>`;
+
+        grid.innerHTML = html;
+
+        if (this.canSchedule) {
+
+            grid.querySelectorAll(".calCell[data-date]").forEach(cell => {
+                cell.style.cursor = "pointer";
+                cell.onclick = () => this.openSchedule(cell.dataset.date);
+            });
+
+        }
+
+    },
+
+    openSchedule(presetDate) {
+
+        let officer, date, start, end, notes;
+
+        UI.modal({
+
+            title: "Schedule a shift",
+
+            buttons: [],
+
+            render: close => {
+
+                const wrap = document.createElement("div");
+
+                const offOpts = this.officers.map(o =>
+                    `<option value="${o.id}">${this.esc(o.officer_id + " — " +
+                        (o.first_name + " " + o.last_name).trim())}</option>`).join("");
+
+                wrap.innerHTML =
+                    `<label class="wizLabel">Officer</label>
+                     <select class="uiModalInput" id="scOff">${offOpts}</select>
+                     <label class="wizLabel">Date</label>
+                     <input type="date" class="uiModalInput" id="scDate"
+                            value="${presetDate || ""}">
+                     <div class="wizGrid">
+                        <div><label class="wizLabel">Start</label>
+                            <input type="time" class="uiModalInput" id="scStart"></div>
+                        <div><label class="wizLabel">End</label>
+                            <input type="time" class="uiModalInput" id="scEnd"></div>
+                     </div>
+                     <label class="wizLabel">Notes (optional)</label>
+                     <input class="uiModalInput" id="scNotes" placeholder="e.g. Metro patrol">`;
+
+                const foot = document.createElement("div");
+                foot.className = "uiModalFoot";
+
+                const cancel = document.createElement("button");
+                cancel.className = "ghostBtn";
+                cancel.textContent = "Cancel";
+                cancel.onclick = () => close(null);
+
+                const save = document.createElement("button");
+                save.className = "primaryBtn";
+                save.textContent = "Schedule";
+                save.onclick = async () => {
+                    const d = wrap.querySelector("#scDate").value;
+                    if (!d) { UI.error("Pick a date."); return; }
+                    save.disabled = true;
+                    const ok = await ShiftService.schedule({
+                        officerId: wrap.querySelector("#scOff").value,
+                        date: d,
+                        startTime: wrap.querySelector("#scStart").value || null,
+                        endTime: wrap.querySelector("#scEnd").value || null,
+                        notes: wrap.querySelector("#scNotes").value.trim() || null
+                    });
+                    save.disabled = false;
+                    if (ok) { close(null); this.renderCalendar(); }
+                };
+
+                foot.append(cancel, save);
+                wrap.appendChild(foot);
+
+                return wrap;
+
+            }
+
+        });
+
     }
 
 };

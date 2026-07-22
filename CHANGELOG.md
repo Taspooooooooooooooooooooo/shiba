@@ -2,6 +2,34 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.38.0 — 2026-07-21 · Phase 7 Sprint 7.3 — statistics, calendar & alerts
+
+### Added
+- **Shift statistics** on the Personnel Statistics tab — number of
+  shifts, **lifetime hours**, this month, average shift, longest shift,
+  total break time and overtime-shift count, all computed from closed
+  shifts.
+- **Duty alerts** on the live widget — a banner appears when a **break
+  passes 30 minutes** or the shift passes **8 hours (overtime)**, and
+  each crossing is recorded once to the shift timeline + audit
+  (supervisor push notifications come with the Live Ops Center, 7.4).
+- **Shift calendar & scheduling** on the Shifts page — a month grid
+  (prev/next), today highlighted, with a chip per scheduled shift.
+  Sergeant+ can **schedule shifts ahead** (officer · date · start/end ·
+  notes) by clicking a day or the Schedule button. Needs
+  `lapd/SETUP-PATCH-18.sql` (`scheduled_shifts`); shows a hint until run.
+
+### Setup
+Run **`lapd/SETUP-PATCH-18.sql`** (or `RUN-ALL-PENDING.sql`) for the
+calendar. Statistics and alerts work without it.
+
+### Verified live
+Real shift stats from the two commissioning shifts rendered on the
+Statistics tab; both alert banners fired with a single audit/timeline
+record each (no double-fire across ticks); the calendar showed its
+graceful hint pre-patch and rendered a full month grid + schedule modal
+with stubbed data.
+
 ## v0.37.0 — 2026-07-21 · Phase 7 Sprint 7.2 — Shift File + incident mode
 
 ### Added

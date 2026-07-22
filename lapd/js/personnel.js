@@ -386,6 +386,32 @@ const Personnel = {
             ["Certificates", "—"]
         ];
 
+        /* shift statistics (Phase 7.3) */
+
+        if (window.ShiftService) {
+
+            try {
+
+                const { stats: sh } =
+                    await ShiftService.officerStats(id);
+
+                if (sh) {
+
+                    stats.push(
+                        ["Shifts", sh.shiftCount],
+                        ["Lifetime hours", ShiftService.hm(sh.lifetimeSec)],
+                        ["This month", ShiftService.hm(sh.monthSec)],
+                        ["Average shift", ShiftService.hm(sh.avgSec)],
+                        ["Longest shift", ShiftService.hm(sh.longestSec)],
+                        ["Break time", ShiftService.hm(sh.breakSec)],
+                        ["Overtime shifts", sh.overtime]);
+
+                }
+
+            } catch (e) { /* shift stats optional */ }
+
+        }
+
         box.innerHTML = "";
 
         stats.forEach(([label, value]) => {

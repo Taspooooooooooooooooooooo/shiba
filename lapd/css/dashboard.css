@@ -3871,6 +3871,130 @@ a.pfCaseLink:hover{ background:#2e8bff14; }
 
 @media(max-width:600px){ .equipGrid{ grid-template-columns:1fr; } }
 
+/* live-widget alert banners */
+
+.shiftAlerts{ display:flex; flex-direction:column; gap:8px; }
+
+.shiftAlerts:not(:empty){ margin:6px 0 12px; }
+
+.shiftAlert{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:8px;
+
+    padding:9px 13px;
+
+    border-radius:10px;
+
+    background:#e08a5a1f;
+
+    border:1px solid #e08a5a55;
+
+    color:#f0b48a;
+
+    font-size:12.5px;
+
+}
+
+/* shift calendar */
+
+.calBar{ display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+
+.calWeekhead{
+
+    display:grid;
+
+    grid-template-columns:repeat(7, 1fr);
+
+    gap:6px;
+
+    margin-bottom:6px;
+
+}
+
+.calWeekhead span{
+
+    text-align:center;
+
+    color:#5a6b80;
+
+    font-size:10px;
+
+    text-transform:uppercase;
+
+    letter-spacing:1px;
+
+}
+
+.calDays{ display:grid; grid-template-columns:repeat(7, 1fr); gap:6px; }
+
+.calCell{
+
+    min-height:78px;
+
+    border-radius:10px;
+
+    background:#15283d55;
+
+    border:1px solid rgba(255,255,255,.06);
+
+    padding:6px;
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:3px;
+
+    transition:.12s;
+
+}
+
+.calCell.blank{ background:transparent; border:none; }
+
+.calCell.today{ border-color:var(--pims-gold); }
+
+.calCell:not(.blank):hover{ border-color:#2e8bff66; }
+
+.calNum{ font-size:11px; color:#8fa6c4; }
+
+.calChip{
+
+    font-size:10px;
+
+    background:#2e8bff2a;
+
+    border:1px solid #2e8bff44;
+
+    color:#bcd4ff;
+
+    border-radius:5px;
+
+    padding:1px 5px;
+
+    white-space:nowrap;
+
+    overflow:hidden;
+
+    text-overflow:ellipsis;
+
+}
+
+.calMore{ font-size:9.5px; color:#5a6b80; }
+
+@media(max-width:640px){
+
+    .calCell{ min-height:52px; }
+
+    .calChip{ display:none; }
+
+    .calCell::after{ content:""; }
+
+}
+
 /* badge artwork on the ID card header */
 
 .idCardShield img{

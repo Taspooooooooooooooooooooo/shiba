@@ -256,6 +256,198 @@ const ShiftService = {
     },
 
     /* ----------------------------------------------------- */
+    /* statistics (Sprint 7.3) — computed from shift history  */
+    /* ----------------------------------------------------- */
+
+    async officerStats(officerId) {
+
+        const { rows, error } = await this.forOfficer(officerId, 500);
+
+        if (error) return { error };
+
+        /* only CLOSED shifts count toward totals */
+
+        const closed = rows.filter(s => s.ended_at);
+
+        const now = new Date();
+
+        const monthKey = now.getFullYear() + "-" + now.getMonth();
+
+        let lifetimeSec = 0, monthSec = 0, breakSec = 0;
+
+        let longestSec = 0, overtime = 0;
+
+        closed.forEach(s => {
+
+            const sum = this.summary(s);
+
+            lifetimeSec += sum.activeSec;
+
+            breakSec += sum.breakSec;
+
+            if (sum.durationSec > longestSec) longestSec = sum.durationSec;
+
+            if (s.overtime) overtime++;
+
+            const d = new Date(s.started_at);
+
+            if (d.getFullYear() + "-" + d.getMonth() === monthKey) {
+
+                monthSec += sum.activeSec;
+
+            }
+
+        });
+
+        const avgSec = closed.length
+            ? Math.round(closed.reduce((a, s) =>
+                a + this.summary(s).durationSec, 0) / closed.length) : 0;
+
+        return {
+            stats: {
+                shiftCount: closed.length,
+                openCount: rows.length - closed.length,
+                lifetimeSec, monthSec, breakSec,
+                longestSec, avgSec, overtime
+            }
+        };
+
+    },
+
+    /* ----------------------------------------------------- */
+    /* alerts — thresholds for the duty widget + supervisors  */
+    /* ----------------------------------------------------- */
+
+    BREAK_LIMIT_MIN: 30,
+
+    OVERTIME_HOURS: 8,
+
+    /* current break minutes for an open shift on break */
+
+    breakMinutesNow(shift) {
+
+        if (shift.status !== "Break" || !shift.break_started_at) return 0;
+
+        return Math.floor(
+            (Date.now() - new Date(shift.break_started_at).getTime())
+            / 60000);
+
+    },
+
+    /* fire supervisor notifications once per threshold crossing —
+       the caller passes the flags it has already sent */
+
+    async raiseAlert(shift, kind, message) {
+
+        try {
+
+            /* notify the case-agnostic supervisors: officers who hold
+               a reviewing tier. Cheap version: notify the shift owner's
+               division supervisors is Phase 7.4 — for now audit it and
+               notify the officer's own account so it's on record. */
+
+            await AuditService.log({
+                action: "SHIFT_ALERT_" + kind,
+                target: shift.shift_id,
+                details: message,
+                officerId: shift.officer_id
+            });
+
+            await this.shiftEvent(shift.id, "Alert", message);
+
+        } catch (e) { /* best effort */ }
+
+    },
+
+    /* ----------------------------------------------------- */
+    /* scheduling / calendar (Sprint 7.3)                     */
+    /* ----------------------------------------------------- */
+
+    SETUP_HINT_73:
+        "The calendar needs a one-time setup — run " +
+        "lapd/SETUP-PATCH-18.sql (or RUN-ALL-PENDING.sql) in the " +
+        "Supabase SQL Editor.",
+
+    async schedule({ officerId, date, startTime, endTime, notes }) {
+
+        if (!window.db || !officerId || !date) return false;
+
+        if (!(await PermissionService.can("cases.assign"))) {
+
+            UI?.error("Requires Sergeant or above.");
+
+            return false;
+
+        }
+
+        const { error } = await db
+            .from("scheduled_shifts")
+            .insert([{
+                officer_id: officerId,
+                shift_date: date,
+                start_time: startTime || null,
+                end_time: endTime || null,
+                notes: notes || null,
+                scheduled_by: localStorage.getItem("username") || null
+            }]);
+
+        if (error) { UI?.error(this.SETUP_HINT_73); return false; }
+
+        AuditService.log({
+            action: "SHIFT_SCHEDULED",
+            target: date + (startTime ? " " + startTime : ""),
+            officerId: officerId
+        });
+
+        UI?.success("Shift scheduled for " + date);
+
+        return true;
+
+    },
+
+    async scheduledBetween(fromDate, toDate) {
+
+        const { data, error } = await db
+            .from("scheduled_shifts")
+            .select("*, officers(officer_id, first_name, last_name)")
+            .gte("shift_date", fromDate)
+            .lte("shift_date", toDate)
+            .order("shift_date", { ascending: true });
+
+        if (error) return { error };
+
+        return { rows: (data || []).map(r => {
+            r.officer_label = r.officers
+                ? (r.officers.officer_id + " " +
+                   (r.officers.first_name + " " +
+                    r.officers.last_name).trim()) : "—";
+            return r;
+        }) };
+
+    },
+
+    async cancelScheduled(id) {
+
+        if (!(await PermissionService.can("cases.assign"))) {
+
+            UI?.error("Requires Sergeant or above.");
+
+            return false;
+
+        }
+
+        const { error } = await db
+            .from("scheduled_shifts")
+            .update({ status: "Cancelled" })
+            .eq("id", id);
+
+        if (error) { UI?.error("Could not cancel."); return false; }
+
+        return true;
+
+    },
+
+    /* ----------------------------------------------------- */
     /* summary maths — used by the End Shift wizard, history  */
     /* and (later) statistics                                 */
     /* ----------------------------------------------------- */

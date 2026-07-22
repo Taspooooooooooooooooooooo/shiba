@@ -543,4 +543,25 @@ create index if not exists shift_notes_shift_idx
   on public.shift_notes (shift_id);
 
 
-select 'ALL PENDING PATCHES applied (3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17)' as result;
+-- ---------- PATCH 18 : shift scheduling / calendar (Phase 7.3) ----------
+
+create table if not exists public.scheduled_shifts (
+  id uuid not null default gen_random_uuid(),
+  officer_id uuid references public.officers(id) on delete cascade,
+  shift_date date not null,
+  start_time text,
+  end_time text,
+  notes text,
+  status text not null default 'Scheduled',
+  scheduled_by text,
+  fulfilled_shift_id uuid references public.shifts(id) on delete set null,
+  created_at timestamp with time zone default now(),
+  constraint scheduled_shifts_pkey primary key (id)
+);
+create index if not exists scheduled_shifts_officer_idx
+  on public.scheduled_shifts (officer_id);
+create index if not exists scheduled_shifts_date_idx
+  on public.scheduled_shifts (shift_date);
+
+
+select 'ALL PENDING PATCHES applied (3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18)' as result;
