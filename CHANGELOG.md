@@ -2,6 +2,18 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.38.1 — 2026-07-21 · Cloud upload limit raised + honest server-limit message
+
+### Changed
+- **SHIBA Cloud upload cap raised** from 50 MB to **200 MB** client-side,
+  and the arbitrary "max 50 MB" copy removed. The real ceiling is
+  Supabase's (bucket + project upload limit + plan) — the app no longer
+  imposes a lower wall than the server does.
+- **Honest failure message** — if Supabase itself rejects an oversized
+  file (413 / "maximum allowed size"), the banner now says exactly why
+  and how to raise it (Storage → Settings; Free plan ≈ 50 MB / 1 GB
+  total, bigger needs Pro), instead of a generic "Upload failed".
+
 ## v0.38.0 — 2026-07-21 · Phase 7 Sprint 7.3 — statistics, calendar & alerts
 
 ### Added

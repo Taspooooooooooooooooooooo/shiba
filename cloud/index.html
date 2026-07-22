@@ -548,7 +548,7 @@
 
             <h2>Drop files here</h2>
 
-            <p>or click to choose (max 50 MB per file)</p>
+            <p>or click to choose</p>
 
         </div>
 
@@ -596,6 +596,14 @@
     ====================================================== */
 
     const BUCKET = "cloud";
+
+    /* Our client-side sanity cap. The REAL ceiling is Supabase's
+       (the bucket's file_size_limit + the project's global upload
+       limit + your plan). If Supabase rejects a big file we detect
+       it below and say exactly why. Raise this if you raise the
+       Supabase limit. */
+
+    const MAX_UPLOAD_MB = 200;
 
     const SETUP_HINT =
         "Storage is not set up yet — run cloud/SETUP.sql in the Supabase SQL Editor once.";
@@ -968,9 +976,10 @@
 
         results.prepend(row);
 
-        if (file.size > 50 * 1024 * 1024) {
+        if (file.size > MAX_UPLOAD_MB * 1024 * 1024) {
 
-            row.querySelector("small").innerText = "Too big — 50 MB limit";
+            row.querySelector("small").innerText =
+                "Too big — " + MAX_UPLOAD_MB + " MB limit";
 
             return;
 
@@ -999,12 +1008,27 @@
 
             console.error("UPLOAD ERROR:", error);
 
-            row.querySelector("small").innerText = "Upload failed";
+            const msg = error.message || "";
+
+            const status = error.statusCode || error.status;
+
+            /* Supabase rejected the file for its own size limit */
+
+            const tooBig = status == 413 ||
+                /maximum allowed size|payload too large|entity too large|exceeded/i
+                    .test(msg);
+
+            row.querySelector("small").innerText =
+                tooBig ? "Server limit — file too large" : "Upload failed";
 
             showBanner(document.getElementById("uploadBanner"), "error",
-                /bucket|policy|security|not.*found/i.test(error.message)
-                    ? SETUP_HINT
-                    : "Upload failed: " + error.message);
+                tooBig
+                    ? "Supabase rejected this file — it's over your project's " +
+                      "upload limit. Raise it in Supabase → Storage → Settings " +
+                      "(Free plan caps at ~50 MB / 1 GB total; bigger needs Pro)."
+                    : /bucket|policy|security|not.*found/i.test(msg)
+                        ? SETUP_HINT
+                        : "Upload failed: " + msg);
 
             return;
 
