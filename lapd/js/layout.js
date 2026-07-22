@@ -44,7 +44,7 @@ const AppLayout = {
         ["certificates.html", "verified", "Certificates"],
         ["scanner.html", "scanner", "Scanner"],
         ["applications.html", "bookings", "Applications"],
-        ["#", "shifts", "Shifts"],
+        ["shifts.html", "shifts", "Shifts"],
         ["#", "messages", "Messages"],
         ["settings.html", "settings", "Settings"]
     ],

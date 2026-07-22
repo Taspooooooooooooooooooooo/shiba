@@ -106,10 +106,16 @@ const ShiftUI = {
                             onBreak ? "On break" : "Active"}</span>
                     </h2>
                     <small class="muted">since ${
-                        new Date(s.started_at).toLocaleTimeString()}</small>
+                        new Date(s.started_at).toLocaleTimeString()} ·
+                        <a href="shift.html?id=${s.id}"
+                           style="color:var(--pims-gold)">open shift file</a></small>
                 </div>
                 <div class="shiftTimer" id="shiftTimer">00:00:00</div>
-            </div>
+            </div>`
+            + (s.current_case_id ? `
+            <div class="linkedCert" style="margin-bottom:14px">
+                ${pimsIcon("warrants", 14)} On incident — responding to a case
+            </div>` : "") + `
 
             <div class="shiftMeta">
                 <div><small>Vehicle</small><b>${this.esc(

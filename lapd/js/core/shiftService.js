@@ -97,6 +97,147 @@ const ShiftService = {
 
     },
 
+    SETUP_HINT_72:
+        "This tab needs a one-time setup — run lapd/SETUP-PATCH-17.sql " +
+        "(or RUN-ALL-PENDING.sql) in the Supabase SQL Editor.",
+
+    /* one shift + its officer + linked case */
+
+    async byId(id) {
+
+        const { data, error } = await db
+            .from("shifts")
+            .select("*, officers(officer_id, first_name, last_name), " +
+                "cases(case_id, title)")
+            .eq("id", id)
+            .maybeSingle();
+
+        if (error || !data) return { error: error || { message: "not found" } };
+
+        data.officer_label = data.officers
+            ? (data.officers.officer_id + " " +
+               (data.officers.first_name + " " +
+                data.officers.last_name).trim())
+            : "—";
+
+        return { row: data };
+
+    },
+
+    /* audit entries mentioning this shift's public id */
+
+    async audit(shiftPublicId) {
+
+        const { data, error } = await db
+            .from("audit_logs")
+            .select("*")
+            .ilike("target", "%" + shiftPublicId + "%")
+            .order("created_at", { ascending: false })
+            .limit(100);
+
+        if (error) return { error };
+
+        return { rows: data || [] };
+
+    },
+
+    /* ----------------------------------------------------- */
+    /* shift notes — the officer's own notes DURING the shift */
+    /* (not case notes)                                       */
+    /* ----------------------------------------------------- */
+
+    async notes(shiftUuid) {
+
+        const { data, error } = await db
+            .from("shift_notes")
+            .select("*")
+            .eq("shift_id", shiftUuid)
+            .order("created_at", { ascending: false });
+
+        if (error) return { error };
+
+        return { rows: data || [] };
+
+    },
+
+    async addNote(shift, body) {
+
+        if (!window.db || !body?.trim()) return false;
+
+        const { error } = await db
+            .from("shift_notes")
+            .insert([{
+                shift_id: shift.id,
+                author: localStorage.getItem("username") || null,
+                body: body.trim()
+            }]);
+
+        if (error) { UI?.error(this.SETUP_HINT_72); return false; }
+
+        this.shiftEvent(shift.id, "Note added", null);
+
+        return true;
+
+    },
+
+    /* ----------------------------------------------------- */
+    /* incident mode — respond to a case from the shift       */
+    /* ----------------------------------------------------- */
+
+    async respondToCase(shift, caseRow) {
+
+        if (!window.db || !caseRow) return false;
+
+        const { error } = await db
+            .from("shifts")
+            .update({
+                current_case_id: caseRow.id,
+                activity: "Responding"
+            })
+            .eq("id", shift.id);
+
+        if (error) { UI?.error("Could not set incident mode."); return false; }
+
+        await Promise.allSettled([
+
+            this.shiftEvent(shift.id, "Responding to case",
+                caseRow.case_id + (caseRow.title ? " · " + caseRow.title : "")),
+
+            AuditService.log({
+                action: "SHIFT_INCIDENT",
+                target: shift.shift_id + " -> " + caseRow.case_id,
+                officerId: shift.officer_id
+            })
+
+        ]);
+
+        UI?.success("On incident — " + caseRow.case_id);
+
+        return true;
+
+    },
+
+    async clearIncident(shift, activity) {
+
+        if (!window.db) return false;
+
+        const { error } = await db
+            .from("shifts")
+            .update({
+                current_case_id: null,
+                activity: activity || "Patrolling"
+            })
+            .eq("id", shift.id);
+
+        if (error) { UI?.error("Could not clear incident."); return false; }
+
+        await this.shiftEvent(shift.id, "Cleared incident",
+            "back to " + (activity || "Patrolling"));
+
+        return true;
+
+    },
+
     /* an officer's shift history, newest first */
 
     async forOfficer(officerId, limit = 100) {

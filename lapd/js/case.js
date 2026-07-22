@@ -157,9 +157,61 @@ const CaseFile = {
                     <div id="caseStatusCtl"></div>
                 </div>
             </div>
+            <div id="caseIncidentCtl"></div>
             <a href="cases.html" class="caseBack">← All cases</a>`;
 
         this.renderStatusControl();
+
+        this.renderIncidentControl();
+
+    },
+
+    /* incident mode — if the viewer is on an active shift they can
+       put that shift on THIS case (or clear it) */
+
+    renderIncidentControl() {
+
+        const box = document.getElementById("caseIncidentCtl");
+
+        if (!box || !this.myShift) return;
+
+        const onThis = this.myShift.current_case_id === this.id;
+
+        const btn = document.createElement("button");
+
+        btn.className = onThis ? "ghostBtn" : "primaryBtn";
+
+        btn.style.marginTop = "10px";
+
+        btn.innerHTML = pimsIcon(onThis ? "verified" : "warrants", 15) + " " +
+            (onThis ? "Clear incident (my shift)"
+                    : "Respond on my shift");
+
+        btn.onclick = async () => {
+
+            btn.disabled = true;
+
+            const ok = onThis
+                ? await ShiftService.clearIncident(this.myShift, "Patrolling")
+                : await ShiftService.respondToCase(this.myShift, this.caseRow);
+
+            btn.disabled = false;
+
+            if (ok) {
+
+                const { shift } = await ShiftService.myActiveShift();
+
+                this.myShift = shift;
+
+                this.renderIncidentControl();
+
+            }
+
+        };
+
+        box.innerHTML = "";
+
+        box.appendChild(btn);
 
     },
 
@@ -1651,6 +1703,15 @@ const CaseFile = {
         this.canRequestClosure =
             (await CaseService.roleAtLeast("Sergeant")) ||
             (await CaseService.isLead(row));
+
+        /* the viewer's own active shift, for incident mode */
+
+        try {
+
+            this.myShift = window.ShiftService
+                ? (await ShiftService.myActiveShift()).shift : null;
+
+        } catch (e) { this.myShift = null; }
 
         this.renderHeader();
         this.renderTabs();

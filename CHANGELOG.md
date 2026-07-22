@@ -2,6 +2,36 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.37.0 — 2026-07-21 · Phase 7 Sprint 7.2 — Shift File + incident mode
+
+### Added
+- **Shift File** (`shift.html`) — the full record of one duty session,
+  Explorer-tabbed: **General · Timeline · Notes · Cases · Bodycam ·
+  Vehicle · Equipment · Statistics · Audit**, with a live timer in the
+  header for an open shift. Equipment shows confirmed/missing dots;
+  Audit pulls every log entry that references the shift.
+- **Shifts page** (`shifts.html`) — the nav's **Shifts** link now works:
+  your active-shift banner plus your full history; any row opens its
+  Shift File. The Personnel-File Shifts rows open it too.
+- **Shift notes** — the officer's own notes *during* a shift ("vehicle
+  had a technical issue"), separate from case notes. Needs
+  `lapd/SETUP-PATCH-17.sql` (the tab shows a hint until then).
+- **Incident Mode** — while you're on an active shift, a case file shows
+  **"Respond on my shift"** → your shift's activity becomes *Responding*
+  and links to that case (shift timeline + audit); a **"Clear incident"**
+  button returns you to Patrolling. The linked case appears on the Shift
+  File's Cases tab, and the duty widget flags the incident.
+
+### Setup
+Run **`lapd/SETUP-PATCH-17.sql`** (or `RUN-ALL-PENDING.sql`) — adds
+`shift_notes`. Everything else works without it.
+
+### Verified live
+Opened the real **SHIFT-2026-000001** file — all 9 tabs render from real
+data (Taser shows Missing, real timeline + audit). The Shifts list +
+Personnel rows link through. Incident mode tested on a live shift:
+Respond → Responding + timeline event + button flip; Clear → Patrolling.
+
 ## v0.36.0 — 2026-07-21 · Phase 7 Sprint 7.1b — End Shift wizard + shift history
 
 ### Added

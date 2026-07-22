@@ -529,4 +529,18 @@ alter table public.shifts
   add column if not exists end_summary jsonb;
 
 
-select 'ALL PENDING PATCHES applied (3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16)' as result;
+-- ---------- PATCH 17 : shift notes (Phase 7.2) ----------
+
+create table if not exists public.shift_notes (
+  id uuid not null default gen_random_uuid(),
+  shift_id uuid references public.shifts(id) on delete cascade,
+  author text,
+  body text not null,
+  created_at timestamp with time zone default now(),
+  constraint shift_notes_pkey primary key (id)
+);
+create index if not exists shift_notes_shift_idx
+  on public.shift_notes (shift_id);
+
+
+select 'ALL PENDING PATCHES applied (3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17)' as result;

@@ -985,52 +985,10 @@ const Personnel = {
                     `${open ? " (open)" : ""}${sh.overtime ? " · OT" : ""}</span></span>` +
                 `<span>${new Date(sh.started_at).toLocaleDateString()}</span>`;
 
-            row.onclick = () => this.showShiftDetail(sh, sum);
+            row.onclick = () =>
+                location.href = "shift.html?id=" + encodeURIComponent(sh.id);
 
             box.appendChild(row);
-
-        });
-
-    },
-
-    showShiftDetail(sh, sum) {
-
-        UI.modal({
-
-            title: sh.shift_id + (sh.ended_at ? "" : " · open"),
-
-            render: () => {
-
-                const wrap = document.createElement("div");
-
-                const line = (k, v) =>
-                    `<div class="rvRow"><small>${k}</small>` +
-                    `<div>${this.esc(v || "—")}</div></div>`;
-
-                wrap.innerHTML =
-                    `<div class="rvGrid">
-                        ${line("Started", new Date(sh.started_at).toLocaleString())}
-                        ${line("Ended", sh.ended_at
-                            ? new Date(sh.ended_at).toLocaleString() : "Still open")}
-                        ${line("Total time", ShiftService.hm(sum.durationSec))}
-                        ${line("Active time", ShiftService.hm(sum.activeSec))}
-                        ${line("Break time", ShiftService.hm(sum.breakSec))}
-                        ${line("Vehicle", sh.vehicle_unit
-                            ? sh.vehicle_unit + " · " + (sh.vehicle_type || "") : "None")}
-                        ${line("Callsign", sh.callsign)}
-                        ${line("Bodycam", sh.bodycam_session_id || "Off")}
-                        ${line("Overtime", sh.overtime ? "Yes" : "No")}
-                        ${line("Last activity", sh.activity)}
-                    </div>` +
-                    (sh.end_comments
-                        ? `<div class="apMot" style="margin-top:10px">` +
-                          `${this.esc(sh.end_comments)}</div>` : "");
-
-                return wrap;
-
-            },
-
-            buttons: [{ label: "Close", kind: "primary", value: null }]
 
         });
 

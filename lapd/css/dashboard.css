@@ -3353,6 +3353,14 @@ a.pfCaseLink:hover{ background:#2e8bff14; }
 
 }
 
+/* Shifts list — Shift|Vehicle|Duration|When */
+
+.exHeader.exShifts, .exRow.exShifts{
+
+    grid-template-columns:minmax(0,1fr) 110px 150px 100px;
+
+}
+
 .exRow.exPinned{ background:#c9a24a14; }
 
 /* ---------- PIMS BRAND (designer handoff, lapd/assets) ---------- */
