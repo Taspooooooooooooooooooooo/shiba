@@ -2,6 +2,13 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.38.2 — 2026-07-28 · Cloud cap back to 50 MB (per plan reality)
+
+### Changed
+- Reverted the client upload cap to **50 MB** (`MAX_UPLOAD_MB`) to match
+  the Supabase free-plan reality. The honest server-limit failure
+  message from 0.38.1 stays.
+
 ## v0.38.1 — 2026-07-21 · Cloud upload limit raised + honest server-limit message
 
 ### Changed
