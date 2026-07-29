@@ -315,6 +315,77 @@ const ShiftService = {
     },
 
     /* ----------------------------------------------------- */
+    /* Live Operations Center (Sprint 7.4)                    */
+    /* ----------------------------------------------------- */
+
+    /* every OPEN shift across the department, for the monitor */
+
+    async activeShifts() {
+
+        const { data, error } = await db
+            .from("shifts")
+            .select("*, officers(officer_id, first_name, last_name), " +
+                "cases(case_id, title)")
+            .is("ended_at", null)
+            .order("started_at", { ascending: true });
+
+        if (error) return { error };
+
+        return { rows: (data || []).map(s => {
+
+            s.officer_label = s.officers
+                ? (s.officers.officer_id + " " +
+                   (s.officers.first_name + " " +
+                    s.officers.last_name).trim())
+                : "—";
+
+            return s;
+
+        }) };
+
+    },
+
+    /* notify every Sergeant+ officer (best effort). Used by the
+       break/overtime alerts so supervisors hear about them. */
+
+    async notifySupervisors(title, message, excludeOfficerId) {
+
+        try {
+
+            const { data } = await db
+                .from("officers")
+                .select("id, user_id, ranks(name), status")
+                .not("user_id", "is", null);
+
+            /* match supervisor rank names directly — robust to the
+               exact names in the ranks table (Sergeant I, Lieutenant,
+               Chief of Police, …) rather than the tier lookup, which
+               only knows a fixed set of keys */
+
+            const SUP = /sergeant|lieutenant|captain|commander|chief|inspector|major|colonel|deputy|superintend/i;
+
+            const supers = (data || []).filter(o => {
+
+                if (o.id === excludeOfficerId) return false;
+
+                if (["Retired", "Terminated"].includes(o.status)) return false;
+
+                return SUP.test(o.ranks?.name || "");
+
+            });
+
+            for (const s of supers) {
+
+                await NotificationService.send({
+                    to: s.user_id, title: title, message: message });
+
+            }
+
+        } catch (e) { /* best effort */ }
+
+    },
+
+    /* ----------------------------------------------------- */
     /* alerts — thresholds for the duty widget + supervisors  */
     /* ----------------------------------------------------- */
 
@@ -341,11 +412,6 @@ const ShiftService = {
 
         try {
 
-            /* notify the case-agnostic supervisors: officers who hold
-               a reviewing tier. Cheap version: notify the shift owner's
-               division supervisors is Phase 7.4 — for now audit it and
-               notify the officer's own account so it's on record. */
-
             await AuditService.log({
                 action: "SHIFT_ALERT_" + kind,
                 target: shift.shift_id,
@@ -354,6 +420,14 @@ const ShiftService = {
             });
 
             await this.shiftEvent(shift.id, "Alert", message);
+
+            /* push to supervisors (Sergeant+) so it surfaces beyond the
+               officer's own screen — excluding the officer themselves */
+
+            await this.notifySupervisors(
+                "Shift alert · " + shift.shift_id,
+                (shift.officer_label || shift.shift_id) + " — " + message,
+                shift.officer_id);
 
         } catch (e) { /* best effort */ }
 

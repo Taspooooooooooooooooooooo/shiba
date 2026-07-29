@@ -3995,6 +3995,155 @@ a.pfCaseLink:hover{ background:#2e8bff14; }
 
 }
 
+/* ---------- LIVE OPERATIONS CENTER (Sprint 7.4) ---------- */
+
+.opsHead{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:flex-start;
+
+    gap:16px;
+
+    flex-wrap:wrap;
+
+}
+
+.opsLive{
+
+    display:inline-flex;
+
+    align-items:center;
+
+    gap:8px;
+
+    padding:7px 14px;
+
+    border-radius:999px;
+
+    background:#ef44441a;
+
+    border:1px solid #ef444455;
+
+    color:#ff8891;
+
+    font-size:12px;
+
+    font-weight:700;
+
+    letter-spacing:1px;
+
+}
+
+.opsDot{
+
+    width:9px; height:9px; border-radius:50%;
+
+    background:#ef4444;
+
+    box-shadow:0 0 0 0 #ef444488;
+
+    animation:opsPulse 1.6s infinite;
+
+}
+
+@keyframes opsPulse{
+
+    0%{ box-shadow:0 0 0 0 #ef444488; }
+
+    70%{ box-shadow:0 0 0 8px #ef444400; }
+
+    100%{ box-shadow:0 0 0 0 #ef444400; }
+
+}
+
+.opsHeadRow, .opsRow{
+
+    display:grid;
+
+    grid-template-columns:minmax(0,1.4fr) minmax(0,1.3fr) 90px 120px 80px 110px;
+
+    gap:10px;
+
+    align-items:center;
+
+    padding:10px 12px;
+
+}
+
+.opsHeadRow{
+
+    color:#5a6b80;
+
+    font-size:10px;
+
+    text-transform:uppercase;
+
+    letter-spacing:1px;
+
+    border-bottom:1px solid rgba(255,255,255,.08);
+
+}
+
+.opsRow{
+
+    border-radius:9px;
+
+    cursor:pointer;
+
+    font-size:12.5px;
+
+    color:#b8c5d6;
+
+    transition:.12s;
+
+}
+
+.opsRow:hover{ background:#2e8bff1a; }
+
+.opsRow:nth-child(even):not(:hover){ background:rgba(255,255,255,.02); }
+
+.opsOfficer{ display:flex; align-items:center; gap:10px; min-width:0; }
+
+.opsOfficer b{ display:block; color:#dbe4f0; font-size:13px; }
+
+.opsOfficer small{ color:#5a6b80; font-size:10px; }
+
+.opsTime{ font-family:monospace; color:#dbe4f0; }
+
+.opsFlag{
+
+    display:inline-block;
+
+    background:#e08a5a;
+
+    color:#0b1f3a;
+
+    font-weight:700;
+
+    font-size:9px;
+
+    padding:1px 5px;
+
+    border-radius:5px;
+
+    vertical-align:middle;
+
+}
+
+@media(max-width:760px){
+
+    .opsHeadRow{ display:none; }
+
+    .opsRow{ grid-template-columns:minmax(0,1fr) auto; }
+
+    .opsRow span:nth-child(3), .opsRow span:nth-child(4),
+    .opsRow span:nth-child(5){ display:none; }
+
+}
+
 /* badge artwork on the ID card header */
 
 .idCardShield img{

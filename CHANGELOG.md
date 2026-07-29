@@ -2,6 +2,31 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.39.0 — 2026-07-28 · Phase 7 Sprint 7.4 — Live Operations Center ⭐
+
+### Added
+- **Live Operations Center** (`ops.html`, new nav link) — a live command
+  screen for **Sergeant+**: every officer on duty in one board with a
+  status dot, current activity, vehicle, incident (linked case), bodycam
+  state and a live on-duty timer. A summary strip counts on-duty / on
+  break / on incident / overtime. Rows flag long breaks (`!`) and
+  overtime (`OT`).
+- **Real-time** via Supabase Realtime on the shifts table, with a 15 s
+  poll fallback and per-second timer re-ticking; a pulsing **LIVE**
+  badge. Clicking an officer opens a live detail dialog → jump to their
+  shift file, the incident case, or their personnel file.
+- **Supervisor alert push** — the break-overrun (>30 min) and overtime
+  (>8 h) alerts from 7.3 now notify **every Sergeant+ officer** (matched
+  by rank name, so "Chief of Police", "Sergeant I", etc. all count),
+  not just the officer's own screen.
+
+### Verified live
+Started two real shifts (one on break, one responding to a case) — the
+board showed 2 on duty / 1 break / 1 incident, the correct rows with
+live timers, and the detail dialog with the case link. The supervisor
+push correctly targeted 2 supervisors (1 with the acting officer
+excluded).
+
 ## v0.38.2 — 2026-07-28 · Cloud cap back to 50 MB (per plan reality)
 
 ### Changed
