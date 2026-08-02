@@ -564,4 +564,56 @@ create index if not exists scheduled_shifts_date_idx
   on public.scheduled_shifts (shift_date);
 
 
-select 'ALL PENDING PATCHES applied (3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18)' as result;
+-- ---------- PATCH 19 : bodycam sessions + markers (Phase 7.5) ----------
+
+insert into public.public_ids (type, prefix, with_year) values
+  ('BODYCAM', 'BODY', true)
+on conflict (type) do nothing;
+
+create table if not exists public.bodycam_sessions (
+  id uuid not null default gen_random_uuid(),
+  session_id text unique,
+  shift_id uuid references public.shifts(id) on delete cascade,
+  officer_id uuid references public.officers(id) on delete set null,
+  status text not null default 'Recording',
+  started_at timestamp with time zone default now(),
+  stopped_at timestamp with time zone,
+  recorded_seconds integer not null default 0,
+  file_url text,
+  file_name text,
+  file_size bigint,
+  hash text,
+  cloud_id text,
+  uploaded_at timestamp with time zone,
+  uploaded_by text,
+  notes text,
+  created_by text,
+  created_at timestamp with time zone default now(),
+  constraint bodycam_sessions_pkey primary key (id)
+);
+create index if not exists bodycam_sessions_shift_idx
+  on public.bodycam_sessions (shift_id);
+create index if not exists bodycam_sessions_officer_idx
+  on public.bodycam_sessions (officer_id);
+
+create table if not exists public.bodycam_markers (
+  id uuid not null default gen_random_uuid(),
+  session_id uuid references public.bodycam_sessions(id) on delete cascade,
+  shift_id uuid references public.shifts(id) on delete set null,
+  kind text not null default 'Bookmark',
+  offset_seconds integer not null default 0,
+  label text,
+  note text,
+  linked_case_id uuid references public.cases(id) on delete set null,
+  linked_evidence_id uuid references public.case_evidence(id) on delete set null,
+  created_by text,
+  created_at timestamp with time zone default now(),
+  constraint bodycam_markers_pkey primary key (id)
+);
+create index if not exists bodycam_markers_session_idx
+  on public.bodycam_markers (session_id);
+create index if not exists bodycam_markers_shift_idx
+  on public.bodycam_markers (shift_id);
+
+
+select 'ALL PENDING PATCHES applied (3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19)' as result;

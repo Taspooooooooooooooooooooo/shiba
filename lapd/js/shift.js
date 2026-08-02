@@ -137,7 +137,9 @@ const ShiftUI = {
 
             <div class="shiftAlerts" id="shiftAlerts"></div>
 
-            <div class="shiftControls" id="shiftControls"></div>`;
+            <div class="shiftControls" id="shiftControls"></div>
+
+            <div class="shiftBodycam" id="shiftBodycam"></div>`;
 
         /* controls */
 
@@ -208,6 +210,14 @@ const ShiftUI = {
 
             }
 
+            /* live bodycam recording timer(s) inside the widget */
+
+            document.querySelectorAll(".bcLive[data-start]").forEach(el => {
+                el.textContent = BodycamService.hms(
+                    Math.round((Date.now() -
+                        new Date(el.dataset.start).getTime()) / 1000));
+            });
+
             this.checkAlerts(s, durMs, alertBox);
 
         };
@@ -215,6 +225,121 @@ const ShiftUI = {
         tick();
 
         this._timer = setInterval(tick, 1000);
+
+        this.renderBodycamWidget();
+
+    },
+
+    /* --------------------------------------------------------- */
+    /* bodycam quick-controls in the duty widget (Sprint 7.5) —  */
+    /* start/stop recording and drop a bookmark or evidence      */
+    /* marker without leaving the dashboard. An evidence marker   */
+    /* while on an incident is logged to that case automatically. */
+    /* --------------------------------------------------------- */
+
+    async renderBodycamWidget() {
+
+        const box = document.getElementById("shiftBodycam");
+
+        if (!box || !window.BodycamService) return;
+
+        const s = this.shift;
+
+        if (!s || s.ended_at) { box.innerHTML = ""; return; }
+
+        const { session, error } = await BodycamService.liveSession(s.id);
+
+        /* bodycam table not set up yet — stay silent, the shift still
+           works (footage upload happens after PATCH-19) */
+
+        if (error) { box.innerHTML = ""; return; }
+
+        box.innerHTML =
+            `<div class="shiftBcHead">${pimsIcon("surveillance", 15)} Bodycam
+                <a href="shift.html?id=${s.id}" class="shiftBcOpen">open module →</a>
+             </div>
+             <div class="shiftBcRow" id="shiftBcRow"></div>`;
+
+        const row = document.getElementById("shiftBcRow");
+
+        if (!session) {
+
+            const start = document.createElement("button");
+            start.className = "primaryBtn";
+            start.innerHTML = pimsIcon("surveillance", 15) + " Start recording";
+            start.onclick = async () => {
+                start.disabled = true;
+                const r = await BodycamService.startRecording(s);
+                if (r.ok) this.render(); else start.disabled = false;
+            };
+            row.appendChild(start);
+
+            return;
+
+        }
+
+        /* recording — REC badge + quick markers + stop */
+
+        const badge = document.createElement("span");
+        badge.className = "bcRecBadge";
+        badge.innerHTML =
+            `<span class="opsDot" style="background:#ef4444"></span>REC ` +
+            `<b class="bcLive" data-start="${this.esc(session.started_at)}">` +
+            `00:00</b>`;
+        row.appendChild(badge);
+
+        const book = document.createElement("button");
+        book.className = "ghostBtn";
+        book.innerHTML = pimsIcon("tags", 14) + " Bookmark";
+        book.onclick = () => this.quickMarker(session, "Bookmark");
+        row.appendChild(book);
+
+        const ev = document.createElement("button");
+        ev.className = "ghostBtn";
+        ev.style.borderColor = "#a855f7";
+        ev.innerHTML = pimsIcon("verified", 14) +
+            (s.current_case_id ? " Evidence → case" : " Evidence");
+        ev.onclick = () => this.quickMarker(session, "Evidence");
+        row.appendChild(ev);
+
+        const stop = document.createElement("button");
+        stop.className = "dangerBtn";
+        stop.innerHTML = pimsIcon("signout", 14) + " Stop";
+        stop.onclick = async () => {
+            stop.disabled = true;
+            const r = await BodycamService.stopRecording(s, session);
+            if (r.ok) this.render(); else stop.disabled = false;
+        };
+        row.appendChild(stop);
+
+    },
+
+    async quickMarker(session, kind) {
+
+        const label = await UI.promptText({
+            title: kind + " marker",
+            message: kind === "Evidence"
+                ? (this.shift.current_case_id
+                    ? "This will be logged as bodycam evidence on your " +
+                      "active incident case."
+                    : "Marks this moment as evidence. Attach it to a case " +
+                      "later from the shift file.")
+                : "Drops a bookmark at the current point in the recording.",
+            label: "Label (optional)",
+            placeholder: kind === "Evidence"
+                ? "e.g. suspect statement" : "e.g. arrived on scene",
+            confirmText: "Add " + kind.toLowerCase()
+        });
+
+        /* promptText returns null only on cancel; empty string is a
+           valid no-label marker */
+
+        if (label === null) return;
+
+        const r = await BodycamService.addMarker(this.shift, session,
+            { kind: kind, label: label });
+
+        if (r.ok) this.render();
 
     },
 

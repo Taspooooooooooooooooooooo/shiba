@@ -2,6 +2,41 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.40.0 — 2026-08-02 · Phase 7 Sprint 7.5 — Bodycam module ⭐ (Phase 7 complete)
+
+### Added
+- **Bodycam module** — a bodycam session is now a real recording clip,
+  not just an id string. New `bodycam_sessions` + `bodycam_markers`
+  tables (PATCH-19) and a `BodycamService` engine.
+- **Recording sessions** — officers **Start / Stop recording** during a
+  shift; each clip has a `BODY-2026-…` id, a live recorded-time counter,
+  and a status (Recording / Stopped / Uploaded).
+- **Markers** — drop a **Bookmark**, **Evidence** or **Incident** marker
+  at the current point in the footage, with an optional label/note. Each
+  marker stores its offset time into the clip.
+- **Evidence auto-linking (Shifts → Cases)** — an **Evidence** marker
+  dropped while the shift is *responding to a case* becomes real
+  `case_evidence` (type **Bodycam**) on that case automatically —
+  complete with an EVID- id, a scannable PDF417 token, and a case-timeline
+  entry. Markers made off-incident can be **Attached to a case** later
+  from the shift file.
+- **Footage upload** — bodycam footage is uploaded **through SHIBA
+  Cloud** (same bucket, SHA-256 hash, `cloud_files` row) per session.
+- **Live Bodycam tab** in the Shift File — a REC badge with a live timer,
+  the marker composer, per-session upload, and every session with its
+  markers and evidence links. Summary chips: sessions · recorded ·
+  uploaded · markers · evidence.
+- **Duty-widget quick controls** — Start recording, **Bookmark** and
+  **Evidence** (labelled "Evidence → case" when on an incident), and Stop,
+  right on the dashboard so an officer never leaves patrol to mark a clip.
+
+### Notes
+- Requires one-time setup: **PATCH-19** (`lapd/SETUP-PATCH-19.sql`, or
+  the bundled `RUN-ALL-PENDING.sql`). Everything degrades gracefully
+  until it's run — shifts keep working; the bodycam tab shows a setup
+  hint.
+- This closes out **Phase 7 — Shift Management**.
+
 ## v0.39.0 — 2026-07-28 · Phase 7 Sprint 7.4 — Live Operations Center ⭐
 
 ### Added
