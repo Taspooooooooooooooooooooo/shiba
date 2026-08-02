@@ -616,4 +616,97 @@ create index if not exists bodycam_markers_shift_idx
   on public.bodycam_markers (shift_id);
 
 
-select 'ALL PENDING PATCHES applied (3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19)' as result;
+-- ---------- PATCH 20 : evidence registry + chain of custody (Phase 8.1) ----------
+
+alter table public.case_evidence
+  add column if not exists status text not null default 'Available';
+alter table public.case_evidence
+  add column if not exists division_id uuid
+    references public.divisions(id) on delete set null;
+alter table public.case_evidence
+  add column if not exists uploaded_by_officer uuid
+    references public.officers(id) on delete set null;
+alter table public.case_evidence
+  add column if not exists source text not null default 'Manual';
+alter table public.case_evidence
+  add column if not exists bodycam_session_id uuid
+    references public.bodycam_sessions(id) on delete set null;
+alter table public.case_evidence
+  add column if not exists origin_shift_id uuid
+    references public.shifts(id) on delete set null;
+alter table public.case_evidence
+  add column if not exists reviewed_at timestamp with time zone;
+alter table public.case_evidence
+  add column if not exists reviewed_by text;
+alter table public.case_evidence
+  add column if not exists locked boolean not null default false;
+alter table public.case_evidence
+  add column if not exists locked_by text;
+alter table public.case_evidence
+  add column if not exists locked_reason text;
+alter table public.case_evidence
+  add column if not exists locked_at timestamp with time zone;
+alter table public.case_evidence
+  add column if not exists retention_policy text not null default 'Standard';
+alter table public.case_evidence
+  add column if not exists retain_until date;
+alter table public.case_evidence
+  add column if not exists archived_at timestamp with time zone;
+
+alter table public.case_evidence
+  drop constraint if exists case_evidence_case_id_fkey;
+alter table public.case_evidence
+  add constraint case_evidence_case_id_fkey
+  foreign key (case_id) references public.cases(id) on delete set null;
+
+create index if not exists case_evidence_status_idx
+  on public.case_evidence (status);
+create index if not exists case_evidence_division_idx
+  on public.case_evidence (division_id);
+create index if not exists case_evidence_officer_idx
+  on public.case_evidence (uploaded_by_officer);
+
+update public.case_evidence ev
+   set status = case when ev.case_id is not null
+                     then 'Attached' else 'Available' end
+ where ev.status is null or ev.status = 'Available';
+
+update public.case_evidence ev
+   set division_id = c.division_id
+  from public.cases c
+ where ev.case_id = c.id
+   and ev.division_id is null
+   and c.division_id is not null;
+
+create table if not exists public.evidence_custody (
+  id uuid not null default gen_random_uuid(),
+  evidence_id uuid references public.case_evidence(id) on delete cascade,
+  action text not null,
+  actor text,
+  actor_officer_id uuid references public.officers(id) on delete set null,
+  details text,
+  created_at timestamp with time zone default now(),
+  constraint evidence_custody_pkey primary key (id)
+);
+create index if not exists evidence_custody_evidence_idx
+  on public.evidence_custody (evidence_id);
+
+insert into public.evidence_custody (evidence_id, action, actor, details, created_at)
+select ev.id, 'Created', ev.uploaded_by,
+       'Backfilled from existing record', ev.created_at
+  from public.case_evidence ev
+ where not exists (
+   select 1 from public.evidence_custody ec where ec.evidence_id = ev.id
+ );
+
+insert into public.evidence_custody (evidence_id, action, actor, details, created_at)
+select ev.id, 'Attached', ev.uploaded_by, c.case_id, ev.created_at
+  from public.case_evidence ev
+  join public.cases c on c.id = ev.case_id
+ where not exists (
+   select 1 from public.evidence_custody ec
+    where ec.evidence_id = ev.id and ec.action = 'Attached'
+ );
+
+
+select 'ALL PENDING PATCHES applied (3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20)' as result;

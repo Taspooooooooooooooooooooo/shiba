@@ -50,6 +50,21 @@ const BodycamService = {
 
     },
 
+    /* PATCH-20 evidence-backbone columns may be absent — detect so the
+       bodycam→evidence insert can retry without them */
+
+    _missingCol(error) {
+
+        const s = ((error?.message || "") + " " + (error?.code || ""))
+            .toLowerCase();
+
+        return s.includes("pgrst204") ||
+            s.includes("could not find") ||
+            s.includes("schema cache") ||
+            s.includes("does not exist");
+
+    },
+
     /* ----------------------------------------------------- */
     /* storage — the same dedicated ANON client the evidence  */
     /* uploader uses (the cloud bucket's policies are anon-    */
@@ -408,28 +423,29 @@ const BodycamService = {
 
     async _promote(marker, session, shift, caseUuid, casePublicId) {
 
-        let cUuid = caseUuid, cPub = casePublicId;
+        let cUuid = caseUuid, cPub = casePublicId, cDiv = null;
 
         if (!cUuid && cPub) {
 
             const { data: c } = await db
                 .from("cases")
-                .select("id, case_id")
+                .select("id, case_id, division_id")
                 .ilike("case_id", cPub.trim())
                 .maybeSingle();
 
             if (!c) { UI?.error("No case with that ID."); return { ok: false }; }
 
-            cUuid = c.id; cPub = c.case_id;
+            cUuid = c.id; cPub = c.case_id; cDiv = c.division_id || null;
 
         }
 
-        if (!cPub && cUuid) {
+        if (cUuid && (!cPub || cDiv === null)) {
 
             const { data: c } = await db
-                .from("cases").select("case_id").eq("id", cUuid).maybeSingle();
+                .from("cases").select("case_id, division_id")
+                .eq("id", cUuid).maybeSingle();
 
-            cPub = c?.case_id || null;
+            if (c) { cPub = cPub || c.case_id; cDiv = cDiv || c.division_id || null; }
 
         }
 
@@ -456,21 +472,41 @@ const BodycamService = {
         /* the evidence is backed by the session's uploaded footage if
            there is any (cloud_id / file / hash), else it's a pointer */
 
-        const { data: evData, error: evErr } = await db
-            .from("case_evidence")
-            .insert([{
-                evidence_id: evId,
-                case_id: cUuid,
-                type: "Bodycam",
-                description: desc,
-                file_url: session.file_url || null,
-                file_name: session.file_name || null,
-                file_size: session.file_size || null,
-                hash: session.hash || null,
-                cloud_id: session.cloud_id || null,
-                uploaded_by: localStorage.getItem("username") || null
-            }])
-            .select();
+        const base = {
+            evidence_id: evId,
+            case_id: cUuid,
+            type: "Bodycam",
+            description: desc,
+            file_url: session.file_url || null,
+            file_name: session.file_name || null,
+            file_size: session.file_size || null,
+            hash: session.hash || null,
+            cloud_id: session.cloud_id || null,
+            uploaded_by: localStorage.getItem("username") || null
+        };
+
+        /* 8.1 backbone fields — source, division, and the shift/session
+           this bodycam evidence came from; degrade if PATCH-20 unrun */
+
+        const extended = {
+            ...base,
+            status: "Attached",
+            source: "Bodycam",
+            division_id: cDiv,
+            uploaded_by_officer: session.officer_id || shift?.officer_id || null,
+            origin_shift_id: session.shift_id || shift?.id || null,
+            bodycam_session_id: session.id
+        };
+
+        let { data: evData, error: evErr } = await db
+            .from("case_evidence").insert([extended]).select();
+
+        if (evErr && this._missingCol(evErr)) {
+
+            ({ data: evData, error: evErr } = await db
+                .from("case_evidence").insert([base]).select());
+
+        }
 
         if (evErr) {
 
@@ -503,6 +539,17 @@ const BodycamService = {
             })
 
         ]);
+
+        /* open its chain of custody — Created (from bodycam) → Attached */
+
+        if (window.EvidenceService) {
+
+            await EvidenceService.logCustody(evRow.id, "Created",
+                "Bodycam · " + (session.session_id || ""));
+
+            await EvidenceService.logCustody(evRow.id, "Attached", cPub);
+
+        }
 
         return {
             ok: true,

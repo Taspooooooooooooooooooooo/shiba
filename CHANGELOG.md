@@ -2,6 +2,38 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.41.0 — 2026-08-02 · Phase 8 Sprint 8.1 — Evidence backbone + Chain of Custody ⭐
+
+### Added
+- **Evidence is now a first-class object** — the `case_evidence` table is
+  extended (PATCH-20) into a real evidence registry with a **lifecycle
+  status** (Created → Uploaded → Verifying → Available → Attached →
+  Reviewed → Archived), its **owning officer + division**, its **source**
+  (Manual / Bodycam / Dashcam / Import), and links back to the bodycam
+  session + shift it came from. Bodycam is just one evidence type.
+- **Chain of Custody** — a new `evidence_custody` log records **who did
+  what, when**: Created, Uploaded, **Viewed**, Attached, Detached,
+  Reviewed, Locked, Archived — append-only, forever. Existing evidence
+  gets a backfilled opening trail so nothing starts blank.
+- **`EvidenceService`** — one unified API over the registry + custody:
+  `logCustody` / `custody`, `byId`, `list` (the Evidence Room's future
+  data source, every filter optional), and lifecycle transitions
+  (`markViewed`, `markReviewed`, `attachToCase`, `detach`, `archive`),
+  each writing custody + audit.
+- **Evidence properties dialog** now shows the **status**, the **source**,
+  and the full **Chain of Custody** list. Opening it records a *Viewed*
+  custody entry, and Sergeant+ get a **Mark reviewed** action. The
+  evidence list shows an at-a-glance status dot.
+- Every existing evidence upload (manual **and** bodycam-marker) now opens
+  its chain of custody automatically (Created → Uploaded → Attached).
+
+### Notes
+- Requires one-time setup: **PATCH-20** (`lapd/SETUP-PATCH-20.sql`, or the
+  bundled `RUN-ALL-PENDING.sql`). Uploads and custody degrade gracefully
+  until it's run (evidence still saves; custody just no-ops).
+- First sprint of **Phase 8 — Bodycam & Digital Evidence System (EMS)**.
+  The Evidence Room (8.2) reads directly from this backbone.
+
 ## v0.40.0 — 2026-08-02 · Phase 7 Sprint 7.5 — Bodycam module ⭐ (Phase 7 complete)
 
 ### Added

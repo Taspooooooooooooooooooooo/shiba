@@ -1017,6 +1017,19 @@ const CaseFile = {
 
     },
 
+    /* tiny at-a-glance lifecycle dot for the evidence list (8.1) */
+
+    evStatusDot(ev) {
+
+        if (!window.EvidenceService || !ev.status) return "";
+
+        const c = EvidenceService.STATUS_COLORS[ev.status] || "#9ca3af";
+
+        return `<span class="evStatusDot" style="background:${c}" ` +
+            `title="${this.esc(ev.status)}"></span>`;
+
+    },
+
     /* Explorer-style evidence browser: toolbar → column list or
        icon grid, like the Windows file manager */
 
@@ -1184,7 +1197,7 @@ const CaseFile = {
                             `</small>
                         </span>
                     </span>` +
-                    `<span>${this.esc(ev.type)}</span>` +
+                    `<span>${this.evStatusDot(ev)}${this.esc(ev.type)}</span>` +
                     `<span>${ev.file_size != null
                         ? this.fmtSize(ev.file_size) : "—"}</span>` +
                     `<span>${new Date(ev.created_at).toLocaleDateString()}</span>` +
@@ -1204,7 +1217,44 @@ const CaseFile = {
 
     /* Explorer "properties" dialog for one evidence item */
 
-    showEvidenceDetail(ev) {
+    /* chain-of-custody list markup for the properties dialog */
+
+    custodyHtml(rows) {
+
+        if (!rows || !rows.length) return "";
+
+        const items = rows.map(c =>
+            `<div class="cocRow">
+                <span class="cocDot"></span>
+                <span class="cocMain">
+                    <b>${this.esc(c.action)}</b>
+                    ${c.details ? `<small>${this.esc(c.details)}</small>` : ""}
+                </span>
+                <span class="cocBy">${this.esc(c.actor_label || c.actor || "—")}</span>
+                <span class="cocWhen">${new Date(c.created_at).toLocaleString()}</span>
+            </div>`).join("");
+
+        return `<label class="wizLabel" style="margin-top:16px">` +
+            `Chain of custody</label><div class="cocList">${items}</div>`;
+
+    },
+
+    async showEvidenceDetail(ev) {
+
+        /* opening an item's properties is itself a custody event */
+
+        if (window.EvidenceService) EvidenceService.markViewed(ev);
+
+        /* pull the chain of custody up front so the dialog can show it */
+
+        let custody = [];
+
+        if (window.EvidenceService) {
+            const res = await EvidenceService.custody(ev.id);
+            custody = res.rows || [];
+        }
+
+        const canReview = await CaseService.roleAtLeast("Sergeant");
 
         UI.modal({
 
@@ -1214,27 +1264,36 @@ const CaseFile = {
 
                 const wrap = document.createElement("div");
 
-                const line = (k, v) =>
+                const line = (k, v, raw) =>
                     `<div class="rvRow"><small>${k}</small>` +
-                    `<div>${this.esc(v || "—")}</div></div>`;
+                    `<div>${raw ? (v || "—") : this.esc(v || "—")}</div></div>`;
+
+                const statusCell = (window.EvidenceService && ev.status)
+                    ? EvidenceService.statusChip(ev.status)
+                    : this.esc(ev.status || "—");
 
                 wrap.innerHTML =
                     `<div class="rvGrid">
                         ${line("Evidence ID", ev.evidence_id)}
                         ${line("Type", ev.type)}
+                        ${line("Status", statusCell, true)}
+                        ${line("Source", ev.source || "Manual")}
                         ${line("Size", ev.file_size != null
                             ? this.fmtSize(ev.file_size) : "—")}
                         ${line("Logged", new Date(ev.created_at).toLocaleString())}
                         ${line("Logged by", ev.uploaded_by)}
                         ${line("Case", this.caseRow.case_id)}
+                        ${ev.reviewed_by
+                            ? line("Reviewed by", ev.reviewed_by) : ""}
                     </div>` +
                     (ev.description
                         ? `<div class="apMot" style="margin-top:10px">` +
                           `${this.esc(ev.description)}</div>` : "") +
                     (ev.hash
                         ? `<div class="evHash" style="margin-top:10px" ` +
-                          `title="Full SHA-256">#️⃣ ${this.esc(ev.hash)}</div>`
-                        : "");
+                          `title="Full SHA-256">#${this.esc(ev.hash)}</div>`
+                        : "") +
+                    this.custodyHtml(custody);
 
                 return wrap;
 
@@ -1242,6 +1301,9 @@ const CaseFile = {
 
             buttons: [
                 { label: "Close", kind: "ghost", value: null },
+                ...(canReview && window.EvidenceService && ev.status !== "Reviewed"
+                    ? [{ label: "Mark reviewed", kind: "ghost", value: "review" }]
+                    : []),
                 ...(ev.scan_token
                     ? [{ label: "Barcode", kind: "ghost", value: "barcode" }]
                     : []),
@@ -1250,7 +1312,7 @@ const CaseFile = {
                     : [])
             ]
 
-        }).then(choice => {
+        }).then(async choice => {
 
             if (choice === "open") {
 
@@ -1259,6 +1321,10 @@ const CaseFile = {
             } else if (choice === "barcode") {
 
                 this.showEvidenceBarcode(ev);
+
+            } else if (choice === "review") {
+
+                if (await EvidenceService.markReviewed(ev)) this.renderBody();
 
             }
 

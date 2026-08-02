@@ -1011,12 +1011,32 @@ const CaseService = {
 
     },
 
+    /* PATCH-20 evidence-backbone columns may not exist yet — detect
+       so we can retry the insert without them (graceful degradation) */
+
+    _missingCol(error) {
+
+        const s = ((error?.message || "") + " " + (error?.code || ""))
+            .toLowerCase();
+
+        return s.includes("pgrst204") ||
+            s.includes("could not find") ||
+            s.includes("schema cache") ||
+            s.includes("does not exist");
+
+    },
+
     async addEvidence(caseRow, { file, type, description }) {
 
         if (!window.db) return false;
 
         const evId = await IdService.next("EVIDENCE",
             () => "EVID-" + String(Date.now()).slice(-6));
+
+        let myOfficerId = null;
+
+        try { myOfficerId = await PermissionService.myOfficerId(); }
+        catch (e) { /* account not linked to an officer */ }
 
         let fileUrl = null, fileName = null, fileSize = null, hash = null;
 
@@ -1088,20 +1108,41 @@ const CaseService = {
 
         }
 
-        const { error } = await db
-            .from("case_evidence")
-            .insert([{
-                evidence_id: evId,
-                case_id: caseRow.id,
-                type: type || "Other",
-                description: description || null,
-                file_url: fileUrl,
-                file_name: fileName,
-                file_size: fileSize,
-                hash: hash,
-                cloud_id: cloudId,
-                uploaded_by: localStorage.getItem("username") || null
-            }]);
+        const base = {
+            evidence_id: evId,
+            case_id: caseRow.id,
+            type: type || "Other",
+            description: description || null,
+            file_url: fileUrl,
+            file_name: fileName,
+            file_size: fileSize,
+            hash: hash,
+            cloud_id: cloudId,
+            uploaded_by: localStorage.getItem("username") || null
+        };
+
+        /* 8.1 evidence-backbone fields — a case upload is Attached from
+           birth; degrade to the base row if PATCH-20 isn't run yet */
+
+        const extended = {
+            ...base,
+            status: "Attached",
+            source: "Manual",
+            division_id: caseRow.division_id || null,
+            uploaded_by_officer: myOfficerId
+        };
+
+        let { data: evData, error } = await db
+            .from("case_evidence").insert([extended]).select();
+
+        if (error && this._missingCol(error)) {
+
+            ({ data: evData, error } = await db
+                .from("case_evidence").insert([base]).select());
+
+        }
+
+        const evRow = (evData && evData[0]) || null;
 
         if (error) {
 
@@ -1144,6 +1185,27 @@ const CaseService = {
             })
 
         ]);
+
+        /* open the chain of custody — Created → (Uploaded) → Attached.
+           Awaited sequentially so the trail stays in order. */
+
+        if (evRow && window.EvidenceService) {
+
+            await EvidenceService.logCustody(evRow.id, "Created",
+                "type " + (type || "Other"));
+
+            if (fileName) {
+
+                await EvidenceService.logCustody(evRow.id, "Uploaded",
+                    fileName + (hash
+                        ? " · sha256 " + hash.slice(0, 12) + "…" : ""));
+
+            }
+
+            await EvidenceService.logCustody(evRow.id, "Attached",
+                caseRow.case_id);
+
+        }
 
         UI?.success(evId + " added");
 
