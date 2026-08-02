@@ -20,6 +20,9 @@ class CommandPalette {
             { title: "Cases", icon: "cases",
               action: () => location.href = "cases.html" },
 
+            { title: "Evidence Room", icon: "evidence",
+              action: () => location.href = "evidence.html" },
+
             { title: "Certificates", icon: "verified",
               action: () => location.href = "certificates.html" },
 

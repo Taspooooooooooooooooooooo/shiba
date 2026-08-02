@@ -4286,6 +4286,61 @@ a.pfCaseLink:hover{ background:#2e8bff14; }
     .bcMarkLink{ grid-column:1 / -1; justify-self:start; }
 }
 
+/* ---- Evidence Room (Sprint 8.2) ---- */
+
+.evrScope{ margin-top:10px; }
+
+.evrStats{ margin-bottom:12px; }
+
+.evrFilters{
+    display:flex;
+    flex-wrap:wrap;
+    gap:9px;
+    align-items:center;
+    margin-bottom:14px;
+}
+
+.evrFilters .uiModalInput{ width:auto; }
+
+.evrFilters .evrSearch{ flex:1; min-width:220px; }
+
+.evrFilters .evrDate{ max-width:150px; }
+
+.evrHead, .evrRow{
+    display:grid;
+    grid-template-columns:minmax(0,1.7fr) 0.8fr 1fr 1fr minmax(0,1.2fr) 0.9fr;
+    gap:10px;
+    align-items:center;
+    padding:10px 12px;
+}
+
+.evrHead{
+    color:#5a6b80;
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    border-bottom:1px solid rgba(255,255,255,.08);
+}
+
+.evrRow{
+    border-radius:9px;
+    cursor:pointer;
+    font-size:12.5px;
+    color:#b8c5d6;
+    transition:.12s;
+}
+
+.evrRow:hover{ background:#2e8bff1a; }
+
+.evrRow:nth-child(even):not(:hover){ background:rgba(255,255,255,.02); }
+
+@media(max-width:820px){
+    .evrHead{ display:none; }
+    .evrRow{ grid-template-columns:minmax(0,1fr) auto; }
+    .evrRow span:nth-child(2), .evrRow span:nth-child(4),
+    .evrRow span:nth-child(5){ display:none; }
+}
+
 /* ---- Evidence chain of custody (Sprint 8.1) ---- */
 
 .evStatusDot{

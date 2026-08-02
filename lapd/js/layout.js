@@ -38,6 +38,7 @@ const AppLayout = {
         ["officers.html", "officers", "Officers"],
         ["../cloud/", "cloud", "Cloud"],
         ["cases.html", "cases", "Cases"],
+        ["evidence.html", "evidence", "Evidence Room"],
         ["#", "reports", "Reports"],
         ["#", "surveillance", "Bodycam"],
         ["#", "patrol", "Vehicles"],

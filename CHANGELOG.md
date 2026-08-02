@@ -2,6 +2,34 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.42.0 — 2026-08-02 · Phase 8 Sprint 8.2 — Evidence Room ⭐
+
+### Added
+- **The Evidence Room** (`evidence.html`, new nav item + Ctrl-K command) —
+  one central store for **every** piece of digital evidence in the
+  department, not scattered across case files. Bodycam, photos, audio,
+  documents — all in one place.
+- **Filter it any way** — full-text search (id / file / description), plus
+  type, status, source, division and a from/to date range. A live stats
+  strip counts total · attached · reviewed · bodycam · locked.
+- **Rank-scoped access** (best-effort UX until the Phase 9 RLS pass) — a
+  banner tells you your reach:
+  - **Officer** → their own uploads + evidence on cases they're assigned to
+  - **Sergeant** → their whole division
+  - **Lieutenant+ / admin** → everything, with a division filter
+- **Every row is a jumping-off point** — click any item for a detail
+  dialog showing its status, source, and full **chain of custody**, then
+  one click to its **Case**, the **officer** who logged it (Personnel
+  File), its **file**, or its **barcode**. Sergeant+ can **Mark reviewed**
+  right there. Opening an item logs a *Viewed* custody entry.
+- `EvidenceService.list` now embeds the uploading officer and supports
+  owner-scoped queries (own uploads OR assigned-case evidence) — the
+  engine behind the room's access tiers.
+
+### Notes
+- Reads the 8.1 evidence backbone; no new SQL to run.
+- Second sprint of **Phase 8 — Bodycam & Digital Evidence System (EMS)**.
+
 ## v0.41.0 — 2026-08-02 · Phase 8 Sprint 8.1 — Evidence backbone + Chain of Custody ⭐
 
 ### Added

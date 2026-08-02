@@ -154,11 +154,12 @@ const EvidenceService = {
        every filter is optional. */
 
     async list({ search, type, status, source, caseId, officerId,
-                 divisionId, from, to, limit = 300 } = {}) {
+                 divisionId, from, to, ownerScope, limit = 300 } = {}) {
 
         let q = db
             .from("case_evidence")
-            .select("*, cases(case_id, title), divisions(name)")
+            .select("*, cases(case_id, title), divisions(name), " +
+                "officers(officer_id, first_name, last_name)")
             .order("created_at", { ascending: false })
             .limit(limit);
 
@@ -171,8 +172,26 @@ const EvidenceService = {
         if (from) q = q.gte("created_at", from);
         if (to) q = q.lte("created_at", to);
 
+        /* rank-scoped access (Officer tier): own uploads OR evidence on
+           the cases they're assigned to. Best-effort UX scoping — true
+           enforcement is the Phase 9 RLS pass. */
+
+        if (ownerScope && ownerScope.officerId) {
+
+            const parts = ["uploaded_by_officer.eq." + ownerScope.officerId];
+
+            if (ownerScope.caseIds && ownerScope.caseIds.length) {
+
+                parts.push("case_id.in.(" + ownerScope.caseIds.join(",") + ")");
+
+            }
+
+            q = q.or(parts.join(","));
+
+        }
+
         if (search) {
-            const s = search.trim();
+            const s = search.trim().replace(/[(),]/g, " ");
             q = q.or(
                 `evidence_id.ilike.%${s}%,file_name.ilike.%${s}%,` +
                 `description.ilike.%${s}%`);
@@ -185,6 +204,11 @@ const EvidenceService = {
         return { rows: (data || []).map(r => {
             r.case_label = r.cases ? r.cases.case_id : null;
             r.division_label = r.divisions ? r.divisions.name : null;
+            r.officer_label = r.officers
+                ? (r.officers.officer_id + " " +
+                   (r.officers.first_name + " " +
+                    r.officers.last_name).trim())
+                : null;
             return r;
         }) };
 
