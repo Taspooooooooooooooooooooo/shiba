@@ -2,6 +2,37 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.43.0 — 2026-08-02 · Phase 8 Sprint 8.3 — Bodycam lifecycle + Upload Wizard + integrity ⭐
+
+### Added
+- **Bodycam Dashboard** (`bodycam.html` — the Bodycam nav item is now live,
+  plus a Ctrl-K command) — your own bodycam at a glance: the **current
+  session** with a live REC timer, status, integrity, duration, storage
+  used, evidence-marker count and a (simulated) **battery** gauge, plus
+  every clip you've recorded with a storage/verified/tampered roll-up.
+- **Upload Wizard** — uploading footage is now a real pipeline you can
+  watch: **Integrity hash → Upload → Verify → Completed**, each step with a
+  live spinner and its result (including the SHA-256).
+- **Integrity re-verification + tamper alert** — the wizard (and a new
+  **Verify** button on any uploaded clip) re-fetches the *stored* file,
+  re-hashes it, and compares against the hash taken at upload. Match →
+  the clip is marked **Verified / Available**; mismatch → **Tampered**,
+  and supervisors are notified. The hash check is 100% real.
+- **Expanded session lifecycle** — Created → Recording → Stopped →
+  Uploading → Verifying → Available → Archived, shown as colored badges,
+  with a separate **integrity** badge (Unverified / Verified / Tampered).
+- Shared `BodycamUI` (upload wizard + verify + badges) so the Shift File
+  Bodycam tab and the new dashboard behave identically.
+
+### Notes
+- Requires one-time setup: **PATCH-21** (`lapd/SETUP-PATCH-21.sql`, or the
+  bundled `RUN-ALL-PENDING.sql`) — adds the integrity tracking columns.
+  Everything degrades gracefully until it's run.
+- Honest scope: there's no real bodycam hardware, so *battery* and the
+  un-uploaded *storage* figure are clearly-labelled estimates; the
+  SHA-256 integrity guarantee is real.
+- Third sprint of **Phase 8 — Bodycam & Digital Evidence System (EMS)**.
+
 ## v0.42.0 — 2026-08-02 · Phase 8 Sprint 8.2 — Evidence Room ⭐
 
 ### Added

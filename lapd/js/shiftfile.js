@@ -597,8 +597,9 @@ const ShiftFile = {
             </span>
             <span class="bcSessionMeta">${pimsIcon("history", 13)} ${dur}${
                 sess.cloud_id
-                    ? " · <span class='dotChip'><i style='background:#3b82f6'>" +
-                      "</i>Uploaded</span>" : ""}</span>`;
+                    ? " · " + BodycamUI.integrityBadge(sess) : ""}${
+                sess.file_size
+                    ? " · " + BodycamService.fmtBytes(sess.file_size) : ""}</span>`;
         block.appendChild(head);
 
         /* per-session actions */
@@ -608,29 +609,27 @@ const ShiftFile = {
             const acts = document.createElement("div");
             acts.className = "bcSessionActions";
 
-            if (!sess.cloud_id) {
-
-                const file = document.createElement("input");
-                file.type = "file";
-                file.style.display = "none";
-                file.onchange = async () => {
-                    if (!file.files[0]) return;
-                    const up = document.getElementById("bcUp" + sess.id);
-                    if (up) { up.disabled = true; up.textContent = "Uploading…"; }
-                    const r = await BodycamService.uploadFootage(
-                        this.shift, sess, file.files[0]);
-                    if (r.ok) this.renderBody();
-                    else if (up) { up.disabled = false;
-                        up.innerHTML = pimsIcon("cloud", 14) + " Upload footage"; }
-                };
+            if (!sess.cloud_id && !recording) {
 
                 const up = document.createElement("button");
                 up.className = "ghostBtn";
-                up.id = "bcUp" + sess.id;
                 up.innerHTML = pimsIcon("cloud", 14) + " Upload footage";
-                up.onclick = () => file.click();
+                up.onclick = () => BodycamUI.uploadWizard(
+                    this.shift, sess, () => this.renderBody());
 
-                acts.append(file, up);
+                acts.appendChild(up);
+
+            }
+
+            if (sess.cloud_id) {
+
+                const ver = document.createElement("button");
+                ver.className = "ghostBtn";
+                ver.innerHTML = pimsIcon("verified", 14) + " Verify";
+                ver.onclick = () => BodycamUI.verify(
+                    this.shift, sess, () => this.renderBody());
+
+                acts.appendChild(ver);
 
             }
 

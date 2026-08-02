@@ -24,11 +24,27 @@ const BodycamService = {
         "Incident": "#ef4444"
     },
 
+    /* the full session lifecycle (8.3). Uploading/Verifying are the
+       transient states the upload wizard passes through. */
+
+    LIFECYCLE: ["Created", "Recording", "Stopped", "Uploading",
+                "Verifying", "Available", "Archived"],
+
     STATUS_COLORS: {
+        "Created": "#9ca3af",
         "Recording": "#22c55e",
         "Stopped": "#eab308",
+        "Uploading": "#a855f7",
+        "Verifying": "#a855f7",
         "Uploaded": "#3b82f6",
+        "Available": "#0ea5e9",
         "Archived": "#6b7280"
+    },
+
+    INTEGRITY_COLORS: {
+        "Unverified": "#9ca3af",
+        "Verified": "#22c55e",
+        "Tampered": "#ef4444"
     },
 
     SETUP_HINT_75:
@@ -581,11 +597,11 @@ const BodycamService = {
     /* footage upload — routed THROUGH SHIBA Cloud            */
     /* ----------------------------------------------------- */
 
-    async uploadFootage(shift, session, file) {
+    async uploadFootage(shift, session, file, precomputedHash) {
 
         if (!window.db || !session || !file) return { ok: false };
 
-        const hash = await this.sha256(file);
+        const hash = precomputedHash || await this.sha256(file);
 
         const cloudId = this.cloudFileId();
 
@@ -682,6 +698,165 @@ const BodycamService = {
         UI?.success("Footage uploaded — " + file.name);
 
         return { ok: true, session: data[0] };
+
+    },
+
+    /* ----------------------------------------------------- */
+    /* integrity — re-hash the STORED file and compare it to  */
+    /* the hash taken at upload. Mismatch => Tampered + alert. */
+    /* ----------------------------------------------------- */
+
+    async verifyIntegrity(shift, session) {
+
+        if (!window.db || !session) return { ok: false };
+
+        if (!session.file_url || !session.hash) {
+
+            UI?.error("This clip has no uploaded footage to verify.");
+
+            return { ok: false };
+
+        }
+
+        let computed;
+
+        try {
+
+            const res = await fetch(session.file_url, { cache: "no-store" });
+
+            if (!res.ok) throw new Error("HTTP " + res.status);
+
+            const buf = await (await res.blob()).arrayBuffer();
+
+            const digest = await crypto.subtle.digest("SHA-256", buf);
+
+            computed = [...new Uint8Array(digest)]
+                .map(b => b.toString(16).padStart(2, "0")).join("");
+
+        } catch (e) {
+
+            UI?.error("Could not fetch the footage to verify it.");
+
+            return { ok: false, error: e.message };
+
+        }
+
+        const match = computed === session.hash;
+
+        const patch = {
+            integrity_status: match ? "Verified" : "Tampered",
+            integrity_verified_at: new Date().toISOString(),
+            integrity_hash: computed,
+            integrity_by: localStorage.getItem("username") || null
+        };
+
+        if (match) patch.status = "Available";
+
+        let { error } = await db
+            .from("bodycam_sessions").update(patch).eq("id", session.id);
+
+        if (error && this._missingCol(error)) {
+
+            /* PATCH-21 not run — still record the lifecycle move */
+
+            ({ error } = await db.from("bodycam_sessions")
+                .update(match ? { status: "Available" } : {})
+                .eq("id", session.id));
+
+        }
+
+        Object.assign(session, patch);
+
+        await Promise.allSettled([
+
+            ShiftService?.shiftEvent?.(session.shift_id || shift?.id,
+                match ? "Bodycam integrity verified"
+                      : "Bodycam integrity FAILED",
+                (session.session_id || "") +
+                (match ? " · matches" : " · HASH MISMATCH")),
+
+            AuditService.log({
+                action: match ? "BODYCAM_INTEGRITY_OK"
+                              : "BODYCAM_INTEGRITY_TAMPERED",
+                target: (shift?.shift_id || "") + " — " +
+                    (session.session_id || ""),
+                details: match ? "sha256 matches stored file"
+                    : "stored file hash != recorded hash",
+                officerId: session.officer_id
+            })
+
+        ]);
+
+        if (!match) {
+
+            await ShiftService?.notifySupervisors?.(
+                "Bodycam TAMPER alert · " + (session.session_id || ""),
+                (shift?.shift_id ? shift.shift_id + " — " : "") +
+                "stored footage does not match its hash — possible tampering.",
+                session.officer_id);
+
+            UI?.error("TAMPER ALERT — the stored footage does not match its hash.");
+
+        } else {
+
+            UI?.success("Integrity verified — the footage is intact.");
+
+        }
+
+        return { ok: true, match, computed };
+
+    },
+
+    /* every bodycam session for one officer, newest first */
+
+    async forOfficer(officerId, limit = 50) {
+
+        const { data, error } = await db
+            .from("bodycam_sessions")
+            .select("*")
+            .eq("officer_id", officerId)
+            .order("started_at", { ascending: false })
+            .limit(limit);
+
+        if (error) return { error };
+
+        return { rows: data || [] };
+
+    },
+
+    /* storage used — the real uploaded size if we have it, else an
+       estimate from recorded time (~400 KB/s, 720p-ish) */
+
+    estimatedBytes(session) {
+
+        if (session.file_size) return session.file_size;
+
+        return Math.round(this.sessionSeconds(session) * 400 * 1024);
+
+    },
+
+    fmtBytes(bytes) {
+
+        if (bytes == null) return "—";
+
+        if (bytes < 1024) return bytes + " B";
+
+        if (bytes < 1048576) return (bytes / 1024).toFixed(0) + " KB";
+
+        if (bytes < 1073741824) return (bytes / 1048576).toFixed(1) + " MB";
+
+        return (bytes / 1073741824).toFixed(2) + " GB";
+
+    },
+
+    /* SIMULATED battery — there is no real hardware. Drains ~1.5%
+       per recorded minute; shown clearly as an estimate. */
+
+    battery(session) {
+
+        const mins = this.sessionSeconds(session) / 60;
+
+        return Math.max(3, Math.min(100, Math.round(100 - mins * 1.5)));
 
     },
 

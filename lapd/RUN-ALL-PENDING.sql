@@ -709,4 +709,16 @@ select ev.id, 'Attached', ev.uploaded_by, c.case_id, ev.created_at
  );
 
 
-select 'ALL PENDING PATCHES applied (3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20)' as result;
+-- ---------- PATCH 21 : bodycam integrity tracking (Phase 8.3) ----------
+
+alter table public.bodycam_sessions
+  add column if not exists integrity_status text not null default 'Unverified';
+alter table public.bodycam_sessions
+  add column if not exists integrity_verified_at timestamp with time zone;
+alter table public.bodycam_sessions
+  add column if not exists integrity_hash text;
+alter table public.bodycam_sessions
+  add column if not exists integrity_by text;
+
+
+select 'ALL PENDING PATCHES applied (3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21)' as result;

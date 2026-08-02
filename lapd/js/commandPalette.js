@@ -23,6 +23,9 @@ class CommandPalette {
             { title: "Evidence Room", icon: "evidence",
               action: () => location.href = "evidence.html" },
 
+            { title: "Bodycam", icon: "surveillance",
+              action: () => location.href = "bodycam.html" },
+
             { title: "Certificates", icon: "verified",
               action: () => location.href = "certificates.html" },
 

@@ -4286,6 +4286,105 @@ a.pfCaseLink:hover{ background:#2e8bff14; }
     .bcMarkLink{ grid-column:1 / -1; justify-self:start; }
 }
 
+/* ---- Bodycam upload wizard + dashboard (Sprint 8.3) ---- */
+
+.bcuPipe{ display:flex; flex-direction:column; gap:4px; margin-top:6px; }
+
+.bcuStep{
+    display:flex;
+    align-items:center;
+    gap:11px;
+    padding:9px 10px;
+    border-radius:9px;
+    background:rgba(255,255,255,.02);
+    border:1px solid rgba(255,255,255,.06);
+}
+
+.bcuStep.active{ border-color:#a855f755; background:#a855f712; }
+.bcuStep.done{ border-color:#22c55e44; }
+.bcuStep.fail{ border-color:#ef444455; background:#ef44440f; }
+.bcuStep.pending{ opacity:.5; }
+
+.bcuStepIcon{ width:18px; display:flex; align-items:center; justify-content:center; }
+.bcuStepText b{ color:#dbe4f0; font-size:13px; }
+.bcuStepText small{ display:block; color:#5a6b80; font-size:11px; }
+
+.bcuDotPend{
+    width:9px; height:9px; border-radius:50%;
+    border:2px solid #5a6b80;
+}
+
+.bcuSpin{
+    width:14px; height:14px;
+    border-radius:50%;
+    border:2px solid #a855f7;
+    border-top-color:transparent;
+    animation:bcuSpin .7s linear infinite;
+}
+
+@keyframes bcuSpin{ to{ transform:rotate(360deg); } }
+
+.bcuHash{
+    margin-top:10px;
+    font-family:monospace;
+    font-size:11px;
+    color:#8ea2bd;
+    word-break:break-all;
+    background:rgba(255,255,255,.03);
+    border-radius:8px;
+    padding:8px 10px;
+}
+
+.bcuNote, .bcuNoteOk, .bcuNoteWarn{
+    margin-top:12px;
+    font-size:12.5px;
+    padding:9px 11px;
+    border-radius:9px;
+}
+.bcuNoteOk{ background:#22c55e15; color:#8ff0b0; }
+.bcuNoteWarn{ background:#ef444418; color:#f6b9b9; }
+.bcuNote{ background:rgba(255,255,255,.04); color:#b8c5d6; }
+
+.bcDashHead{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:14px;
+    flex-wrap:wrap;
+}
+
+.bcDashRec{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    font-size:14px;
+    color:#dbe4f0;
+    font-family:monospace;
+    padding:7px 13px;
+    border-radius:10px;
+    background:rgba(255,255,255,.03);
+}
+
+.bcDashRec.on{ background:#ef44441a; border:1px solid #ef444455; color:#f6c2c2; }
+.bcDashRec b{ color:#fff; }
+
+.bcDashActions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:9px;
+    margin-top:16px;
+}
+
+.batWrap{ display:flex; align-items:center; gap:8px; }
+.batBar{
+    width:70px; height:9px;
+    border-radius:5px;
+    background:rgba(255,255,255,.1);
+    overflow:hidden;
+}
+.batBar i{ display:block; height:100%; border-radius:5px; }
+.batWrap small{ color:#5a6b80; }
+
 /* ---- Evidence Room (Sprint 8.2) ---- */
 
 .evrScope{ margin-top:10px; }

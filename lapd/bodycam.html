@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>SHIBA PIMS | Shift File</title>
+<title>SHIBA PIMS | Bodycam</title>
 
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/dashboard.css">
@@ -19,13 +19,25 @@
 
 <div class="content">
 
-    <div class="card" id="shiftHeader">
-        <p class="muted">Loading shift…</p>
+    <div class="card">
+
+        <h1><svg class="pIcon" width="24" height="24" aria-hidden="true"><use href="assets/pims-sprite.svg#pims-surveillance"></use></svg> Bodycam</h1>
+
+        <p>Your bodycam — the current recording, storage and integrity of
+           every clip. Start and stop recording from your duty widget on the
+           Dashboard or your Shift File.</p>
+
     </div>
 
-    <div class="caseTabs" id="shiftTabs"></div>
+    <div class="card" id="bcDashCurrent">
+        <p class="muted">Loading…</p>
+    </div>
 
-    <div id="shiftTabBody"></div>
+    <div class="card">
+        <h2>Your recording sessions</h2>
+        <div class="evrStats" id="bcDashStats"></div>
+        <div id="bcDashList"><p class="muted">Loading…</p></div>
+    </div>
 
 </div>
 
@@ -52,7 +64,7 @@
 <script src="js/layout.js"></script>
 <script src="js/commandPalette.js"></script>
 <script src="js/bodycam-ui.js"></script>
-<script src="js/shiftfile.js"></script>
+<script src="js/bodycam.js"></script>
 
 <script>
 

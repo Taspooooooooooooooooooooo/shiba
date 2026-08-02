@@ -40,7 +40,7 @@ const AppLayout = {
         ["cases.html", "cases", "Cases"],
         ["evidence.html", "evidence", "Evidence Room"],
         ["#", "reports", "Reports"],
-        ["#", "surveillance", "Bodycam"],
+        ["bodycam.html", "surveillance", "Bodycam"],
         ["#", "patrol", "Vehicles"],
         ["certificates.html", "verified", "Certificates"],
         ["scanner.html", "scanner", "Scanner"],
