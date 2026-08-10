@@ -89,7 +89,9 @@ function parseCloudId(value) {
     const ourHost =
         url.host === location.host ||
         url.host === "shiba.is-a.dev" ||
-        url.host.endsWith(".shiba.is-a.dev");
+        url.host.endsWith(".shiba.is-a.dev") ||
+        url.host === "shibaprojects.app" ||
+        url.host.endsWith(".shibaprojects.app");
 
     if (!ourHost) return null;
 
