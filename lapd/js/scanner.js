@@ -126,7 +126,7 @@ const Scanner = {
                 (result.officer_name || "")
             : "unknown token";
 
-        AuditService.log({
+        await AuditService.log({
             action: result.valid
                 ? (result.revoked ? "SCAN_REVOKED" : "SCAN_VALID")
                 : "SCAN_INVALID",
@@ -134,6 +134,8 @@ const Scanner = {
             details: "PDF417 via " + (source || "scanner") +
                 (result.kind ? " · " + result.kind : "")
         });
+
+        this.loadHistory();
 
     },
 
@@ -147,6 +149,137 @@ const Scanner = {
             rows.filter(r => r[1]).map(([k, v]) =>
                 `<div class="fieldItem"><small>${k}</small><div>${v}</div></div>`
             ).join("") + `</div>`;
+
+    },
+
+    esc(s) {
+        return (s == null ? "" : String(s)).replace(/[&<>"]/g,
+            c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;",
+                    '"': "&quot;" }[c]));
+    },
+
+    /* ----------------------------------------------------- */
+    /* open — deep-link to the scanned record (8.x)           */
+    /* verify_scan_token returns PUBLIC ids, so we look up the */
+    /* uuid client-side and navigate.                         */
+    /* ----------------------------------------------------- */
+
+    openLabel(result) {
+        if (result.kind === "officer" && result.officer_public_id)
+            return "Open personnel file";
+        if (result.kind === "evidence") return "Open case";
+        if (result.certificate_id && result.officer_public_id)
+            return "Open officer";
+        return null;
+    },
+
+    async openScanned(result, btn) {
+
+        if (btn) { btn.disabled = true; }
+
+        try {
+
+            /* officer, or certificate → its officer */
+            if ((result.kind === "officer" ||
+                 (result.certificate_id && result.kind !== "evidence")) &&
+                result.officer_public_id) {
+
+                const { data } = await db.from("officers")
+                    .select("id").eq("officer_id", result.officer_public_id)
+                    .maybeSingle();
+
+                if (data?.id) { location.href = "personnel.html?id=" + data.id; return; }
+                UI?.error("That officer isn't in the records anymore.");
+                return;
+            }
+
+            /* evidence → its case (or the Evidence Room if unattached) */
+            if (result.kind === "evidence") {
+
+                if (result.case_public_id) {
+                    const { data } = await db.from("cases")
+                        .select("id").eq("case_id", result.case_public_id)
+                        .maybeSingle();
+                    if (data?.id) { location.href = "case.html?id=" + data.id; return; }
+                }
+                location.href = "evidence.html";
+                return;
+            }
+
+            UI?.error("Nothing to open for this code.");
+
+        } catch (e) {
+            UI?.error("Could not open the linked record.");
+        } finally {
+            if (btn) btn.disabled = false;
+        }
+
+    },
+
+    /* ----------------------------------------------------- */
+    /* recent-scans dashboard (from SCAN_* audit entries)     */
+    /* ----------------------------------------------------- */
+
+    async loadHistory() {
+
+        const statsBox = document.getElementById("scanStats");
+        const listBox = document.getElementById("scanHistory");
+
+        if (!statsBox || !listBox || !window.db) return;
+
+        const { data, error } = await db.from("audit_logs")
+            .select("*")
+            .in("action", ["SCAN_VALID", "SCAN_INVALID", "SCAN_REVOKED"])
+            .order("created_at", { ascending: false })
+            .limit(100);
+
+        if (error) {
+            statsBox.innerHTML = "";
+            listBox.innerHTML = "<p class='muted'>Scan history unavailable.</p>";
+            return;
+        }
+
+        const rows = data || [];
+
+        const n = a => rows.filter(r => r.action === a).length;
+        const today = rows.filter(r =>
+            new Date(r.created_at).toDateString() ===
+            new Date().toDateString()).length;
+
+        const stat = (label, v, cls = "") =>
+            `<div class="statChip ${cls}"><b>${v}</b><span>${label}</span></div>`;
+
+        statsBox.innerHTML = `<div class="caseStats">` +
+            stat("Total", rows.length) +
+            stat("Valid", n("SCAN_VALID")) +
+            stat("Revoked", n("SCAN_REVOKED"), n("SCAN_REVOKED") ? "crit" : "") +
+            stat("Invalid", n("SCAN_INVALID"), n("SCAN_INVALID") ? "crit" : "") +
+            stat("Today", today) +
+            `</div>`;
+
+        if (!rows.length) {
+            listBox.innerHTML = "<p class='muted'>No scans yet — verify a " +
+                "credential above and it'll show here.</p>";
+            return;
+        }
+
+        listBox.innerHTML = "";
+
+        rows.slice(0, 15).forEach(r => {
+            const good = r.action === "SCAN_VALID";
+            const color = good ? "#22c55e"
+                : r.action === "SCAN_REVOKED" ? "#eab308" : "#ef4444";
+            const row = document.createElement("div");
+            row.className = "scanHistRow";
+            row.innerHTML =
+                `<span class="dotChip"><i style="background:${color}"></i>${
+                    this.esc(r.action.replace("SCAN_", ""))}</span>` +
+                `<span class="shTgt"><b>${this.esc(r.target || "—")}</b>` +
+                (r.details ? `<small>${this.esc(r.details)}</small>` : "") +
+                `</span>` +
+                `<span class="shWhen">${new Date(r.created_at).toLocaleString()}</span>`;
+            listBox.appendChild(row);
+        });
 
     },
 
@@ -284,6 +417,21 @@ const Scanner = {
         }
 
         box.innerHTML = html;
+
+        /* deep-link to the scanned record */
+
+        const label = this.openLabel(result);
+
+        if (label) {
+            const actions = document.createElement("div");
+            actions.className = "scanActions";
+            const b = document.createElement("button");
+            b.className = "primaryBtn";
+            b.innerHTML = pimsIcon("export", 15) + " " + label;
+            b.onclick = () => this.openScanned(result, b);
+            actions.appendChild(b);
+            box.appendChild(actions);
+        }
 
         card.scrollIntoView({ behavior: "smooth" });
 
@@ -423,6 +571,8 @@ const Scanner = {
         const t = new URLSearchParams(location.search).get("t");
 
         if (t) this.verify(t, "link");
+
+        this.loadHistory();
 
     }
 

@@ -2,6 +2,22 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.47.0 — 2026-08-02 · Scanner upgrade — Open the scanned record + recent-scans dashboard
+
+### Added
+- **Open the scanned record** — after a valid scan, the Scanner now shows an
+  **Open** button that jumps straight to the record: an officer ID → their
+  **Personnel File**, an evidence label → its **Case** (or the Evidence Room
+  if unattached), a certificate → the **officer** it belongs to. (Uses a
+  quick public-id → uuid lookup; the verify RPC itself is unchanged.)
+- **Recent-scans dashboard** — a live panel on the Scanner: a stats strip
+  (Total · Valid · Revoked · Invalid · Today) and the last 15 scans with a
+  green/amber/red dot, what was scanned, and when — built from the existing
+  `SCAN_*` audit trail and refreshed after every scan.
+
+### Notes
+- No new SQL — reads the audit log that scans already write.
+
 ## v0.46.0 — 2026-08-02 · Phase 8 Sprint 8.5 — Evidence Lock + Download + Export + Retention ⭐
 
 ### Added

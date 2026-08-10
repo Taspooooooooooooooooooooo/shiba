@@ -4603,6 +4603,34 @@ a.pfCaseLink:hover{ background:#2e8bff14; }
     .evrRow span:nth-child(5){ display:none; }
 }
 
+/* ---- Scanner: open action + recent-scans list ---- */
+
+.scanActions{ margin-top:16px; display:flex; gap:10px; flex-wrap:wrap; }
+
+.scanHistRow{
+    display:grid;
+    grid-template-columns:112px minmax(0,1fr) auto;
+    gap:12px;
+    align-items:center;
+    padding:9px 8px;
+    border-radius:8px;
+    font-size:12.5px;
+    color:#b8c5d6;
+}
+.scanHistRow:nth-child(even){ background:rgba(255,255,255,.02); }
+.shTgt{ min-width:0; }
+.shTgt b{
+    color:#dbe4f0; display:block;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.shTgt small{ color:#5a6b80; font-size:11px; }
+.shWhen{ color:#5a6b80; font-size:11px; white-space:nowrap; }
+
+@media(max-width:640px){
+    .scanHistRow{ grid-template-columns:auto 1fr; }
+    .shWhen{ grid-column:2; justify-self:start; }
+}
+
 /* ---- Evidence lock + actions (Sprint 8.5) ---- */
 
 .evLockBanner{
