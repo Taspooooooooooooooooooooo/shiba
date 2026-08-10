@@ -231,6 +231,8 @@ const EvidenceService = {
 
         if (!window.db) return false;
 
+        if (this._lockedBlock(ev)) return false;
+
         if (ev.status === "Reviewed") return true;
 
         if (!(await PermissionService.can("cases.assign"))) {
@@ -259,6 +261,12 @@ const EvidenceService = {
 
         }
 
+        Object.assign(ev, {
+            status: "Reviewed",
+            reviewed_by: localStorage.getItem("username") || null,
+            reviewed_at: new Date().toISOString()
+        });
+
         await Promise.allSettled([
             this.logCustody(ev.id, "Reviewed", null),
             AuditService.log({
@@ -278,6 +286,8 @@ const EvidenceService = {
     async attachToCase(ev, caseRow) {
 
         if (!window.db || !caseRow) return false;
+
+        if (this._lockedBlock(ev)) return false;
 
         if (!(await PermissionService.can("cases.assign"))) {
 
@@ -316,6 +326,8 @@ const EvidenceService = {
 
         if (!window.db) return false;
 
+        if (this._lockedBlock(ev)) return false;
+
         if (!(await PermissionService.can("cases.assign"))) {
 
             UI?.error("Requires Sergeant or above.");
@@ -347,6 +359,8 @@ const EvidenceService = {
 
         if (!window.db) return false;
 
+        if (this._lockedBlock(ev)) return false;
+
         if (!(await PermissionService.can("cases.assign"))) {
 
             UI?.error("Requires Sergeant or above.");
@@ -374,6 +388,273 @@ const EvidenceService = {
         UI?.success(ev.evidence_id + " · archived");
 
         return true;
+
+    },
+
+    /* ----------------------------------------------------- */
+    /* lock · download · retention · export (Sprint 8.5)      */
+    /* ----------------------------------------------------- */
+
+    /* a locked item can't be edited/reviewed/attached/detached/
+       archived until a Lieutenant+ unlocks it */
+
+    _lockedBlock(ev) {
+        if (ev && ev.locked) {
+            UI?.error("This evidence is locked" +
+                (ev.locked_reason ? " (" + ev.locked_reason + ")" : "") +
+                " — a Lieutenant+ must unlock it first.");
+            return true;
+        }
+        return false;
+    },
+
+    /* command staff (Lieutenant+) — matched by rank/role name */
+    async isCommand() {
+        try {
+            const r = await PermissionService.role();
+            return /lieutenant|captain|commander|chief|super|admin|deputy|inspector|colonel|major|superintend/i
+                .test(r || "");
+        } catch (e) { return false; }
+    },
+
+    async lock(ev, reason) {
+
+        if (!window.db) return false;
+
+        if (ev.locked) { UI?.error("Already locked."); return false; }
+
+        if (!(await this.isCommand())) {
+            AuditService.log({ action: "EVIDENCE_LOCK_DENIED",
+                target: ev.evidence_id });
+            UI?.error("Locking evidence requires Lieutenant or above.");
+            return false;
+        }
+
+        if (!reason?.trim()) {
+            UI?.error("A lock reason is required (e.g. Court Submission).");
+            return false;
+        }
+
+        const { error } = await db.from("case_evidence").update({
+            locked: true,
+            locked_by: localStorage.getItem("username") || null,
+            locked_reason: reason.trim(),
+            locked_at: new Date().toISOString()
+        }).eq("id", ev.id);
+
+        if (error) {
+            UI?.error(this._missing(error) ? this.SETUP_HINT_81 : "Could not lock.");
+            return false;
+        }
+
+        Object.assign(ev, { locked: true, locked_reason: reason.trim(),
+            locked_by: localStorage.getItem("username") || null });
+
+        await Promise.allSettled([
+            this.logCustody(ev.id, "Locked", reason.trim()),
+            AuditService.log({ action: "EVIDENCE_LOCKED",
+                target: ev.evidence_id, details: reason.trim() })
+        ]);
+
+        UI?.success(ev.evidence_id + " locked");
+        return true;
+
+    },
+
+    async unlock(ev, reason) {
+
+        if (!window.db) return false;
+
+        if (!ev.locked) return true;
+
+        if (!(await this.isCommand())) {
+            AuditService.log({ action: "EVIDENCE_UNLOCK_DENIED",
+                target: ev.evidence_id });
+            UI?.error("Unlocking evidence requires Lieutenant or above.");
+            return false;
+        }
+
+        const { error } = await db.from("case_evidence").update({
+            locked: false, locked_by: null, locked_reason: null, locked_at: null
+        }).eq("id", ev.id);
+
+        if (error) { UI?.error("Could not unlock."); return false; }
+
+        Object.assign(ev, { locked: false, locked_reason: null, locked_by: null });
+
+        await Promise.allSettled([
+            this.logCustody(ev.id, "Unlocked", reason?.trim() || null),
+            AuditService.log({ action: "EVIDENCE_UNLOCKED",
+                target: ev.evidence_id, details: reason?.trim() || null })
+        ]);
+
+        UI?.success(ev.evidence_id + " unlocked");
+        return true;
+
+    },
+
+    fileHref(ev) {
+        if (ev.cloud_id) return "../cloud/?=" + ev.cloud_id;
+        return ev.file_url || null;
+    },
+
+    /* download requires a reason and is written to the chain of custody */
+    async download(ev, reason) {
+
+        const href = this.fileHref(ev);
+
+        if (!href) { UI?.error("No file is attached to this evidence."); return null; }
+
+        if (!reason?.trim()) {
+            UI?.error("A reason is required to download evidence.");
+            return null;
+        }
+
+        await Promise.allSettled([
+            this.logCustody(ev.id, "Downloaded", reason.trim()),
+            AuditService.log({ action: "EVIDENCE_DOWNLOADED",
+                target: ev.evidence_id, details: reason.trim() })
+        ]);
+
+        return href;
+
+    },
+
+    async setRetention(ev, { policy, retainUntil } = {}) {
+
+        if (!window.db) return false;
+
+        if (this._lockedBlock(ev)) return false;
+
+        if (!(await PermissionService.can("cases.assign"))) {
+            UI?.error("Requires Sergeant or above.");
+            return false;
+        }
+
+        if (!this.RETENTION_POLICIES.includes(policy)) policy = "Standard";
+
+        const patch = {
+            retention_policy: policy,
+            retain_until: policy === "Custom" ? (retainUntil || null) : null
+        };
+
+        const { error } = await db.from("case_evidence")
+            .update(patch).eq("id", ev.id);
+
+        if (error) {
+            UI?.error(this._missing(error) ? this.SETUP_HINT_81
+                : "Could not set retention.");
+            return false;
+        }
+
+        Object.assign(ev, patch);
+
+        const detail = policy + (patch.retain_until
+            ? " until " + patch.retain_until : "");
+
+        await Promise.allSettled([
+            this.logCustody(ev.id, "Retention set", detail),
+            AuditService.log({ action: "EVIDENCE_RETENTION_SET",
+                target: ev.evidence_id, details: detail })
+        ]);
+
+        UI?.success("Retention: " + policy);
+        return true;
+
+    },
+
+    /* export the evidence metadata as a downloadable JSON file */
+    exportMetadata(ev, custody) {
+
+        const meta = {
+            evidence_id: ev.evidence_id, type: ev.type, status: ev.status,
+            source: ev.source, description: ev.description,
+            file_name: ev.file_name, file_size: ev.file_size, sha256: ev.hash,
+            case: ev.cases?.case_id || ev.case_label || null,
+            division: ev.divisions?.name || ev.division_label || null,
+            logged_by: ev.officer_label || ev.uploaded_by || null,
+            created_at: ev.created_at,
+            reviewed_by: ev.reviewed_by || null,
+            reviewed_at: ev.reviewed_at || null,
+            locked: !!ev.locked, locked_by: ev.locked_by || null,
+            locked_reason: ev.locked_reason || null,
+            retention_policy: ev.retention_policy || "Standard",
+            retain_until: ev.retain_until || null,
+            chain_of_custody: (custody || []).map(c => ({
+                action: c.action, by: c.actor_label || c.actor || null,
+                details: c.details || null, at: c.created_at }))
+        };
+
+        const blob = new Blob([JSON.stringify(meta, null, 2)],
+            { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = (ev.evidence_id || "evidence") + ".json";
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 2000);
+
+        this.logCustody(ev.id, "Exported", "metadata JSON");
+        AuditService.log({ action: "EVIDENCE_EXPORTED",
+            target: ev.evidence_id, details: "metadata" });
+
+    },
+
+    /* open a print-ready evidence report (browser print → PDF) */
+    exportReport(ev, custody) {
+
+        const esc = s => (s == null ? "" : String(s))
+            .replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+
+        const row = (k, v) =>
+            `<tr><td class="k">${esc(k)}</td><td>${esc(v || "—")}</td></tr>`;
+
+        const coc = (custody || []).map(c =>
+            `<tr><td>${esc(c.action)}</td><td>${esc(c.actor_label || c.actor || "—")}</td>` +
+            `<td>${esc(c.details || "")}</td><td>${new Date(c.created_at).toLocaleString()}</td></tr>`
+        ).join("");
+
+        const html =
+            `<!doctype html><html><head><meta charset="utf-8">` +
+            `<title>${esc(ev.evidence_id)} — Evidence Report</title><style>` +
+            `body{font-family:Arial,sans-serif;color:#111;margin:32px}` +
+            `h1{font-size:20px}h2{font-size:14px;margin-top:22px;` +
+            `border-bottom:1px solid #ccc;padding-bottom:4px}` +
+            `table{border-collapse:collapse;width:100%;font-size:12px}` +
+            `td,th{border:1px solid #ddd;padding:6px 8px;text-align:left}` +
+            `td.k{width:180px;color:#555}.lock{color:#b00;font-weight:bold}` +
+            `.badge{display:inline-block;padding:2px 8px;border:1px solid #999;` +
+            `border-radius:6px;font-size:11px}</style></head><body>` +
+            `<h1>SHIBA PIMS — Evidence Report</h1>` +
+            `<span class="badge">${esc(ev.evidence_id)}</span> ` +
+            (ev.locked ? `<span class="lock">LOCKED — ${esc(ev.locked_reason || "hold")}</span>` : "") +
+            `<h2>Details</h2><table>` +
+            row("Evidence ID", ev.evidence_id) + row("Type", ev.type) +
+            row("Status", ev.status) + row("Source", ev.source) +
+            row("Description", ev.description) + row("File", ev.file_name) +
+            row("Size (bytes)", ev.file_size) + row("SHA-256", ev.hash) +
+            row("Case", ev.cases?.case_id || ev.case_label) +
+            row("Division", ev.divisions?.name || ev.division_label) +
+            row("Logged by", ev.officer_label || ev.uploaded_by) +
+            row("Logged at", ev.created_at ? new Date(ev.created_at).toLocaleString() : "") +
+            row("Reviewed by", ev.reviewed_by) +
+            row("Retention", (ev.retention_policy || "Standard") +
+                (ev.retain_until ? " until " + ev.retain_until : "")) +
+            `</table><h2>Chain of custody</h2><table>` +
+            `<tr><th>Action</th><th>By</th><th>Details</th><th>When</th></tr>` +
+            (coc || `<tr><td colspan="4">—</td></tr>`) + `</table>` +
+            `<p style="margin-top:22px;color:#888;font-size:11px">Generated ` +
+            new Date().toLocaleString() + ` · SHIBA PIMS</p>` +
+            `<scr` + `ipt>window.onload=function(){setTimeout(function(){window.print()},300)}</scr` + `ipt>` +
+            `</body></html>`;
+
+        const w = window.open("", "_blank");
+        if (!w) { UI?.error("Allow pop-ups to export the report."); return; }
+        w.document.write(html); w.document.close();
+
+        this.logCustody(ev.id, "Exported", "printable report");
+        AuditService.log({ action: "EVIDENCE_EXPORTED",
+            target: ev.evidence_id, details: "report" });
 
     }
 

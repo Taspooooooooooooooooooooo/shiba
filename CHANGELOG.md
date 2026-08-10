@@ -2,6 +2,30 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.46.0 — 2026-08-02 · Phase 8 Sprint 8.5 — Evidence Lock + Download + Export + Retention ⭐
+
+### Added
+- **Evidence Lock** — a Lieutenant+ can **lock** a piece of evidence (e.g.
+  *Court Submission*) with a reason. A locked item **can't be reviewed,
+  attached, detached, archived or have its retention changed** until it's
+  unlocked (also Lieutenant+). Every lock/unlock — and every **denied**
+  attempt — is written to the chain of custody + audit log. A red LOCKED
+  banner shows on the item.
+- **Permissioned Download** — opening an evidence file now **requires a
+  reason** and logs a *Downloaded* custody entry (who, why, when), in both
+  the Evidence Room and the case Evidence tab.
+- **Retention policy** — Sergeant+ can set an item's retention to
+  **Standard / Never / Custom** (with a keep-until date), recorded in
+  custody + audit.
+- **Export** — one click for a print-ready **Evidence Report** (details +
+  full chain of custody, print → PDF) or a **metadata JSON** download.
+- The Evidence Room detail dialog gained an action toolbar (Download · Mark
+  reviewed · Lock/Unlock · Retention · Report · JSON · Barcode · jumps).
+
+### Notes
+- **No new SQL** — uses the lock/retention columns already added in PATCH-20.
+- Fifth sprint of **Phase 8 — Bodycam & Digital Evidence System (EMS)**.
+
 ## v0.45.0 — 2026-08-02 · Browser favicon + SHIBA Links (link shortener)
 
 ### Added

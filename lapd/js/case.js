@@ -1273,6 +1273,10 @@ const CaseFile = {
                     : this.esc(ev.status || "—");
 
                 wrap.innerHTML =
+                    (ev.locked
+                        ? `<div class="evLockBanner">${pimsIcon("access", 14)}
+                             LOCKED — ${this.esc(ev.locked_reason || "hold")}</div>`
+                        : "") +
                     `<div class="rvGrid">
                         ${line("Evidence ID", ev.evidence_id)}
                         ${line("Type", ev.type)}
@@ -1283,6 +1287,8 @@ const CaseFile = {
                         ${line("Logged", new Date(ev.created_at).toLocaleString())}
                         ${line("Logged by", ev.uploaded_by)}
                         ${line("Case", this.caseRow.case_id)}
+                        ${line("Retention", (ev.retention_policy || "Standard") +
+                            (ev.retain_until ? " until " + ev.retain_until : ""))}
                         ${ev.reviewed_by
                             ? line("Reviewed by", ev.reviewed_by) : ""}
                     </div>` +
@@ -1308,15 +1314,26 @@ const CaseFile = {
                     ? [{ label: "Barcode", kind: "ghost", value: "barcode" }]
                     : []),
                 ...(this.evFileHref(ev)
-                    ? [{ label: "Open file", kind: "primary", value: "open" }]
+                    ? [{ label: "Download", kind: "primary", value: "download" }]
                     : [])
             ]
 
         }).then(async choice => {
 
-            if (choice === "open") {
+            if (choice === "download") {
 
-                window.open(this.evFileHref(ev), "_blank", "noopener");
+                const reason = await UI.promptText({
+                    title: "Download evidence",
+                    message: "Downloads are recorded in the chain of custody. " +
+                        "Why are you accessing this file?",
+                    label: "Reason", placeholder: "e.g. Case review, court prep",
+                    required: true, confirmText: "Download" });
+                if (!reason) return;
+                const href = window.EvidenceService
+                    ? await EvidenceService.download(ev, reason)
+                    : this.evFileHref(ev);
+                if (href) window.open(href, "_blank", "noopener");
+                this.renderBody();
 
             } else if (choice === "barcode") {
 

@@ -354,19 +354,25 @@ const EvidenceRoom = {
         return ev.file_url || null;
     },
 
-    async openDetail(ev) {
+    async openDetail(ev, opts = {}) {
 
-        EvidenceService.markViewed(ev);
+        if (opts.view !== false) EvidenceService.markViewed(ev);
 
-        /* re-fetch for the freshest row + joined labels, plus custody */
+        /* re-fetch for the freshest row + joined labels — unless this is a
+           post-action refresh, where the passed object is already mutated
+           and an immediate re-read can be momentarily stale */
 
-        const byId = await EvidenceService.byId(ev.id);
-        const full = (byId && byId.row) || ev;
+        let full = ev;
+        if (!opts.fresh) {
+            const byId = await EvidenceService.byId(ev.id);
+            full = (byId && byId.row) || ev;
+        }
 
         const cust = await EvidenceService.custody(ev.id);
         const custody = cust.rows || [];
 
         const canReview = await PermissionService.can("cases.assign");
+        const canCommand = await EvidenceService.isCommand();
 
         const casePub = full.cases?.case_id || ev.case_label;
         const divName = full.divisions?.name || ev.division_label;
@@ -375,11 +381,15 @@ const EvidenceRoom = {
                 (full.officers.first_name + " " +
                  full.officers.last_name).trim()) : full.uploaded_by);
 
+        /* re-open with fresh data after an action, without re-logging a view */
+        const refresh = (close) => { if (close) close(); this.load();
+            this.openDetail(full, { view: false, fresh: true }); };
+
         UI.modal({
 
             title: full.type + " · " + (full.file_name || full.evidence_id),
 
-            render: () => {
+            render: (close) => {
 
                 const wrap = document.createElement("div");
 
@@ -388,6 +398,11 @@ const EvidenceRoom = {
                     `<div>${raw ? (v || "—") : this.esc(v || "—")}</div></div>`;
 
                 wrap.innerHTML =
+                    (full.locked
+                        ? `<div class="evLockBanner">${pimsIcon("access", 14)}
+                             LOCKED — ${this.esc(full.locked_reason || "hold")}${
+                             full.locked_by ? " · by " + this.esc(full.locked_by)
+                             : ""}</div>` : "") +
                     `<div class="rvGrid">
                         ${line("Evidence ID", full.evidence_id)}
                         ${line("Type", full.type)}
@@ -400,9 +415,8 @@ const EvidenceRoom = {
                         ${line("Logged", new Date(full.created_at).toLocaleString())}
                         ${full.reviewed_by
                             ? line("Reviewed by", full.reviewed_by) : ""}
-                        ${full.locked
-                            ? line("Locked", "Yes — " +
-                                (full.locked_reason || "locked"), false) : ""}
+                        ${line("Retention", (full.retention_policy || "Standard") +
+                            (full.retain_until ? " until " + full.retain_until : ""))}
                     </div>` +
                     (full.description
                         ? `<div class="apMot" style="margin-top:10px">` +
@@ -412,38 +426,131 @@ const EvidenceRoom = {
                           `title="Full SHA-256">#${this.esc(full.hash)}</div>` : "") +
                     this.custodyHtml(custody);
 
+                /* ---- action toolbar ---- */
+
+                const bar = document.createElement("div");
+                bar.className = "evrActions";
+
+                const btn = (label, primary, icon) => {
+                    const b = document.createElement("button");
+                    b.className = primary ? "primaryBtn" : "ghostBtn";
+                    b.innerHTML = (icon || "") + " " + label;
+                    return b;
+                };
+
+                /* Download — requires a reason, logged to custody */
+                if (this.evFileHref(full)) {
+                    const dl = btn("Download", true, pimsIcon("cloud", 14));
+                    dl.onclick = async () => {
+                        const reason = await UI.promptText({
+                            title: "Download evidence",
+                            message: "Downloads are recorded in the chain of " +
+                                "custody. Why are you accessing this file?",
+                            label: "Reason", placeholder: "e.g. Case review, court prep",
+                            required: true, confirmText: "Download" });
+                        if (!reason) return;
+                        const href = await EvidenceService.download(full, reason);
+                        if (href) window.open(href, "_blank", "noopener");
+                        refresh(close);
+                    };
+                    bar.appendChild(dl);
+                }
+
+                /* Mark reviewed */
+                if (canReview && full.status !== "Reviewed" && !full.locked) {
+                    const rv = btn("Mark reviewed", false, pimsIcon("verified", 14));
+                    rv.onclick = async () => {
+                        if (await EvidenceService.markReviewed(full)) refresh(close);
+                    };
+                    bar.appendChild(rv);
+                }
+
+                /* Lock / Unlock (Lieutenant+) */
+                if (canCommand && !full.locked) {
+                    const lk = btn("Lock", false, pimsIcon("access", 14));
+                    lk.onclick = async () => {
+                        const reason = await UI.promptText({
+                            title: "Lock evidence",
+                            message: "Locking blocks any edit, review or removal " +
+                                "until it's unlocked. Common reason: Court Submission.",
+                            label: "Lock reason", placeholder: "e.g. Court Submission",
+                            required: true, confirmText: "Lock" });
+                        if (!reason) return;
+                        if (await EvidenceService.lock(full, reason)) refresh(close);
+                    };
+                    bar.appendChild(lk);
+                } else if (canCommand && full.locked) {
+                    const ul = btn("Unlock", false, pimsIcon("access", 14));
+                    ul.onclick = async () => {
+                        const reason = await UI.promptText({
+                            title: "Unlock evidence",
+                            message: "Unlocking is recorded in the chain of custody.",
+                            label: "Reason (optional)", confirmText: "Unlock" });
+                        if (reason === null) return;
+                        if (await EvidenceService.unlock(full, reason)) refresh(close);
+                    };
+                    bar.appendChild(ul);
+                }
+
+                /* Retention (Sergeant+) */
+                if (canReview && !full.locked) {
+                    const ret = document.createElement("select");
+                    ret.className = "uiModalInput";
+                    ret.style.maxWidth = "150px";
+                    ret.title = "Retention policy";
+                    ret.innerHTML = EvidenceService.RETENTION_POLICIES.map(pn =>
+                        `<option ${pn === (full.retention_policy || "Standard")
+                            ? "selected" : ""}>${pn}</option>`).join("");
+                    ret.onchange = async () => {
+                        let retainUntil = null;
+                        if (ret.value === "Custom") {
+                            retainUntil = await UI.promptText({
+                                title: "Retain until",
+                                message: "Keep this evidence until (YYYY-MM-DD):",
+                                label: "Date", placeholder: "2030-01-01",
+                                required: true });
+                            if (!retainUntil) {
+                                ret.value = full.retention_policy || "Standard";
+                                return;
+                            }
+                        }
+                        if (await EvidenceService.setRetention(full,
+                            { policy: ret.value, retainUntil })) refresh(close);
+                    };
+                    bar.appendChild(ret);
+                }
+
+                /* Export */
+                const exR = btn("Report", false, pimsIcon("print", 14));
+                exR.onclick = () => EvidenceService.exportReport(full, custody);
+                const exJ = btn("JSON", false, pimsIcon("export", 14));
+                exJ.onclick = () => EvidenceService.exportMetadata(full, custody);
+                bar.append(exR, exJ);
+
+                if (full.scan_token) {
+                    const bc = btn("Barcode", false, pimsIcon("scanner", 14));
+                    bc.onclick = () => this.showBarcode(full, casePub);
+                    bar.appendChild(bc);
+                }
+                if (full.case_id) {
+                    const oc = btn("Open case", false, pimsIcon("cases", 14));
+                    oc.onclick = () => location.href = "case.html?id=" + full.case_id;
+                    bar.appendChild(oc);
+                }
+                if (full.uploaded_by_officer) {
+                    const oo = btn("Officer", false, pimsIcon("officers", 14));
+                    oo.onclick = () => location.href =
+                        "personnel.html?id=" + full.uploaded_by_officer;
+                    bar.appendChild(oo);
+                }
+
+                wrap.appendChild(bar);
+
                 return wrap;
 
             },
 
-            buttons: [
-                { label: "Close", kind: "ghost", value: null },
-                ...(full.uploaded_by_officer
-                    ? [{ label: "Officer", kind: "ghost", value: "officer" }] : []),
-                ...(canReview && full.status !== "Reviewed"
-                    ? [{ label: "Mark reviewed", kind: "ghost", value: "review" }] : []),
-                ...(full.scan_token
-                    ? [{ label: "Barcode", kind: "ghost", value: "barcode" }] : []),
-                ...(full.case_id
-                    ? [{ label: "Open case", kind: "ghost", value: "case" }] : []),
-                ...(this.evFileHref(full)
-                    ? [{ label: "Open file", kind: "primary", value: "open" }] : [])
-            ]
-
-        }).then(async choice => {
-
-            if (choice === "open") {
-                window.open(this.evFileHref(full), "_blank", "noopener");
-            } else if (choice === "case") {
-                window.location.href = "case.html?id=" + full.case_id;
-            } else if (choice === "officer") {
-                window.location.href =
-                    "personnel.html?id=" + full.uploaded_by_officer;
-            } else if (choice === "barcode") {
-                this.showBarcode(full, casePub);
-            } else if (choice === "review") {
-                if (await EvidenceService.markReviewed(full)) this.load();
-            }
+            buttons: [{ label: "Close", kind: "ghost", value: null }]
 
         });
 
