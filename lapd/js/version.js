@@ -10,7 +10,7 @@
    "newer version available" prompt.
 ========================================================== */
 
-window.SHIBA_VERSION = "0.43.0";
+window.SHIBA_VERSION = "0.44.0";
 window.SHIBA_CHANNEL = "Alpha";
 
 (function () {

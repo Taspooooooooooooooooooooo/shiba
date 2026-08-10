@@ -202,6 +202,15 @@ const BodycamDash = {
             box.appendChild(up);
         }
 
+        if (s.file_url) {
+            const play = document.createElement("a");
+            play.className = "primaryBtn";
+            play.style.textDecoration = "none";
+            play.href = "bodycam-player.html?session=" + s.id;
+            play.innerHTML = pimsIcon("surveillance", 15) + " Play & review";
+            box.appendChild(play);
+        }
+
         if (s.cloud_id) {
             const ver = document.createElement("button");
             ver.className = "ghostBtn";

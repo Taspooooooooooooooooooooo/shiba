@@ -4286,6 +4286,115 @@ a.pfCaseLink:hover{ background:#2e8bff14; }
     .bcMarkLink{ grid-column:1 / -1; justify-self:start; }
 }
 
+/* ---- Bodycam Player (Sprint 8.4) ---- */
+
+.bcpGrid{
+    display:grid;
+    grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);
+    gap:16px;
+    align-items:start;
+}
+
+@media(max-width:900px){ .bcpGrid{ grid-template-columns:1fr; } }
+
+.bcpVideo{
+    width:100%;
+    max-height:60vh;
+    background:#000;
+    border-radius:10px;
+    display:block;
+}
+
+.bcpNoVideo{
+    text-align:center;
+    padding:44px 12px;
+    color:#8ea2bd;
+    background:rgba(255,255,255,.02);
+    border-radius:10px;
+}
+.bcpNoVideo p{ margin:12px 0 4px; color:#dbe4f0; }
+
+.bcpTimeline{ margin-top:14px; }
+
+.bcpTrack{
+    position:relative;
+    height:26px;
+    background:rgba(255,255,255,.06);
+    border-radius:7px;
+    cursor:pointer;
+}
+
+.bcpPlayhead{
+    position:absolute;
+    top:-3px; bottom:-3px;
+    width:2px;
+    background:#fff;
+    left:0;
+    pointer-events:none;
+    box-shadow:0 0 6px #fff;
+}
+
+.bcpTick{
+    position:absolute;
+    top:3px;
+    width:4px; height:20px;
+    border:none;
+    border-radius:2px;
+    padding:0;
+    cursor:pointer;
+    transform:translateX(-2px);
+    transition:.1s;
+}
+.bcpTick:hover{ height:26px; top:0; width:6px; }
+
+.bcpTimeRow{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    margin-top:10px;
+    flex-wrap:wrap;
+}
+.bcpClock{ font-family:monospace; color:#dbe4f0; }
+.bcpClock b{ color:#fff; }
+.bcpQuick{ display:flex; gap:8px; flex-wrap:wrap; }
+
+.bcpPanel{ margin-top:12px; max-height:62vh; overflow:auto; }
+
+.bcpSeekRow{
+    display:flex;
+    gap:11px;
+    align-items:flex-start;
+    padding:8px;
+    border-radius:8px;
+    cursor:pointer;
+}
+.bcpSeekRow:hover{ background:#2e8bff1a; }
+
+.bcpAt{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-family:monospace;
+    color:#8ea2bd;
+    font-size:12px;
+    white-space:nowrap;
+    min-width:66px;
+}
+.bcpSeekText b{ display:block; color:#dbe4f0; font-size:13px; }
+.bcpSeekText small{ color:#5a6b80; font-size:11.5px; }
+.bcpSeekText a{ color:#a855f7; text-decoration:none; }
+
+.bcpComposer{ display:flex; flex-direction:column; gap:8px; margin-bottom:14px; }
+
+.bcpCount{
+    display:inline-block;
+    background:rgba(255,255,255,.1);
+    border-radius:10px;
+    padding:0 6px;
+    font-size:10px;
+}
+
 /* ---- Bodycam upload wizard + dashboard (Sprint 8.3) ---- */
 
 .bcuPipe{ display:flex; flex-direction:column; gap:4px; margin-top:6px; }

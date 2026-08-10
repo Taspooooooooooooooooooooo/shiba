@@ -2,6 +2,31 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.44.0 — 2026-08-02 · Phase 8 Sprint 8.4 — Marker categories + bodycam Player ⭐
+
+### Added
+- **The bodycam Player** (`bodycam-player.html`) — a real review player for a
+  clip: the uploaded footage in an HTML5 video, a **timeline** with every
+  marker and annotation plotted as a colored **click-to-seek tick**, a moving
+  playhead, and four panels — **Markers · Bookmarks · Comments · Evidence** —
+  where clicking any row jumps the video to that moment.
+- **Bookmarks & timestamped comments** — while watching, a supervisor can drop
+  a **Bookmark** or a **Comment** at the exact current frame. Comments **notify
+  the officer** ("commented at 03:12: …"), so review feedback reaches them.
+  New `bodycam_annotations` table (PATCH-22).
+- **Marker categories** — markers now carry an event **type**: Traffic Stop,
+  Arrest, Use of Force, Weapon Drawn, Evidence Found, Interview, Other — colored
+  on the timeline. The category implies the disposition (Evidence Found →
+  auto-logs to the case; Use of Force / Weapon Drawn → incident). The Shift
+  File marker composer now picks the category.
+- **Play buttons** on every uploaded clip — from the Shift File Bodycam tab and
+  the Bodycam Dashboard. Access is scoped to the officer + their supervisors.
+
+### Notes
+- Requires one-time setup: **PATCH-22** (`lapd/SETUP-PATCH-22.sql`, or the
+  bundled `RUN-ALL-PENDING.sql`). Degrades gracefully until it's run.
+- Fourth sprint of **Phase 8 — Bodycam & Digital Evidence System (EMS)**.
+
 ## v0.43.0 — 2026-08-02 · Phase 8 Sprint 8.3 — Bodycam lifecycle + Upload Wizard + integrity ⭐
 
 ### Added

@@ -721,4 +721,24 @@ alter table public.bodycam_sessions
   add column if not exists integrity_by text;
 
 
-select 'ALL PENDING PATCHES applied (3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21)' as result;
+-- ---------- PATCH 22 : marker categories + bodycam annotations (Phase 8.4) ----------
+
+alter table public.bodycam_markers
+  add column if not exists category text;
+
+create table if not exists public.bodycam_annotations (
+  id uuid not null default gen_random_uuid(),
+  session_id uuid references public.bodycam_sessions(id) on delete cascade,
+  kind text not null default 'Comment',
+  offset_seconds integer not null default 0,
+  body text,
+  author text,
+  author_officer_id uuid references public.officers(id) on delete set null,
+  created_at timestamp with time zone default now(),
+  constraint bodycam_annotations_pkey primary key (id)
+);
+create index if not exists bodycam_annotations_session_idx
+  on public.bodycam_annotations (session_id);
+
+
+select 'ALL PENDING PATCHES applied (3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22)' as result;

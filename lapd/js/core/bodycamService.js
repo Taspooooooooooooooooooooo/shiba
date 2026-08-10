@@ -24,6 +24,34 @@ const BodycamService = {
         "Incident": "#ef4444"
     },
 
+    /* the EVENT type of a marker (8.4) — richer than kind */
+
+    MARKER_CATEGORIES: ["Traffic Stop", "Arrest", "Use of Force",
+        "Weapon Drawn", "Evidence Found", "Interview", "Other"],
+
+    /* a category implies a disposition kind: Evidence Found auto-links
+       to a case; Use of Force / Weapon Drawn are incidents */
+
+    CATEGORY_KIND: {
+        "Evidence Found": "Evidence",
+        "Use of Force": "Incident",
+        "Weapon Drawn": "Incident"
+    },
+
+    CATEGORY_COLORS: {
+        "Traffic Stop": "#3b82f6",
+        "Arrest": "#f97316",
+        "Use of Force": "#ef4444",
+        "Weapon Drawn": "#ef4444",
+        "Evidence Found": "#a855f7",
+        "Interview": "#0ea5e9",
+        "Other": "#6b7280"
+    },
+
+    /* review-time annotations (added while watching, not recording) */
+
+    ANNOTATION_KINDS: ["Bookmark", "Comment"],
+
     /* the full session lifecycle (8.3). Uploading/Verifying are the
        transient states the upload wizard passes through. */
 
@@ -219,6 +247,141 @@ const BodycamService = {
 
     },
 
+    /* one session by id — for the Player (8.4) */
+
+    async sessionById(sessionUuid) {
+
+        const { data, error } = await db
+            .from("bodycam_sessions")
+            .select("*, officers(officer_id, first_name, last_name, user_id), " +
+                "shifts(shift_id)")
+            .eq("id", sessionUuid)
+            .maybeSingle();
+
+        if (error || !data) return { error: error || { message: "not found" } };
+
+        data.officer_label = data.officers
+            ? (data.officers.officer_id + " " +
+               (data.officers.first_name + " " +
+                data.officers.last_name).trim())
+            : "—";
+
+        return { row: data };
+
+    },
+
+    /* ----------------------------------------------------- */
+    /* annotations — review-time bookmarks + comments (8.4)   */
+    /* ----------------------------------------------------- */
+
+    async annotations(sessionUuid) {
+
+        const { data, error } = await db
+            .from("bodycam_annotations")
+            .select("*, officers(officer_id, first_name, last_name)")
+            .eq("session_id", sessionUuid)
+            .order("offset_seconds", { ascending: true });
+
+        if (error) return { error };
+
+        return { rows: (data || []).map(r => {
+            r.author_label = r.officers
+                ? (r.officers.officer_id + " " +
+                   (r.officers.first_name + " " +
+                    r.officers.last_name).trim())
+                : (r.author || "—");
+            return r;
+        }) };
+
+    },
+
+    /* add a Bookmark or Comment at a point in the footage. A Comment
+       from anyone other than the session's own officer pings them. */
+
+    async addAnnotation(session, { kind, offsetSeconds, body } = {}) {
+
+        if (!window.db || !session) return { ok: false };
+
+        kind = this.ANNOTATION_KINDS.includes(kind) ? kind : "Comment";
+
+        if (kind === "Comment" && !body?.trim()) {
+            UI?.error("Write a comment first.");
+            return { ok: false };
+        }
+
+        let officerId = null;
+
+        try { officerId = await PermissionService.myOfficerId(); }
+        catch (e) { /* not linked */ }
+
+        const { data, error } = await db
+            .from("bodycam_annotations")
+            .insert([{
+                session_id: session.id,
+                kind: kind,
+                offset_seconds: Math.max(0, Math.round(offsetSeconds || 0)),
+                body: body?.trim() || null,
+                author: localStorage.getItem("username") || null,
+                author_officer_id: officerId
+            }])
+            .select();
+
+        if (error) {
+            UI?.error(this._missingTable(error)
+                ? "Bodycam review needs PATCH-22 (run RUN-ALL-PENDING.sql)."
+                : "Could not save.");
+            return { ok: false };
+        }
+
+        await Promise.allSettled([
+
+            ShiftService?.shiftEvent?.(session.shift_id,
+                "Bodycam " + kind.toLowerCase(),
+                (session.session_id || "") + " @ " + this.hms(offsetSeconds)),
+
+            AuditService.log({
+                action: "BODYCAM_" + kind.toUpperCase(),
+                target: session.session_id || "",
+                details: "@ " + this.hms(offsetSeconds) +
+                    (body ? " · " + body.slice(0, 40) : ""),
+                officerId: session.officer_id
+            })
+
+        ]);
+
+        /* a comment from someone else reaches the session's officer */
+
+        if (kind === "Comment" && officerId !== session.officer_id) {
+
+            try {
+
+                let uid = session.officers?.user_id;
+
+                if (!uid) {
+                    const { data: o } = await db.from("officers")
+                        .select("user_id").eq("id", session.officer_id)
+                        .maybeSingle();
+                    uid = o?.user_id;
+                }
+
+                if (uid) {
+                    await NotificationService.send({
+                        to: uid,
+                        title: "Bodycam comment on " + (session.session_id || "your clip"),
+                        message: (localStorage.getItem("username") || "A supervisor") +
+                            " commented at " + this.hms(offsetSeconds) +
+                            (body ? ': "' + body.slice(0, 80) + '"' : ".")
+                    });
+                }
+
+            } catch (e) { /* best effort */ }
+
+        }
+
+        return { ok: true, annotation: data[0] };
+
+    },
+
     /* ----------------------------------------------------- */
     /* recording lifecycle                                    */
     /* ----------------------------------------------------- */
@@ -364,26 +527,41 @@ const BodycamService = {
        Evidence marker on a shift that's responding to a case, the
        marker is promoted into real case_evidence right away. */
 
-    async addMarker(shift, session, { kind, label, note } = {}) {
+    async addMarker(shift, session, { kind, category, label, note } = {}) {
 
         if (!window.db || !session) return { ok: false };
+
+        /* a category implies the disposition kind unless one is given */
+
+        if (category && !kind) kind = this.CATEGORY_KIND[category] || "Bookmark";
 
         kind = this.MARKER_KINDS.includes(kind) ? kind : "Bookmark";
 
         const offset = this.sessionSeconds(session);
 
-        const { data, error } = await db
+        const base = {
+            session_id: session.id,
+            shift_id: session.shift_id || shift?.id || null,
+            kind: kind,
+            offset_seconds: offset,
+            label: label?.trim() || null,
+            note: note?.trim() || null,
+            created_by: localStorage.getItem("username") || null
+        };
+
+        /* category needs PATCH-22 — degrade to the base row if unrun */
+
+        let { data, error } = await db
             .from("bodycam_markers")
-            .insert([{
-                session_id: session.id,
-                shift_id: session.shift_id || shift?.id || null,
-                kind: kind,
-                offset_seconds: offset,
-                label: label?.trim() || null,
-                note: note?.trim() || null,
-                created_by: localStorage.getItem("username") || null
-            }])
+            .insert([{ ...base, category: category || null }])
             .select();
+
+        if (error && this._missingCol(error)) {
+
+            ({ data, error } = await db
+                .from("bodycam_markers").insert([base]).select());
+
+        }
 
         if (error) {
 

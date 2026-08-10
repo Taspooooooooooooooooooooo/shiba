@@ -515,12 +515,13 @@ const ShiftFile = {
             `00:00</b> · ${this.esc(live.session_id || "")}`;
         wrap.appendChild(badge);
 
-        const kind = document.createElement("select");
-        kind.className = "uiModalInput";
-        kind.style.maxWidth = "150px";
-        kind.innerHTML = BodycamService.MARKER_KINDS.map(k =>
-            `<option value="${k}">${k}</option>`).join("");
-        wrap.appendChild(kind);
+        const cat = document.createElement("select");
+        cat.className = "uiModalInput";
+        cat.style.maxWidth = "170px";
+        cat.title = "Marker type";
+        cat.innerHTML = BodycamService.MARKER_CATEGORIES.map(c =>
+            `<option value="${c}">${c}</option>`).join("");
+        wrap.appendChild(cat);
 
         const label = document.createElement("input");
         label.className = "uiModalInput";
@@ -534,7 +535,7 @@ const ShiftFile = {
         mark.onclick = async () => {
             mark.disabled = true;
             const r = await BodycamService.addMarker(this.shift, live, {
-                kind: kind.value, label: label.value });
+                category: cat.value, label: label.value });
             mark.disabled = false;
             if (r.ok) { label.value = ""; this.renderBody(); }
         };
@@ -604,10 +605,23 @@ const ShiftFile = {
 
         /* per-session actions */
 
-        if (canEdit) {
+        const acts = document.createElement("div");
+        acts.className = "bcSessionActions";
 
-            const acts = document.createElement("div");
-            acts.className = "bcSessionActions";
+        /* Play — available to anyone viewing the file (needs footage) */
+
+        if (sess.file_url) {
+
+            const play = document.createElement("a");
+            play.className = "primaryBtn";
+            play.style.textDecoration = "none";
+            play.href = "bodycam-player.html?session=" + sess.id;
+            play.innerHTML = pimsIcon("surveillance", 14) + " Play";
+            acts.appendChild(play);
+
+        }
+
+        if (canEdit) {
 
             if (!sess.cloud_id && !recording) {
 
@@ -647,9 +661,9 @@ const ShiftFile = {
 
             }
 
-            if (acts.children.length) block.appendChild(acts);
-
         }
+
+        if (acts.children.length) block.appendChild(acts);
 
         /* markers */
 
