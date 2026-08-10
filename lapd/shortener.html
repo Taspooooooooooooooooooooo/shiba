@@ -6,8 +6,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>SHIBA PIMS | Bodycam Player</title>
-    <link rel="icon" type="image/svg+xml" href="assets/pims-badge.svg">
+<title>SHIBA PIMS | Link Shortener</title>
+<link rel="icon" type="image/svg+xml" href="assets/pims-badge.svg">
 
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/dashboard.css">
@@ -20,11 +20,27 @@
 
 <div class="content">
 
-    <div class="card" id="bcpHeader">
-        <p class="muted">Loading footage…</p>
+    <div class="card">
+
+        <h1><svg class="pIcon" width="24" height="24" aria-hidden="true"><use href="assets/pims-sprite.svg#pims-attach"></use></svg> SHIBA Links</h1>
+
+        <p>Turn long URLs into short <b>/s/</b> links, tied to your SHIBA
+           account. Every link tracks its own click count.</p>
+
     </div>
 
-    <div id="bcpMain"></div>
+    <div class="card">
+        <h2>New short link</h2>
+        <div class="shForm" id="shForm"></div>
+    </div>
+
+    <div class="card">
+        <div class="shListHead">
+            <h2 style="margin:0">Links</h2>
+            <label class="shMineToggle"><input type="checkbox" id="shMine" checked> Only mine</label>
+        </div>
+        <div id="shList"><p class="muted">Loading…</p></div>
+    </div>
 
 </div>
 
@@ -39,18 +55,14 @@
 <script src="js/core/idService.js"></script>
 <script src="js/core/permissionService.js"></script>
 <script src="js/core/auditService.js"></script>
-<script src="js/core/timelineService.js"></script>
-<script src="js/core/notificationService.js"></script>
-<script src="js/core/shiftService.js"></script>
-<script src="js/core/evidenceService.js"></script>
-<script src="js/core/bodycamService.js"></script>
+<script src="js/core/linkService.js"></script>
 
 <script src="js/auth.js"></script>
 <script src="js/session.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/layout.js"></script>
 <script src="js/commandPalette.js"></script>
-<script src="js/bodycam-player.js"></script>
+<script src="js/shortener.js"></script>
 
 <script>
 

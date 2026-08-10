@@ -2,6 +2,21 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.45.0 — 2026-08-02 · Browser favicon + SHIBA Links (link shortener)
+
+### Added
+- **Favicon** — the PIMS badge now shows as the browser-tab icon on every
+  page (no more blank icon).
+- **SHIBA Links** — a link shortener built into PIMS (new "Links" nav item +
+  Ctrl-K command). Officers turn long URLs into short **`/s/?<slug>`** links
+  tied to their account, with an optional custom slug and label, live
+  **click counts**, enable/disable, and delete. A public `/s/` endpoint
+  resolves slugs and counts clicks atomically (`resolve_short_link` RPC).
+
+### Notes
+- Requires one-time setup: **PATCH-23** (`lapd/SETUP-PATCH-23.sql`, or the
+  bundled `RUN-ALL-PENDING.sql`). Degrades gracefully until it's run.
+
 ## v0.44.0 — 2026-08-02 · Phase 8 Sprint 8.4 — Marker categories + bodycam Player ⭐
 
 ### Added

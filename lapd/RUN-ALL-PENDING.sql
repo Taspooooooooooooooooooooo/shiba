@@ -741,4 +741,38 @@ create index if not exists bodycam_annotations_session_idx
   on public.bodycam_annotations (session_id);
 
 
-select 'ALL PENDING PATCHES applied (3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22)' as result;
+-- ---------- PATCH 23 : SHIBA Links (link shortener) ----------
+
+create table if not exists public.short_links (
+  id uuid not null default gen_random_uuid(),
+  slug text not null unique,
+  target_url text not null,
+  title text,
+  created_by text,
+  owner_id uuid,
+  clicks integer not null default 0,
+  active boolean not null default true,
+  created_at timestamp with time zone default now(),
+  constraint short_links_pkey primary key (id)
+);
+create index if not exists short_links_owner_idx
+  on public.short_links (created_by);
+
+create or replace function public.resolve_short_link(p_slug text)
+returns text
+language plpgsql
+security definer
+as $$
+declare v_url text;
+begin
+  update public.short_links
+     set clicks = clicks + 1
+   where slug = p_slug and active = true
+   returning target_url into v_url;
+  return v_url;
+end;
+$$;
+grant execute on function public.resolve_short_link(text) to anon, authenticated;
+
+
+select 'ALL PENDING PATCHES applied (3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23)' as result;

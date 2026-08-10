@@ -37,6 +37,7 @@ const AppLayout = {
         ["dashboard.html", "dashboard", "Dashboard"],
         ["officers.html", "officers", "Officers"],
         ["../cloud/", "cloud", "Cloud"],
+        ["shortener.html", "attach", "Links"],
         ["cases.html", "cases", "Cases"],
         ["evidence.html", "evidence", "Evidence Room"],
         ["#", "reports", "Reports"],

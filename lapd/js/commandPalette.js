@@ -44,6 +44,9 @@ class CommandPalette {
             { title: "Cloud", icon: "cloud",
               action: () => location.href = "../cloud/" },
 
+            { title: "SHIBA Links — link shortener", icon: "attach",
+              action: () => location.href = "shortener.html" },
+
             { title: "Settings", icon: "settings",
               action: () => location.href = "settings.html" },
 

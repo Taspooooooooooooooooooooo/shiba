@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SHIBA Links</title>
+<link rel="icon" type="image/svg+xml" href="../lapd/assets/pims-badge.svg">
+<style>
+  body { font-family: Arial, Helvetica, sans-serif; background:#020617;
+         color:#cbd5e1; min-height:100vh; margin:0; display:flex;
+         align-items:center; justify-content:center; text-align:center; }
+  .box { max-width:420px; padding:24px; }
+  .box img { width:52px; height:auto; }
+  a { color:#c9a24a; word-break:break-all; }
+  .muted { color:#5a6b80; font-size:13px; }
+</style>
+</head>
+<body>
+
+<div class="box">
+  <img src="../lapd/assets/pims-badge.svg" alt="SHIBA">
+  <p id="msg">Redirecting…</p>
+  <p class="muted" id="sub"></p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+<script src="../lapd/js/supabaseClient.js"></script>
+<script>
+(async function () {
+
+  const msg = document.getElementById("msg");
+  const sub = document.getElementById("sub");
+
+  const raw = location.search.slice(1);
+  const slug = raw
+    ? decodeURIComponent(raw.includes("=") ? raw.split("=").pop() : raw).trim()
+    : "";
+
+  if (!slug) {
+    msg.textContent = "SHIBA Links";
+    sub.innerHTML = 'No link given. <a href="../lapd/shortener.html">Create one</a>.';
+    return;
+  }
+
+  try {
+    const { data, error } = await window.db.rpc("resolve_short_link", { p_slug: slug });
+    if (error) throw error;
+    if (data) {
+      location.replace(data);
+      return;
+    }
+    msg.textContent = "Link not found";
+    sub.innerHTML = 'That short link doesn’t exist or was disabled. ' +
+      '<a href="../lapd/shortener.html">SHIBA Links</a>';
+  } catch (e) {
+    msg.textContent = "Something went wrong";
+    sub.innerHTML = 'Could not resolve this link right now. ' +
+      '<a href="../lapd/shortener.html">SHIBA Links</a>';
+  }
+
+})();
+</script>
+
+</body>
+</html>
