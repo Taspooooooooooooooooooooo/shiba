@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>SHIBA PIMS | Evidence Center</title>
+<link rel="icon" type="image/svg+xml" href="assets/pims-badge.svg">
+
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/dashboard.css">
+
+</head>
+
+<body>
+
+<div id="layoutTop"></div>
+
+<div class="content">
+
+    <div class="card">
+
+        <h1><svg class="pIcon" width="24" height="24" aria-hidden="true"><use href="assets/pims-sprite.svg#pims-analytics"></use></svg> Evidence Center</h1>
+
+        <p>Supervisor oversight of the department's digital evidence — what
+           came in today, what's waiting on review, which shifts ended without
+           bodycam footage, and anything flagged.</p>
+
+        <div class="evrScope" id="ecScope"></div>
+
+    </div>
+
+    <div class="card" id="ecBody">
+        <p class="muted">Loading…</p>
+    </div>
+
+</div>
+
+<div id="layoutFooter"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+<script src="js/version.js"></script>
+
+<script src="js/supabaseClient.js"></script>
+
+<script src="js/core/idService.js"></script>
+<script src="js/core/permissionService.js"></script>
+<script src="js/core/auditService.js"></script>
+<script src="js/core/notificationService.js"></script>
+<script src="js/core/shiftService.js"></script>
+<script src="js/core/evidenceService.js"></script>
+<script src="js/core/bodycamService.js"></script>
+
+<script src="js/auth.js"></script>
+<script src="js/session.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/layout.js"></script>
+<script src="js/commandPalette.js"></script>
+<script src="js/evidence-center.js"></script>
+
+<script>
+
+if(localStorage.getItem("loggedIn")!="true"){
+
+    window.location.href="index.html";
+
+}
+
+document.getElementById("layoutTop").innerHTML = AppLayout.createTopbar();
+document.getElementById("layoutFooter").innerHTML = AppLayout.createFooter();
+
+</script>
+
+</body>
+
+</html>

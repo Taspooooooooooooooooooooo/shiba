@@ -4603,6 +4603,52 @@ a.pfCaseLink:hover{ background:#2e8bff14; }
     .evrRow span:nth-child(5){ display:none; }
 }
 
+/* ---- Evidence Center (Sprint 8.6) ---- */
+
+.ecSection{
+    border-top:1px solid rgba(255,255,255,.08);
+    padding-top:16px;
+    margin-top:16px;
+}
+
+.ecSectionHead h2{
+    margin:0;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-size:15px;
+}
+.ecSectionHead small{ display:block; margin-top:3px; }
+
+.ecCount{
+    display:inline-flex;
+    min-width:22px; height:22px;
+    padding:0 7px;
+    align-items:center; justify-content:center;
+    border-radius:11px;
+    background:rgba(255,255,255,.1);
+    color:#dbe4f0;
+    font-size:12px;
+}
+.ecCount.crit{ background:var(--pims-danger,#ef4444); color:#fff; }
+
+.ecList{ display:flex; flex-direction:column; gap:2px; margin-top:10px; }
+
+.ecRow{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
+    gap:12px;
+    align-items:center;
+    padding:9px 8px;
+    border-radius:9px;
+    cursor:pointer;
+    font-size:12.5px;
+    color:#b8c5d6;
+    transition:.12s;
+}
+.ecRow:hover{ background:#2e8bff1a; }
+.ecRight{ white-space:nowrap; }
+
 /* ---- Scanner: open action + recent-scans list ---- */
 
 .scanActions{ margin-top:16px; display:flex; gap:10px; flex-wrap:wrap; }

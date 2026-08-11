@@ -40,6 +40,7 @@ const AppLayout = {
         ["shortener.html", "attach", "Links"],
         ["cases.html", "cases", "Cases"],
         ["evidence.html", "evidence", "Evidence Room"],
+        ["evidence-center.html", "analytics", "Evidence Center"],
         ["#", "reports", "Reports"],
         ["bodycam.html", "surveillance", "Bodycam"],
         ["#", "patrol", "Vehicles"],

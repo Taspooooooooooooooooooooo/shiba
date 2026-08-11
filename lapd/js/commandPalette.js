@@ -23,6 +23,9 @@ class CommandPalette {
             { title: "Evidence Room", icon: "evidence",
               action: () => location.href = "evidence.html" },
 
+            { title: "Evidence Center — supervisor oversight", icon: "analytics",
+              action: () => location.href = "evidence-center.html" },
+
             { title: "Bodycam", icon: "surveillance",
               action: () => location.href = "bodycam.html" },
 

@@ -2,6 +2,27 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.48.0 — 2026-08-02 · Phase 8 Sprint 8.6 — Supervisor Evidence Center ⭐ (Phase 8 core complete)
+
+### Added
+- **Evidence Center** (`evidence-center.html`, new **Sergeant+** nav item +
+  Ctrl-K) — a supervisor oversight screen with a stats strip (Today · Pending
+  review · Missing bodycam · Processing · Flagged) and live sections:
+  - **Flagged evidence** — bodycam clips whose stored file no longer matches
+    its hash (tamper-detected).
+  - **Missing bodycams** — shifts that **ended with a bodycam ready but no
+    footage uploaded** (the shift-ended-without-upload alert) → jump to the
+    shift file.
+  - **Pending review** — evidence no supervisor has marked reviewed yet.
+  - **Processing** — uploaded clips still awaiting integrity verification.
+  - **Today's uploads** — everything logged into evidence today.
+- Rows deep-link to the case, shift file, or bodycam Player.
+
+### Notes
+- No new SQL — reads existing case_evidence / bodycam_sessions / shifts.
+- Closes the **Phase 8 — Bodycam & Digital Evidence System (EMS)** core
+  (8.1–8.6). The optional 8.7 (synced multi-cam + AI timeline) remains.
+
 ## v0.47.0 — 2026-08-02 · Scanner upgrade — Open the scanned record + recent-scans dashboard
 
 ### Added
