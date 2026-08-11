@@ -2,6 +2,21 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.49.0 — 2026-08-02 · Mobile pass v1 — hamburger drawer navigation
+
+### Changed
+- **Phone-friendly navigation** — on small screens the sidebar is now a proper
+  **left off-canvas drawer** opened by a **☰ hamburger** in the topbar, with a
+  dimming backdrop (tap anywhere outside, or tap a link, to close). Replaces
+  the old cramped 70px icon-rail.
+- **Full-width content on mobile** — the page content no longer sits behind a
+  fixed rail; the topbar tidies up (subtitle + welcome text hidden on small
+  screens) to make room.
+
+### Notes
+- First step of the mobile/redesign initiative — the current look, just made
+  usable on a phone. Theme-switcher + new look come later.
+
 ## v0.48.0 — 2026-08-02 · Phase 8 Sprint 8.6 — Supervisor Evidence Center ⭐ (Phase 8 core complete)
 
 ### Added

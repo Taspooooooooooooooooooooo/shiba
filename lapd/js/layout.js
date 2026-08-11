@@ -60,14 +60,19 @@ const AppLayout = {
         const role = localStorage.getItem("role") || "";
 
         const links = this.NAV.map(([href, icon, label]) =>
-            `<a href="${href}">${pimsIcon(icon, 19)}<span>${label}</span></a>`
+            `<a href="${href}" onclick="AppLayout.closeNav()">${
+                pimsIcon(icon, 19)}<span>${label}</span></a>`
         ).join("\n    ");
 
         return `
 
 <header class="topbar">
 
-    <div>
+    <button class="navToggle" aria-label="Menu" onclick="AppLayout.toggleNav()">
+        <span></span><span></span><span></span>
+    </button>
+
+    <div class="topbarTitle">
 
         <h2>SHIBA PIMS</h2>
 
@@ -85,7 +90,7 @@ const AppLayout = {
 
 </header>
 
-<nav class="sidebar">
+<nav class="sidebar" id="appSidebar">
 
     <div class="sideBrand">
 
@@ -99,8 +104,20 @@ const AppLayout = {
 
 </nav>
 
+<div class="navBackdrop" onclick="AppLayout.closeNav()"></div>
+
 `;
 
+    },
+
+    /* mobile drawer toggle (the ☰ in the topbar) */
+
+    toggleNav() {
+        document.body.classList.toggle("navOpen");
+    },
+
+    closeNav() {
+        document.body.classList.remove("navOpen");
     },
 
     createFooter() {
