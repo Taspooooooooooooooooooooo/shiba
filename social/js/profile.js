@@ -162,6 +162,96 @@ document.addEventListener("DOMContentLoaded", async () => {
     renderView();
 
     /* ----------------------------------------------------- */
+    /* your posts grid + lightbox                             */
+    /* ----------------------------------------------------- */
+
+    const grid = document.getElementById("postGrid");
+
+    const noPosts = document.getElementById("noPosts");
+
+    const lightbox = document.getElementById("postLightbox");
+
+    const lightBody = document.getElementById("lightBody");
+
+    async function loadMyPosts() {
+
+        let posts = [];
+
+        try {
+
+            posts = await SocialAPI.listByAuthor(user.id, user.id, 60);
+
+        } catch (e) { /* schema maybe not set up — leave grid empty */ }
+
+        grid.innerHTML = "";
+
+        if (!posts.length) {
+
+            noPosts.classList.remove("hidden");
+
+            return;
+
+        }
+
+        noPosts.classList.add("hidden");
+
+        posts.forEach(p => {
+
+            const cell = document.createElement("button");
+
+            cell.className = "gridCell";
+
+            cell.type = "button";
+
+            const img = document.createElement("img");
+
+            img.src = p.image_url;
+
+            img.alt = p.caption || "Photo";
+
+            img.loading = "lazy";
+
+            cell.appendChild(img);
+
+            cell.addEventListener("click", () => openLightbox(p));
+
+            grid.appendChild(cell);
+
+        });
+
+    }
+
+    function openLightbox(post) {
+
+        lightBody.innerHTML = "";
+
+        lightBody.appendChild(renderPostCard(post, user.id));
+
+        lightbox.classList.remove("hidden");
+
+    }
+
+    function closeLightbox() {
+
+        lightbox.classList.add("hidden");
+
+        lightBody.innerHTML = "";
+
+    }
+
+    document.getElementById("lightClose")
+
+        .addEventListener("click", closeLightbox);
+
+    lightbox.addEventListener("click", (e) => {
+
+        if (e.target === lightbox) closeLightbox();
+
+    });
+
+    loadMyPosts();
+
+    /* ----------------------------------------------------- */
     /* switch to EDIT                                         */
     /* ----------------------------------------------------- */
 

@@ -20,8 +20,13 @@ create table if not exists public.social_profiles (
   avatar_url text,
   avatar_path text,
   bio text,
+  date_of_birth date,
   created_at timestamp with time zone default now()
 );
+
+-- add DOB for databases created before this column existed
+alter table public.social_profiles
+  add column if not exists date_of_birth date;
 
 -- a photo post in the (global, for now) community feed
 create table if not exists public.social_posts (
@@ -79,10 +84,15 @@ create index if not exists social_stories_expires_idx
 -- social profile. Called AFTER the client makes the Supabase
 -- auth user. Does NOT touch the officer/activation flow.
 -- ------------------------------------------------------------
+-- drop the old 3-arg signature so the name resolves unambiguously
+-- to the new one below (which also records date of birth).
+drop function if exists public.social_register(uuid, text, text);
+
 create or replace function public.social_register(
   p_user uuid,
   p_username text,
-  p_display_name text default null
+  p_display_name text default null,
+  p_dob date default null
 )
 returns json
 language plpgsql
@@ -94,15 +104,17 @@ begin
           'SUPABASE_AUTH', 'IN_AUTH_METADATA', true)
   on conflict (id) do nothing;
 
-  insert into public.social_profiles (user_id, display_name)
-  values (p_user, coalesce(nullif(trim(p_display_name), ''), p_username))
+  insert into public.social_profiles (user_id, display_name, date_of_birth)
+  values (p_user,
+          coalesce(nullif(trim(p_display_name), ''), p_username),
+          p_dob)
   on conflict (user_id) do nothing;
 
   return json_build_object('ok', true);
 end;
 $$;
 
-grant execute on function public.social_register(uuid, text, text)
+grant execute on function public.social_register(uuid, text, text, date)
   to anon, authenticated;
 
 -- best-effort cleanup of expired stories (called opportunistically

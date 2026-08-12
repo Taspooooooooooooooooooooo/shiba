@@ -580,3 +580,394 @@ img { max-width: 100%; display: block; }
 
     .authHero h1 { font-size: 30px; }
 }
+
+/* ==========================================================
+   AUTH — "or" divider + Continue-with-PIMS
+========================================================== */
+
+.authOr {
+
+    display: flex;
+    align-items: center;
+    text-align: center;
+    color: var(--faint);
+    font-size: 12px;
+    margin: 18px 0 14px;
+    gap: 12px;
+}
+
+.authOr::before,
+.authOr::after {
+
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+}
+
+.pimsLink {
+
+    display: block;
+    text-align: center;
+    margin-top: 0;
+}
+
+/* ==========================================================
+   COMPOSER teaser
+========================================================== */
+
+.composer {
+
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 10px 12px;
+    margin-bottom: 18px;
+    cursor: pointer;
+    transition: .2s;
+    text-align: left;
+}
+
+.composer:hover { border-color: var(--line-strong); background: var(--surface-2); }
+
+.composer .cAvatar {
+
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--surface-2);
+    border: 1px solid var(--line-strong);
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    color: var(--muted);
+    font-weight: 700;
+    flex: none;
+}
+
+.composer .cAvatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.composer .cText { flex: 1; color: var(--muted); font-size: 15px; }
+
+.composer .cGo {
+
+    background: var(--accent-grad);
+    color: #fff;
+    font-weight: 700;
+    font-size: 13px;
+    padding: 8px 16px;
+    border-radius: 999px;
+}
+
+/* ==========================================================
+   POST card
+========================================================== */
+
+.post {
+
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    margin-bottom: 18px;
+    overflow: hidden;
+}
+
+.postHead {
+
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 13px 15px;
+}
+
+.pAvatar {
+
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--surface-2);
+    border: 1px solid var(--line-strong);
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    color: var(--muted);
+    font-weight: 700;
+    flex: none;
+}
+
+.pAvatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.pWho .pName { font-weight: 700; font-size: 14px; }
+
+.pWho .pMeta { color: var(--faint); font-size: 12px; margin-top: 1px; }
+
+.postImg {
+
+    width: 100%;
+    background: #000;
+    display: flex;
+    justify-content: center;
+}
+
+.postImg img {
+
+    width: 100%;
+    max-height: 640px;
+    object-fit: contain;
+}
+
+.postBody { padding: 12px 15px 16px; }
+
+.postActions {
+
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 10px;
+}
+
+.iAction {
+
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: none;
+    border: none;
+    color: var(--text);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 2px;
+    transition: .15s;
+}
+
+.iAction:hover { color: var(--accent); }
+
+.iAction .cnt { color: var(--muted); font-weight: 600; }
+
+/* heart: outline by default, fills on like */
+
+.likeBtn .hStroke {
+
+    stroke: currentColor;
+    stroke-width: 1.9;
+    fill: transparent;
+}
+
+.likeBtn.liked { color: var(--accent-2); }
+
+.likeBtn.liked .hStroke { fill: var(--accent-2); stroke: var(--accent-2); }
+
+.likeBtn.liked .cnt { color: var(--accent-2); }
+
+.postCaption {
+
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text);
+    word-break: break-word;
+}
+
+.postCaption b { font-weight: 700; margin-right: 4px; }
+
+/* comments */
+
+.commentsWrap { margin-top: 12px; display: flex; flex-direction: column; gap: 10px; }
+
+.cLoading, .cEmpty { color: var(--faint); font-size: 13px; }
+
+.comment { display: flex; gap: 10px; align-items: flex-start; }
+
+.cAvatar {
+
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--surface-2);
+    border: 1px solid var(--line-strong);
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+    flex: none;
+}
+
+.cAvatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.cBody { font-size: 13.5px; line-height: 1.45; word-break: break-word; }
+
+.cBody b { font-weight: 700; margin-right: 4px; }
+
+.addComment {
+
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+}
+
+.addComment input {
+
+    flex: 1;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--bg-2);
+    color: var(--text);
+    font-size: 14px;
+    outline: none;
+}
+
+.addComment input:focus { border-color: var(--accent); }
+
+.addComment button {
+
+    border: none;
+    background: none;
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    padding: 0 6px;
+}
+
+.emptyArt { color: var(--faint); margin-bottom: 12px; }
+
+/* ==========================================================
+   POST grid (profile)
+========================================================== */
+
+.postGrid {
+
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+    margin-bottom: 16px;
+}
+
+.gridCell {
+
+    position: relative;
+    aspect-ratio: 1 / 1;
+    border: none;
+    padding: 0;
+    background: var(--surface-2);
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.gridCell img { width: 100%; height: 100%; object-fit: cover; }
+
+/* ==========================================================
+   MODAL (compose + lightbox)
+========================================================== */
+
+.mBack {
+
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    background: rgba(0,0,0,.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 0;
+}
+
+.mCard {
+
+    width: 100%;
+    max-width: 520px;
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+    border-radius: 20px 20px 0 0;
+    box-shadow: var(--shadow);
+    max-height: 92vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.mHead {
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--line);
+    font-weight: 700;
+}
+
+.mClose {
+
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    padding: 4px;
+}
+
+.mClose:hover { color: var(--text); }
+
+.mBody { padding: 18px; overflow-y: auto; }
+
+.mFoot {
+
+    display: flex;
+    gap: 10px;
+    padding: 14px 18px;
+    border-top: 1px solid var(--line);
+}
+
+.mFoot .btn { margin-top: 0; }
+
+.pickArea {
+
+    width: 100%;
+    min-height: 220px;
+    border: 1.5px dashed var(--line-strong);
+    border-radius: var(--radius-sm);
+    background: var(--bg-2);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding: 0;
+}
+
+.pickArea:hover { border-color: var(--accent); }
+
+.pickPrompt {
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    color: var(--faint);
+    font-size: 14px;
+}
+
+.pickArea img { width: 100%; max-height: 60vh; object-fit: contain; display: block; }
+
+/* lightbox card: centered, not bottom-sheet */
+
+.mBack .lightCard { border-radius: 18px; }
+
+@media (min-width: 560px) {
+
+    .mBack { align-items: center; padding: 20px; }
+
+    .mCard { border-radius: 18px; }
+}

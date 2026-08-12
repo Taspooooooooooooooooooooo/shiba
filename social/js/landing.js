@@ -143,6 +143,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const uname = document.getElementById("suUser").value.trim().toLowerCase();
 
+        const dob = document.getElementById("suDob").value;   /* yyyy-mm-dd */
+
         const pass = document.getElementById("suPass").value;
 
         const pass2 = document.getElementById("suPass2").value;
@@ -150,6 +152,26 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!isValidUsername(uname)) {
 
             SToast.err("Username: 3–24 chars, only a–z 0–9 . _ -");
+
+            return;
+
+        }
+
+        if (!dob) {
+
+            SToast.err("Please enter your date of birth.");
+
+            return;
+
+        }
+
+        const dobDate = new Date(dob + "T00:00:00");
+
+        if (isNaN(dobDate.getTime()) ||
+            dobDate > new Date() ||
+            dobDate.getFullYear() < 1900) {
+
+            SToast.err("Please enter a valid date of birth.");
 
             return;
 
@@ -242,7 +264,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 p_username: uname,
 
-                p_display_name: displayName || null
+                p_display_name: displayName || null,
+
+                p_dob: dob
 
             });
 
@@ -260,7 +284,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
         }
 
-        SocialSession.save({ id: data.user.id, username: uname });
+        SocialSession.save({
+
+            id: data.user.id,
+
+            username: uname,
+
+            displayName: displayName || uname
+
+        });
 
         SToast.ok("Welcome to SHIBA Social!");
 

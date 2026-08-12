@@ -35,7 +35,15 @@
 
         <div class="actions">
 
-            <a class="iconBtn" href="home.html" title="Home">⌂</a>
+            <a class="iconBtn" href="home.html" title="Home" aria-label="Home">
+
+                <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                    <path fill="none" stroke="currentColor" stroke-width="2"
+                          stroke-linecap="round" stroke-linejoin="round"
+                          d="M4 11l8-7 8 7M6 10v9h12v-9"/>
+                </svg>
+
+            </a>
 
         </div>
 
@@ -84,6 +92,16 @@
                     <button class="btn ghost" id="editBtn">Edit profile</button>
 
                 </div>
+
+            </div>
+
+            <div class="sectionLabel">Your posts</div>
+
+            <div id="postGrid" class="postGrid"></div>
+
+            <div class="card hidden" id="noPosts">
+
+                <div class="empty"><p>You haven't posted yet.</p></div>
 
             </div>
 
@@ -152,8 +170,36 @@
 
     </main>
 
+    <!-- lightbox for opening a post from the grid -->
+
+    <div class="mBack hidden" id="postLightbox">
+
+        <div class="mCard lightCard">
+
+            <div class="mHead">
+
+                <span>Post</span>
+
+                <button class="mClose" id="lightClose" aria-label="Close">
+
+                    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                        <path fill="none" stroke="currentColor" stroke-width="2"
+                              stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/>
+                    </svg>
+
+                </button>
+
+            </div>
+
+            <div class="mBody" id="lightBody"></div>
+
+        </div>
+
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
     <script src="js/socialClient.js"></script>
+    <script src="js/postCard.js"></script>
     <script src="js/profile.js"></script>
 
 </body>

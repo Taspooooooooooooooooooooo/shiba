@@ -2,6 +2,36 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.51.0 — 2026-08-12 · SHIBA Social S2 — photo feed + DOB + PIMS shortcut
+
+### Added
+- **Photo feed** on the Social home — a global, newest-first community feed.
+  - **Compose** (＋ in the topbar, the "Share a photo…" bar, or the empty state):
+    pick a photo → it is **compressed in the browser (~1080px)** → uploaded to the
+    public **cloud** bucket under `social/posts/` → posted with an optional caption.
+  - **Likes** (heart toggles, optimistic with revert-on-failure) and **comments**
+    (lazy-loaded per post, add inline). Post cards are a shared renderer used by
+    both the feed and the profile grid.
+  - **Profile posts grid** — your photos in a 3-up grid; tap one to open it in a
+    lightbox with the same likes/comments.
+- **Date of birth** is now collected at sign-up (validated: a real past date).
+- **"Continue with SHIBA PIMS"** button on the Social landing → the PIMS login.
+
+### Changed
+- **Emoji-free** across the whole Social app — every icon is now inline SVG
+  (topbar, actions, like/comment, empty states), per request. The only glyph
+  kept is the geometric `◈` brand mark (not an emoji).
+
+### SQL — run this migration (only needed for the new **DOB on sign-up**)
+- `social/SETUP-SOCIAL.sql` now adds `social_profiles.date_of_birth` and gives
+  `social_register()` a 4th `p_dob` argument. The feed/likes/comments tables were
+  already created in the S1 patch, so **the feed works now**; only new sign-ups
+  that record a birth date need this migration.
+
+### Notes
+- Social still runs a **separate session** from PIMS and never mentions PIMS on
+  sign-up. Next: **S3** 24-hour stories, then **S4** the PIMS bridge.
+
 ## v0.50.0 — 2026-08-12 · SHIBA Social S1 — foundation (a new sibling app) 🎉
 
 ### Added

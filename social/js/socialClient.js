@@ -311,3 +311,293 @@ const SToast = {
     info(m) { this.show(m, "info"); }
 
 };
+
+/* ---------------------------------------------------------- */
+/* small shared helpers                                        */
+/* ---------------------------------------------------------- */
+
+function escapeHtml(value) {
+
+    return String(value == null ? "" : value)
+
+        .replace(/&/g, "&amp;")
+
+        .replace(/</g, "&lt;")
+
+        .replace(/>/g, "&gt;")
+
+        .replace(/"/g, "&quot;")
+
+        .replace(/'/g, "&#39;");
+
+}
+
+function escapeAttr(value) { return escapeHtml(value); }
+
+function initialOf(name) {
+
+    return (name && name[0] ? name[0] : "?").toUpperCase();
+
+}
+
+/* compact "2m" / "3h" / "5d" relative time */
+
+function timeAgo(iso) {
+
+    const then = new Date(iso).getTime();
+
+    const s = Math.max(1, Math.floor((Date.now() - then) / 1000));
+
+    if (s < 60) return s + "s";
+
+    const m = Math.floor(s / 60); if (m < 60) return m + "m";
+
+    const h = Math.floor(m / 60); if (h < 24) return h + "h";
+
+    const d = Math.floor(h / 24); if (d < 7) return d + "d";
+
+    const w = Math.floor(d / 7); if (w < 5) return w + "w";
+
+    const mo = Math.floor(d / 30); if (mo < 12) return mo + "mo";
+
+    return Math.floor(d / 365) + "y";
+
+}
+
+/* ---------------------------------------------------------- */
+/* SocialAPI — feed, posts, likes, comments (S2)               */
+/* ---------------------------------------------------------- */
+
+const SocialAPI = {
+
+    /* create a photo post from a picked File/Blob (compressed here) */
+
+    async createPost(userId, imageFile, caption) {
+
+        const blob = await compressImage(imageFile, 1080, 0.82);
+
+        const { path, url } = await uploadToCloud("posts", userId, blob);
+
+        const { data, error } = await window.sdb
+
+            .from("social_posts")
+
+            .insert({
+
+                author_id: userId,
+
+                image_url: url,
+
+                image_path: path,
+
+                caption: (caption || "").trim() || null
+
+            })
+
+            .select()
+
+            .single();
+
+        if (error) throw error;
+
+        return data;
+
+    },
+
+    /* newest-first global feed, hydrated with author + counts */
+
+    async listFeed(viewerId, limit = 30) {
+
+        const { data: posts, error } = await window.sdb
+
+            .from("social_posts")
+
+            .select("*")
+
+            .order("created_at", { ascending: false })
+
+            .limit(limit);
+
+        if (error) throw error;
+
+        return this._hydrate(posts || [], viewerId);
+
+    },
+
+    /* one author's posts, newest first */
+
+    async listByAuthor(authorId, viewerId, limit = 60) {
+
+        const { data: posts, error } = await window.sdb
+
+            .from("social_posts")
+
+            .select("*")
+
+            .eq("author_id", authorId)
+
+            .order("created_at", { ascending: false })
+
+            .limit(limit);
+
+        if (error) throw error;
+
+        return this._hydrate(posts || [], viewerId);
+
+    },
+
+    /* attach author profile + like/comment counts to a set of posts.
+       social_posts has no direct FK to social_profiles, so we join
+       in the client with a couple of batched lookups. */
+
+    async _hydrate(posts, viewerId) {
+
+        if (!posts.length) return [];
+
+        const postIds = posts.map(p => p.id);
+
+        const authorIds = [...new Set(posts.map(p => p.author_id))];
+
+        const [profs, likes, comments] = await Promise.all([
+
+            window.sdb.from("social_profiles")
+
+                .select("user_id, display_name, avatar_url")
+
+                .in("user_id", authorIds),
+
+            window.sdb.from("social_likes")
+
+                .select("post_id, user_id")
+
+                .in("post_id", postIds),
+
+            window.sdb.from("social_comments")
+
+                .select("post_id")
+
+                .in("post_id", postIds)
+
+        ]);
+
+        const profMap = {};
+
+        (profs.data || []).forEach(p => { profMap[p.user_id] = p; });
+
+        const likeCount = {}, likedByMe = {};
+
+        (likes.data || []).forEach(l => {
+
+            likeCount[l.post_id] = (likeCount[l.post_id] || 0) + 1;
+
+            if (l.user_id === viewerId) likedByMe[l.post_id] = true;
+
+        });
+
+        const cmtCount = {};
+
+        (comments.data || []).forEach(c => {
+
+            cmtCount[c.post_id] = (cmtCount[c.post_id] || 0) + 1;
+
+        });
+
+        return posts.map(p => ({
+
+            ...p,
+
+            author: profMap[p.author_id] ||
+
+                { display_name: "Someone", avatar_url: null },
+
+            likeCount: likeCount[p.id] || 0,
+
+            likedByMe: !!likedByMe[p.id],
+
+            commentCount: cmtCount[p.id] || 0
+
+        }));
+
+    },
+
+    async toggleLike(postId, userId, currentlyLiked) {
+
+        if (currentlyLiked) {
+
+            const { error } = await window.sdb.from("social_likes")
+
+                .delete().eq("post_id", postId).eq("user_id", userId);
+
+            if (error) throw error;
+
+            return false;
+
+        }
+
+        const { error } = await window.sdb.from("social_likes")
+
+            .insert({ post_id: postId, user_id: userId });
+
+        /* a duplicate just means it was already liked — treat as liked */
+
+        if (error && !/duplicate|unique/i.test(error.message || "")) throw error;
+
+        return true;
+
+    },
+
+    async listComments(postId) {
+
+        const { data: comments, error } = await window.sdb
+
+            .from("social_comments")
+
+            .select("*")
+
+            .eq("post_id", postId)
+
+            .order("created_at", { ascending: true });
+
+        if (error) throw error;
+
+        if (!comments || !comments.length) return [];
+
+        const authorIds = [...new Set(comments.map(c => c.author_id))];
+
+        const { data: profs } = await window.sdb.from("social_profiles")
+
+            .select("user_id, display_name, avatar_url")
+
+            .in("user_id", authorIds);
+
+        const map = {};
+
+        (profs || []).forEach(p => { map[p.user_id] = p; });
+
+        return comments.map(c => ({
+
+            ...c,
+
+            author: map[c.author_id] ||
+
+                { display_name: "Someone", avatar_url: null }
+
+        }));
+
+    },
+
+    async addComment(postId, userId, body) {
+
+        const { data, error } = await window.sdb.from("social_comments")
+
+            .insert({ post_id: postId, author_id: userId, body: body.trim() })
+
+            .select().single();
+
+        if (error) throw error;
+
+        return data;
+
+    }
+
+};

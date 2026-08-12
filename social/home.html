@@ -35,9 +35,16 @@
 
         <div class="actions">
 
-            <button class="iconBtn" id="newPostBtn" title="New post">＋</button>
+            <button class="iconBtn" id="newPostBtn" title="New post" aria-label="New post">
 
-            <button class="avatarBtn" id="avatarBtn" title="You">
+                <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                    <path fill="none" stroke="currentColor" stroke-width="2"
+                          stroke-linecap="round" d="M12 5v14M5 12h14"/>
+                </svg>
+
+            </button>
+
+            <button class="avatarBtn" id="avatarBtn" title="You" aria-label="Your menu">
 
                 <span id="avatarInitial">·</span>
 
@@ -69,33 +76,59 @@
 
     <main class="page">
 
-        <div class="card" id="welcomeCard">
+        <!-- composer teaser -->
 
-            <h2 id="greeting">Welcome 👋</h2>
+        <button class="composer" id="composerTeaser">
 
-            <p style="color:var(--muted);margin-top:6px;line-height:1.5">
-               Your corner of SHIBA Social is ready.</p>
+            <span class="cAvatar" id="teaserAvatar"><span id="teaserInitial">·</span></span>
 
-        </div>
+            <span class="cText">Share a photo…</span>
+
+            <span class="cGo">Post</span>
+
+        </button>
 
         <div class="sectionLabel">Community feed</div>
 
-        <div class="card">
+        <!-- feed -->
+
+        <div id="feed"></div>
+
+        <!-- loading / empty states -->
+
+        <div class="card" id="feedLoading">
+
+            <div class="empty"><p>Loading the feed…</p></div>
+
+        </div>
+
+        <div class="card hidden" id="feedEmpty">
 
             <div class="empty">
 
-                <div class="big">🖼️</div>
+                <div class="emptyArt">
 
-                <h3>The feed is on its way</h3>
+                    <svg viewBox="0 0 48 48" width="52" height="52" aria-hidden="true">
+                        <rect x="6" y="9" width="36" height="30" rx="4"
+                              fill="none" stroke="currentColor" stroke-width="2.2"/>
+                        <circle cx="17" cy="20" r="3.4"
+                              fill="none" stroke="currentColor" stroke-width="2.2"/>
+                        <path d="M9 35l10-9 7 6 6-5 7 6" fill="none"
+                              stroke="currentColor" stroke-width="2.2"
+                              stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
 
-                <p>Photo posts, likes and comments land in the next update.
-                   For now, make your profile yours.</p>
+                </div>
+
+                <h3>No posts yet</h3>
+
+                <p>Be the first to share something with the community.</p>
 
                 <div style="margin-top:18px">
 
-                    <a class="btn" href="profile.html"
-                       style="display:inline-block;width:auto;padding:12px 22px">
-                       Set up your profile</a>
+                    <button class="btn" id="emptyPostBtn"
+                            style="display:inline-block;width:auto;padding:12px 22px">
+                        Share a photo</button>
 
                 </div>
 
@@ -105,8 +138,79 @@
 
     </main>
 
+    <!-- ===================================================== -->
+    <!-- Compose modal                                          -->
+    <!-- ===================================================== -->
+
+    <div class="mBack hidden" id="composeModal">
+
+        <div class="mCard">
+
+            <div class="mHead">
+
+                <span>New post</span>
+
+                <button class="mClose" id="composeClose" aria-label="Close">
+
+                    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                        <path fill="none" stroke="currentColor" stroke-width="2"
+                              stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/>
+                    </svg>
+
+                </button>
+
+            </div>
+
+            <div class="mBody">
+
+                <button class="pickArea" id="pickArea" type="button">
+
+                    <div class="pickPrompt" id="pickPrompt">
+
+                        <svg viewBox="0 0 48 48" width="40" height="40" aria-hidden="true">
+                            <rect x="6" y="9" width="36" height="30" rx="4"
+                                  fill="none" stroke="currentColor" stroke-width="2.2"/>
+                            <path d="M24 17v12M18 23h12" fill="none"
+                                  stroke="currentColor" stroke-width="2.2"
+                                  stroke-linecap="round"/>
+                        </svg>
+
+                        <span>Tap to choose a photo</span>
+
+                    </div>
+
+                    <img id="composePreview" class="hidden" alt="Preview">
+
+                </button>
+
+                <input type="file" id="postFile" accept="image/*" class="hidden">
+
+                <div class="field" style="margin-top:16px">
+
+                    <label for="postCaption">Caption</label>
+
+                    <textarea id="postCaption" maxlength="600"
+                              placeholder="Say something about it… (optional)"></textarea>
+
+                </div>
+
+            </div>
+
+            <div class="mFoot">
+
+                <button class="btn ghost" id="composeCancel">Cancel</button>
+
+                <button class="btn" id="postBtn">Post</button>
+
+            </div>
+
+        </div>
+
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
     <script src="js/socialClient.js"></script>
+    <script src="js/postCard.js"></script>
     <script src="js/home.js"></script>
 
 </body>
