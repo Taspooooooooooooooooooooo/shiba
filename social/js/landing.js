@@ -145,6 +145,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const dob = document.getElementById("suDob").value;   /* yyyy-mm-dd */
 
+        const email = document.getElementById("suEmail").value.trim();
+
+        const phone = document.getElementById("suPhone").value.trim();
+
         const pass = document.getElementById("suPass").value;
 
         const pass2 = document.getElementById("suPass2").value;
@@ -172,6 +176,22 @@ document.addEventListener("DOMContentLoaded", () => {
             dobDate.getFullYear() < 1900) {
 
             SToast.err("Please enter a valid date of birth.");
+
+            return;
+
+        }
+
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+
+            SToast.err("Please enter a valid email address.");
+
+            return;
+
+        }
+
+        if (phone.replace(/\D/g, "").length < 6) {
+
+            SToast.err("Please enter a valid phone number.");
 
             return;
 
@@ -266,7 +286,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 p_display_name: displayName || null,
 
-                p_dob: dob
+                p_dob: dob,
+
+                p_email: email,
+
+                p_phone: phone
 
             });
 

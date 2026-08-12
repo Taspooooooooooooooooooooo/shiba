@@ -764,6 +764,23 @@ img { max-width: 100%; display: block; }
 
 .likeBtn.liked .cnt { color: var(--accent-2); }
 
+.postTitle {
+
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 4px;
+    word-break: break-word;
+}
+
+/* views is display-only, not a button */
+
+.iAction.views { cursor: default; }
+
+.iAction.views:hover { color: var(--muted); }
+
+.iAction.views .cnt { color: var(--muted); }
+
 .postCaption {
 
     font-size: 14px;

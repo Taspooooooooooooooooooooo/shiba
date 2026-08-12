@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>SHIBA Social | Link police account</title>
+
+    <meta name="theme-color" content="#0e0b16">
+
+    <link rel="icon" type="image/svg+xml" href="assets/social-badge.svg">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+
+    <link rel="stylesheet" href="css/social.css">
+</head>
+
+<body>
+
+    <header class="topbar">
+
+        <a class="brand" href="home.html">
+
+            <span class="glyph">◈</span>
+
+            <span class="word"><b>SHIBA</b> <span>Social</span></span>
+
+        </a>
+
+        <div class="actions">
+
+            <a class="iconBtn" href="home.html" title="Home" aria-label="Home">
+
+                <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                    <path fill="none" stroke="currentColor" stroke-width="2"
+                          stroke-linecap="round" stroke-linejoin="round"
+                          d="M4 11l8-7 8 7M6 10v9h12v-9"/>
+                </svg>
+
+            </a>
+
+        </div>
+
+    </header>
+
+    <main class="page">
+
+        <div class="card">
+
+            <h2 style="margin-bottom:6px">Link a police account</h2>
+
+            <p style="color:var(--muted);line-height:1.55;font-size:14px">
+               Have a SHIBA PIMS activation code? Link it to this account to
+               unlock the police system with your existing profile. Your code
+               is your identity confirmation.</p>
+
+        </div>
+
+        <!-- already linked -->
+
+        <div class="card hidden" id="alreadyCard">
+
+            <div class="empty">
+
+                <h3>You're already linked</h3>
+
+                <p>This account already has a police profile.</p>
+
+                <div style="margin-top:16px">
+
+                    <a class="btn" href="../lapd/index.html"
+                       style="display:inline-block;width:auto;padding:12px 22px">
+                        Open SHIBA PIMS</a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- STEP 1 — verify the code -->
+
+        <div class="card" id="codeCard">
+
+            <div class="field">
+
+                <label for="lpOfficerId">Officer ID <small
+                    style="color:var(--faint)">(optional)</small></label>
+
+                <input id="lpOfficerId" type="text" placeholder="OFCR-000123">
+
+            </div>
+
+            <div class="field">
+
+                <label for="lpCode">Activation code</label>
+
+                <input id="lpCode" type="text" placeholder="XXXX-XXXX-XXXX">
+
+            </div>
+
+            <button class="btn" id="lpVerify">Verify code</button>
+
+        </div>
+
+        <!-- STEP 2 — set a PIN + link -->
+
+        <div class="card hidden" id="pinCard">
+
+            <div class="card" style="background:var(--surface-2);margin-bottom:16px">
+
+                <div style="font-weight:700" id="lpHello">—</div>
+
+            </div>
+
+            <p style="color:var(--muted);font-size:14px;line-height:1.5;
+                      margin-bottom:14px">
+               Set a 4-digit security PIN — you'll use it as the second step
+               when signing into SHIBA PIMS.</p>
+
+            <div class="field">
+
+                <label for="lpPin">Security PIN</label>
+
+                <input id="lpPin" type="password" inputmode="numeric"
+                       maxlength="4" placeholder="••••">
+
+            </div>
+
+            <div class="field">
+
+                <label for="lpPin2">Confirm PIN</label>
+
+                <input id="lpPin2" type="password" inputmode="numeric"
+                       maxlength="4" placeholder="••••">
+
+            </div>
+
+            <div class="rowBtns">
+
+                <button class="btn ghost" id="lpBack">Back</button>
+
+                <button class="btn" id="lpLink">Link account</button>
+
+            </div>
+
+        </div>
+
+        <!-- success -->
+
+        <div class="card hidden" id="doneCard">
+
+            <div class="empty">
+
+                <h3>Police account linked</h3>
+
+                <p id="doneText">You can now sign into SHIBA PIMS with this
+                   account.</p>
+
+                <div style="margin-top:16px">
+
+                    <a class="btn" href="../lapd/index.html"
+                       style="display:inline-block;width:auto;padding:12px 22px">
+                        Open SHIBA PIMS</a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script src="js/socialClient.js"></script>
+    <script src="js/link-pims.js"></script>
+
+</body>
+
+</html>

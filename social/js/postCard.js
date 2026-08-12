@@ -20,6 +20,18 @@ const SVG_COMMENT =
     'stroke-linecap="round" stroke-linejoin="round" ' +
     'd="M21 12a8 8 0 0 1-11.5 7.2L4 20l1-4.5A8 8 0 1 1 21 12z"/></svg>';
 
+const SVG_EYE =
+    '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">' +
+    '<path fill="none" stroke="currentColor" stroke-width="1.8" ' +
+    'stroke-linecap="round" stroke-linejoin="round" ' +
+    'd="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/>' +
+    '<circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" ' +
+    'stroke-width="1.8"/></svg>';
+
+/* count each post as viewed at most once per page load */
+
+const _viewedPosts = new Set();
+
 /* build + return an <article class="post"> element */
 
 function renderPostCard(post, viewerId) {
@@ -105,7 +117,32 @@ function renderPostCard(post, viewerId) {
 
     actions.appendChild(cmtBtn);
 
+    /* views (display only) */
+
+    const views = document.createElement("span");
+
+    views.className = "iAction views";
+
+    views.innerHTML = SVG_EYE +
+        '<span class="cnt">' + (post.view_count || 0) + '</span>';
+
+    actions.appendChild(views);
+
     body.appendChild(actions);
+
+    /* title (optional name for the photo) */
+
+    if (post.title) {
+
+        const t = document.createElement("div");
+
+        t.className = "postTitle";
+
+        t.textContent = post.title;
+
+        body.appendChild(t);
+
+    }
 
     /* caption */
 
@@ -273,6 +310,25 @@ function renderPostCard(post, viewerId) {
         input.focus();
 
     });
+
+    /* count a view (once per post per page load) and reflect the
+       returned total in the counter */
+
+    if (!_viewedPosts.has(post.id)) {
+
+        _viewedPosts.add(post.id);
+
+        SocialAPI.incrementViews(post.id).then(n => {
+
+            if (typeof n === "number") {
+
+                views.querySelector(".cnt").textContent = n;
+
+            }
+
+        });
+
+    }
 
     return el;
 

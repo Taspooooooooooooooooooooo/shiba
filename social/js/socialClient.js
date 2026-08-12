@@ -55,6 +55,23 @@ function isValidUsername(username) {
 
 }
 
+/* SHA-256 hex — used when linking a police account (the PIMS PIN
+   is stored as a SHA-256 hash, same as PIMS itself). */
+
+async function sha256Hex(text) {
+
+    const bytes = new TextEncoder().encode(text);
+
+    const hash = await crypto.subtle.digest("SHA-256", bytes);
+
+    return [...new Uint8Array(hash)]
+
+        .map(b => b.toString(16).padStart(2, "0"))
+
+        .join("");
+
+}
+
 /* ---------------------------------------------------------- */
 /* image compression (shrink before upload)                    */
 /* ---------------------------------------------------------- */
@@ -400,35 +417,62 @@ const SocialAPI = {
 
     /* ---- posts ------------------------------------------- */
 
-    async createPost(userId, imageFile, caption) {
+    async createPost(userId, imageFile, caption, title) {
 
         const blob = await compressImage(imageFile, 1080, 0.82);
 
         const { path, url } = await uploadToCloud("posts", userId, blob);
 
-        const { data, error } = await window.sdb
+        const row = {
 
-            .from("social_posts")
+            author_id: userId,
 
-            .insert({
+            image_url: url,
 
-                author_id: userId,
+            image_path: path,
 
-                image_url: url,
+            caption: (caption || "").trim() || null,
 
-                image_path: path,
+            title: (title || "").trim() || null
 
-                caption: (caption || "").trim() || null
+        };
 
-            })
+        let res = await window.sdb
 
-            .select()
+            .from("social_posts").insert(row).select().single();
 
-            .single();
+        if (res.error && row.title) {
 
-        if (error) throw error;
+            /* the title column may not exist yet — retry without it */
 
-        return data;
+            delete row.title;
+
+            res = await window.sdb
+
+                .from("social_posts").insert(row).select().single();
+
+        }
+
+        if (res.error) throw res.error;
+
+        return res.data;
+
+    },
+
+    /* bump a post's view counter (atomic RPC). Fire-and-forget;
+       silently no-ops until the S4 patch is run. */
+
+    async incrementViews(postId) {
+
+        try {
+
+            const { data } = await window.sdb
+
+                .rpc("increment_post_views", { p_post_id: postId });
+
+            return data;
+
+        } catch (e) { return null; }
 
     },
 

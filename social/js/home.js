@@ -120,6 +120,40 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         .addEventListener("click", () => SocialSession.logout());
 
+    /* PIMS bridge in the menu: linked officers get a shortcut into
+       SHIBA PIMS; everyone else gets the "link a police account"
+       flow (which asks for an activation code). */
+
+    try {
+
+        const badges = await SocialAPI.getBadges([viewerId]);
+
+        const isOfficer = !!(badges[viewerId] && badges[viewerId].is_officer);
+
+        const link = document.createElement("a");
+
+        link.className = "pimsMenuLink";
+
+        if (isOfficer) {
+
+            link.href = "../lapd/index.html";
+
+            link.textContent = "SHIBA PIMS";
+
+        } else {
+
+            link.href = "link-pims.html";
+
+            link.textContent = "Link police account";
+
+        }
+
+        const logoutBtn = document.getElementById("logoutBtn");
+
+        logoutBtn.parentNode.insertBefore(link, logoutBtn);
+
+    } catch (e) { /* badges RPC not available yet — skip the link */ }
+
     /* ----------------------------------------------------- */
     /* feed                                                   */
     /* ----------------------------------------------------- */
@@ -186,6 +220,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const captionEl = document.getElementById("postCaption");
 
+    const titleEl = document.getElementById("postTitle");
+
     const postBtn = document.getElementById("postBtn");
 
     let chosenFile = null;
@@ -195,6 +231,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         chosenFile = null;
 
         captionEl.value = "";
+
+        titleEl.value = "";
 
         preview.classList.add("hidden");
 
@@ -276,7 +314,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             const created = await SocialAPI.createPost(
 
-                viewerId, chosenFile, captionEl.value);
+                viewerId, chosenFile, captionEl.value, titleEl.value);
 
             /* hydrate the single new post with the viewer as author
                so it renders instantly at the top of the feed */

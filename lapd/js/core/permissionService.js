@@ -61,6 +61,10 @@ const PermissionService = {
             ["division.all", "See all divisions"],
             ["permissions.grant", "Grant permissions"],
             ["admin.panel", "Access admin panel"]
+        ],
+
+        "Social Media": [
+            ["socialmedia.admin", "SHIBA Social administrator"]
         ]
 
     },

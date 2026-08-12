@@ -50,6 +50,7 @@ const AppLayout = {
         ["shifts.html", "shifts", "Shifts"],
         ["ops.html", "dispatch", "Live Ops"],
         ["#", "messages", "Messages"],
+        ["../social/", "messages", "Social"],
         ["settings.html", "settings", "Settings"]
     ],
 

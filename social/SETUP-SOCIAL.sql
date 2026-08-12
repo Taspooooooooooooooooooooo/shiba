@@ -21,12 +21,18 @@ create table if not exists public.social_profiles (
   avatar_path text,
   bio text,
   date_of_birth date,
+  email text,
+  phone text,
   created_at timestamp with time zone default now()
 );
 
--- add DOB for databases created before this column existed
+-- columns added over time (safe on existing databases)
 alter table public.social_profiles
   add column if not exists date_of_birth date;
+alter table public.social_profiles
+  add column if not exists email text;
+alter table public.social_profiles
+  add column if not exists phone text;
 
 -- a photo post in the (global, for now) community feed
 create table if not exists public.social_posts (
@@ -42,6 +48,28 @@ create index if not exists social_posts_created_idx
   on public.social_posts (created_at desc);
 create index if not exists social_posts_author_idx
   on public.social_posts (author_id);
+
+-- a post can have a title/name and counts views
+alter table public.social_posts
+  add column if not exists title text;
+alter table public.social_posts
+  add column if not exists view_count integer not null default 0;
+
+-- atomic view bump (returns the new count)
+create or replace function public.increment_post_views(p_post_id uuid)
+returns integer
+language sql
+security definer
+set search_path = public
+as $$
+  update public.social_posts
+     set view_count = coalesce(view_count, 0) + 1
+   where id = p_post_id
+  returning view_count;
+$$;
+
+grant execute on function public.increment_post_views(uuid)
+  to anon, authenticated;
 
 create table if not exists public.social_likes (
   id uuid not null default gen_random_uuid(),
@@ -84,15 +112,18 @@ create index if not exists social_stories_expires_idx
 -- social profile. Called AFTER the client makes the Supabase
 -- auth user. Does NOT touch the officer/activation flow.
 -- ------------------------------------------------------------
--- drop the old 3-arg signature so the name resolves unambiguously
--- to the new one below (which also records date of birth).
+-- drop older signatures so the name resolves unambiguously to the
+-- newest one below (records display name, DOB, email and phone).
 drop function if exists public.social_register(uuid, text, text);
+drop function if exists public.social_register(uuid, text, text, date);
 
 create or replace function public.social_register(
   p_user uuid,
   p_username text,
   p_display_name text default null,
-  p_dob date default null
+  p_dob date default null,
+  p_email text default null,
+  p_phone text default null
 )
 returns json
 language plpgsql
@@ -104,17 +135,21 @@ begin
           'SUPABASE_AUTH', 'IN_AUTH_METADATA', true)
   on conflict (id) do nothing;
 
-  insert into public.social_profiles (user_id, display_name, date_of_birth)
+  insert into public.social_profiles
+    (user_id, display_name, date_of_birth, email, phone)
   values (p_user,
           coalesce(nullif(trim(p_display_name), ''), p_username),
-          p_dob)
+          p_dob,
+          nullif(trim(p_email), ''),
+          nullif(trim(p_phone), ''))
   on conflict (user_id) do nothing;
 
   return json_build_object('ok', true);
 end;
 $$;
 
-grant execute on function public.social_register(uuid, text, text, date)
+grant execute on function
+  public.social_register(uuid, text, text, date, text, text)
   to anon, authenticated;
 
 -- best-effort cleanup of expired stories (called opportunistically
@@ -164,8 +199,10 @@ alter table public.social_profiles
 
 -- derived badges (officer / admin) for a set of users. SECURITY
 -- DEFINER so the public site can read just these two booleans
--- without exposing the officers/ranks tables. Officer = has an
--- officer record; Admin = a command-tier rank.
+-- without exposing the officers/permissions tables.
+--   Officer = the account is linked to an officer record.
+--   Admin   = that officer holds an active 'socialmedia.admin'
+--             permission grant (granted in their PIMS file).
 create or replace function public.social_badges(p_user_ids uuid[])
 returns table(user_id uuid, is_officer boolean, is_admin boolean)
 language sql
@@ -174,13 +211,16 @@ set search_path = public
 as $$
   select u.id,
          (o.id is not null) as is_officer,
-         coalesce(
-           r.name in ('Commander','Deputy Chief','Chief','Chief of Police'),
-           false
-         ) as is_admin
+         coalesce(exists(
+           select 1
+             from public.permission_grants pg
+            where pg.officer_id = o.id
+              and pg.permission = 'socialmedia.admin'
+              and pg.revoked_at is null
+              and pg.expires_at > now()
+         ), false) as is_admin
   from public.users u
   left join public.officers o on o.user_id = u.id
-  left join public.ranks r on r.id = o.rank_id
   where u.id = any(p_user_ids);
 $$;
 

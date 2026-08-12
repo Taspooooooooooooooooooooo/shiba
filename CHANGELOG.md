@@ -2,6 +2,34 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.53.0 — 2026-08-12 · SHIBA Social S4 — PIMS bridge + admin permission, email/phone, post titles & views
+
+### Changed
+- **Administrator badge is now permission-driven.** It no longer comes from
+  rank — an account shows the shield when it's a **linked officer** *and* that
+  officer holds an active **`socialmedia.admin`** permission. Grant it in the
+  officer's **Personnel File → Permissions** (new permission in the catalog;
+  the grant form gained a **Permanent** duration).
+
+### Added
+- **Email + phone at registration** — collected and stored on the profile.
+- **Post titles + view counts** — name a photo when posting; each post shows a
+  **view counter** (atomic `increment_post_views` RPC, counted once per load).
+- **PIMS ↔ Social bridge (S4)**:
+  - PIMS sidebar gains a **Social** link.
+  - In Social, linked officers get a **SHIBA PIMS** shortcut in their menu;
+    everyone else gets **Link police account**.
+  - **`link-pims.html`** — a logged-in Social user can attach a PIMS officer to
+    their **existing** account with an activation code: it sets their PIMS PIN +
+    role (`auth.updateUser`) and calls the **unchanged** `complete_activation`.
+    No second account, and the frozen activation contract is untouched.
+
+### SQL — run `social/SETUP-SOCIAL.sql` (the S4 additions)
+- `social_profiles` gains `email` / `phone`; `social_posts` gains `title` /
+  `view_count`; new `increment_post_views(uuid)`; `social_register` now takes
+  email + phone; **`social_badges` rewritten** to derive admin from an active
+  `socialmedia.admin` grant. Everything degrades gracefully until it's run.
+
 ## v0.52.0 — 2026-08-12 · SHIBA Social S3 — follows, privacy & badges
 
 ### Added

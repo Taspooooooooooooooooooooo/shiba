@@ -1102,6 +1102,7 @@ const Personnel = {
                     <option value="24">1 day</option>
                     <option value="168">7 days</option>
                     <option value="720">30 days</option>
+                    <option value="876000">Permanent</option>
                 </select>
                 <input id="tgReason" placeholder="Reason">
                 <button id="tgGrant" class="primaryBtn">Grant</button>
