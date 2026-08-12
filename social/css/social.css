@@ -857,6 +857,54 @@ img { max-width: 100%; display: block; }
 
 .emptyArt { color: var(--faint); margin-bottom: 12px; }
 
+/* report */
+
+.reportBtn {
+
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: var(--faint);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 2px 4px;
+    transition: .15s;
+}
+
+.reportBtn:hover:not(:disabled) { color: var(--err); }
+
+.reportBtn:disabled { color: var(--faint); cursor: default; }
+
+.reportBar {
+
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+}
+
+.rbLabel { display: block; font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+
+.rbBtns { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.rbChip {
+
+    padding: 7px 12px;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    background: var(--bg-2);
+    color: var(--text);
+    font-size: 13px;
+    cursor: pointer;
+    transition: .15s;
+}
+
+.rbChip:hover:not(:disabled) { border-color: var(--err); color: var(--err); }
+
+.rbChip:disabled { opacity: .5; cursor: default; }
+
+.rbThanks { font-size: 13px; color: var(--ok); }
+
 /* ==========================================================
    POST grid (profile)
 ========================================================== */

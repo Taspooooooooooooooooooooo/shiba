@@ -1108,6 +1108,42 @@ const SocialAPI = {
 
     },
 
+    /* a user manually reports a post → lands in the same admin
+       queue as bot flags (covers images and anything the bot
+       misses). No matched terms, so a "False" review learns nothing. */
+
+    async reportPost(post, reason) {
+
+        const me = SocialSession.cached();
+
+        const who = me && me.username ? "@" + me.username : "a user";
+
+        const { error } = await window.sdb.from("social_flags").insert({
+
+            post_id: post.id,
+
+            author_id: post.author_id,
+
+            category: "User report",
+
+            matched: null,
+
+            reason: "Reported by " + who +
+
+                (reason ? " — " + reason : ""),
+
+            snapshot_title: post.title || null,
+
+            snapshot_caption: post.caption || null,
+
+            snapshot_image: post.image_url || null
+
+        });
+
+        if (error) throw error;
+
+    },
+
     async listPendingFlags() {
 
         const { data, error } = await window.sdb

@@ -2,6 +2,15 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.55.0 — 2026-08-12 · SHIBA Social — manual "Report" on posts
+
+### Added
+- Every post has a **Report** button that opens a quick reason chooser
+  (Racism / hate, Harassment, Violence, Nudity, Spam, Other). A report files a
+  flag into the **same admin moderation queue** as the bot, tagged "User report"
+  with the reason and reporter — so admins can act on **images and anything the
+  bot misses**. No new SQL (reuses `social_flags`).
+
 ## v0.54.0 — 2026-08-12 · SHIBA Social S5 — moderation (auto-flag bot + review + bans) + Terms of Use
 
 ### Added

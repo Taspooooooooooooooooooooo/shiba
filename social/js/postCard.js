@@ -128,6 +128,18 @@ function renderPostCard(post, viewerId) {
 
     actions.appendChild(views);
 
+    /* report (pushed to the right) */
+
+    const reportBtn = document.createElement("button");
+
+    reportBtn.type = "button";
+
+    reportBtn.className = "reportBtn";
+
+    reportBtn.textContent = "Report";
+
+    actions.appendChild(reportBtn);
+
     body.appendChild(actions);
 
     /* title (optional name for the photo) */
@@ -308,6 +320,78 @@ function renderPostCard(post, viewerId) {
         input.disabled = false;
 
         input.focus();
+
+    });
+
+    /* report → inline reason chooser → file a flag */
+
+    let reportBar = null;
+
+    reportBtn.addEventListener("click", () => {
+
+        if (reportBar) { reportBar.remove(); reportBar = null; return; }
+
+        reportBar = document.createElement("div");
+
+        reportBar.className = "reportBar";
+
+        const label = document.createElement("span");
+
+        label.className = "rbLabel";
+
+        label.textContent = "Report this post for:";
+
+        reportBar.appendChild(label);
+
+        const wrap = document.createElement("div");
+
+        wrap.className = "rbBtns";
+
+        ["Racism / hate", "Harassment", "Violence", "Nudity",
+
+         "Spam", "Other"].forEach(r => {
+
+            const b = document.createElement("button");
+
+            b.type = "button";
+
+            b.className = "rbChip";
+
+            b.textContent = r;
+
+            b.addEventListener("click", async () => {
+
+                wrap.querySelectorAll("button").forEach(x => x.disabled = true);
+
+                try {
+
+                    await SocialAPI.reportPost(post, r);
+
+                    reportBar.innerHTML =
+                        '<span class="rbThanks">Reported — thank you. ' +
+                        'An administrator will review it.</span>';
+
+                    reportBtn.textContent = "Reported";
+
+                    reportBtn.disabled = true;
+
+                } catch (e) {
+
+                    SToast.err("Couldn't send the report. Try again.");
+
+                    wrap.querySelectorAll("button").forEach(x => x.disabled = false);
+
+                }
+
+            });
+
+            wrap.appendChild(b);
+
+        });
+
+        reportBar.appendChild(wrap);
+
+        body.appendChild(reportBar);
 
     });
 
