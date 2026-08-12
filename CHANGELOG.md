@@ -2,6 +2,36 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.56.0 — 2026-08-12 · SHIBA Social S6 — admin panel + post Actions + sanctions
+
+### Added
+- **Admin panel** (`admin.html`, replaces the old moderation page) with three
+  tabs:
+  - **Users** — look up any account; admins see the **full profile even if
+    private** (email, phone, DOB, signup IP, joined) and **all their posts**;
+    issue **Ban / Timeout / Mute / Warn** (with reason + minutes) and **lift**
+    active sanctions; see the sanction history.
+  - **Queue** — the flag review queue (Confirm / Cancel / False).
+  - **Banned words** — manage the bot's term list + learned-safe list.
+- **Actions menu on every post** — the **owner** gets **Delete**; an **admin**
+  gets **Delete · Warn author · Ban author · Administration lookup** (opens the
+  panel on that user). The **Report** button is now a textured pill.
+- **Sanctions** — ban (permanent), **timeout** (temporary lockout), **mute**
+  (can browse, can't post/comment), and **warn** (a one-time notice). Timeouts
+  and mutes honor a duration; the app enforces block/mute/warn on every page via
+  a self-status check.
+
+### Changed
+- **Admin = a linked police officer holding `socialmedia.admin`** (unchanged
+  definition). The patch **grants `vladko` that permission** so the owner is an
+  admin out of the box.
+
+### SQL — run `social/SETUP-SOCIAL.sql` (the S6 section)
+- `social_punishments` gains `kind` + `expires_at`; new RPCs `social_sanction`,
+  `social_lift`, `social_self_status`, `social_admin_sanctions`; `social_check_
+  banned` now respects kind/expiry; and a grant of `socialmedia.admin` to
+  `vladko`. Degrades gracefully until run.
+
 ## v0.55.0 — 2026-08-12 · SHIBA Social — manual "Report" on posts
 
 ### Added

@@ -128,7 +128,33 @@ function renderPostCard(post, viewerId) {
 
     actions.appendChild(views);
 
-    /* report (pushed to the right) */
+    /* right-side buttons: Actions (owner/admin) + Report (everyone) */
+
+    const isOwner = post.author_id &&
+
+        post.author_id === (SocialViewer.id || viewerId);
+
+    const isAdmin = !!SocialViewer.isAdmin;
+
+    const rightWrap = document.createElement("div");
+
+    rightWrap.className = "actionsRight";
+
+    let actionsBtn = null;
+
+    if (isOwner || isAdmin) {
+
+        actionsBtn = document.createElement("button");
+
+        actionsBtn.type = "button";
+
+        actionsBtn.className = "actionsBtn";
+
+        actionsBtn.textContent = "Actions";
+
+        rightWrap.appendChild(actionsBtn);
+
+    }
 
     const reportBtn = document.createElement("button");
 
@@ -138,7 +164,9 @@ function renderPostCard(post, viewerId) {
 
     reportBtn.textContent = "Report";
 
-    actions.appendChild(reportBtn);
+    rightWrap.appendChild(reportBtn);
+
+    actions.appendChild(rightWrap);
 
     body.appendChild(actions);
 
@@ -283,6 +311,14 @@ function renderPostCard(post, viewerId) {
 
         if (!text || !viewerId) return;
 
+        if (SocialStatus.muted) {
+
+            SToast.err("You're muted and can't comment right now.");
+
+            return;
+
+        }
+
         input.disabled = true;
 
         try {
@@ -394,6 +430,182 @@ function renderPostCard(post, viewerId) {
         body.appendChild(reportBar);
 
     });
+
+    /* Actions menu (owner: delete; admin: delete/warn/ban + panel) */
+
+    let actionsPanel = null;
+
+    if (actionsBtn) actionsBtn.addEventListener("click", () => {
+
+        if (actionsPanel) { actionsPanel.remove(); actionsPanel = null; return; }
+
+        actionsPanel = document.createElement("div");
+
+        actionsPanel.className = "actionsPanel";
+
+        /* delete (owner or admin) */
+
+        const del = document.createElement("button");
+
+        del.className = "apItem danger";
+
+        del.textContent = "Delete post";
+
+        let armed = false;
+
+        del.addEventListener("click", async () => {
+
+            if (!armed) {
+
+                armed = true;
+
+                del.textContent = "Tap again to delete";
+
+                setTimeout(() => { armed = false; del.textContent = "Delete post"; }, 3000);
+
+                return;
+
+            }
+
+            del.disabled = true;
+
+            try {
+
+                await SocialAPI.deletePost(post.id);
+
+                SToast.ok("Post deleted.");
+
+                el.remove();
+
+            } catch (e) { SToast.err("Couldn't delete the post."); del.disabled = false; }
+
+        });
+
+        actionsPanel.appendChild(del);
+
+        /* admin-only sanctions + panel */
+
+        if (isAdmin) {
+
+            actionsPanel.appendChild(mkAdminAction("Warn author", "warn"));
+
+            actionsPanel.appendChild(mkAdminAction("Ban author", "ban"));
+
+            const look = document.createElement("a");
+
+            look.className = "apItem";
+
+            look.href = "admin.html?user=" +
+
+                encodeURIComponent(post.author_id || "");
+
+            look.textContent = "Administration lookup";
+
+            actionsPanel.appendChild(look);
+
+        }
+
+        body.appendChild(actionsPanel);
+
+    });
+
+    /* build a "reveal a reason, then apply" admin action row */
+
+    function mkAdminAction(label, kind) {
+
+        const b = document.createElement("button");
+
+        b.className = "apItem" + (kind === "ban" ? " danger" : "");
+
+        b.textContent = label;
+
+        b.addEventListener("click", () => {
+
+            actionsPanel.innerHTML = "";
+
+            const l = document.createElement("div");
+
+            l.className = "apLabel";
+
+            l.textContent = label;
+
+            const inp = document.createElement("input");
+
+            inp.className = "apInput";
+
+            inp.placeholder = "Reason (optional)";
+
+            const row = document.createElement("div");
+
+            row.className = "apRow";
+
+            const cancel = document.createElement("button");
+
+            cancel.className = "btn ghost";
+
+            cancel.textContent = "Cancel";
+
+            cancel.addEventListener("click", () => {
+
+                actionsPanel.remove(); actionsPanel = null;
+
+            });
+
+            const apply = document.createElement("button");
+
+            apply.className = "btn danger";
+
+            apply.textContent = label;
+
+            apply.addEventListener("click", async () => {
+
+                apply.disabled = true;
+
+                try {
+
+                    const res = await SocialAPI.sanction(
+
+                        post.author_id, kind, inp.value.trim() || null, null);
+
+                    if (res && res.ok === false) {
+
+                        SToast.err(res.reason === "not authorized"
+
+                            ? "Not authorized." : "Action failed.");
+
+                        apply.disabled = false;
+
+                        return;
+
+                    }
+
+                    SToast.ok(kind === "ban" ? "User banned." : "Warning sent.");
+
+                    if (actionsPanel) { actionsPanel.remove(); actionsPanel = null; }
+
+                } catch (e) {
+
+                    SToast.err("Action failed."); apply.disabled = false;
+
+                }
+
+            });
+
+            row.appendChild(cancel);
+
+            row.appendChild(apply);
+
+            actionsPanel.appendChild(l);
+
+            actionsPanel.appendChild(inp);
+
+            actionsPanel.appendChild(row);
+
+        });
+
+        return b;
+
+    }
 
     /* count a view (once per post per page load) and reflect the
        returned total in the counter */

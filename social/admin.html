@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>SHIBA Social | Admin panel</title>
+
+    <meta name="theme-color" content="#0e0b16">
+
+    <link rel="icon" type="image/svg+xml" href="assets/social-badge.svg">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+
+    <link rel="stylesheet" href="css/social.css">
+</head>
+
+<body>
+
+    <header class="topbar">
+
+        <a class="brand" href="home.html">
+
+            <span class="glyph">◈</span>
+
+            <span class="word"><b>SHIBA</b> <span>Social</span></span>
+
+        </a>
+
+        <div class="actions">
+
+            <a class="iconBtn" href="home.html" title="Home" aria-label="Home">
+
+                <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                    <path fill="none" stroke="currentColor" stroke-width="2"
+                          stroke-linecap="round" stroke-linejoin="round"
+                          d="M4 11l8-7 8 7M6 10v9h12v-9"/>
+                </svg>
+
+            </a>
+
+        </div>
+
+    </header>
+
+    <main class="page">
+
+        <div class="card hidden" id="notAdmin">
+
+            <div class="empty">
+
+                <h3>Administrators only</h3>
+
+                <p>You need the SHIBA Social administrator permission.</p>
+
+            </div>
+
+        </div>
+
+        <div id="adminContent" class="hidden">
+
+            <div class="authTabs adminTabs">
+
+                <button data-tab="users" class="active" type="button">Users</button>
+
+                <button data-tab="queue" type="button">Queue
+                    <span id="queueCount" class="qCount"></span></button>
+
+                <button data-tab="words" type="button">Banned words</button>
+
+            </div>
+
+            <!-- USERS -->
+
+            <section id="tab-users" class="adminTab">
+
+                <div class="card">
+
+                    <div class="bwAdd">
+
+                        <input id="uSearch" type="text"
+                               placeholder="username to look up">
+
+                        <button class="btn" id="uSearchBtn">Look up</button>
+
+                    </div>
+
+                </div>
+
+                <div id="userResult"></div>
+
+            </section>
+
+            <!-- QUEUE -->
+
+            <section id="tab-queue" class="adminTab hidden">
+
+                <div id="flagList"></div>
+
+                <div class="card hidden" id="noFlags">
+
+                    <div class="empty"><p>Nothing to review. All clear.</p></div>
+
+                </div>
+
+            </section>
+
+            <!-- WORDS -->
+
+            <section id="tab-words" class="adminTab hidden">
+
+                <div class="card">
+
+                    <p style="color:var(--muted);font-size:13px;line-height:1.5;
+                              margin-bottom:14px">
+                       The bot flags posts whose text contains any of these terms.
+                       Stored privately in your database.</p>
+
+                    <div class="bwAdd">
+
+                        <input id="bwTerm" type="text" placeholder="term or phrase">
+
+                        <select id="bwCat">
+                            <option>Hate ideology</option>
+                            <option>Racial slur</option>
+                            <option>Violence / genocide</option>
+                            <option>Harassment</option>
+                            <option>Other</option>
+                        </select>
+
+                        <button class="btn" id="bwAddBtn">Add</button>
+
+                    </div>
+
+                    <div id="bwList" class="termList"></div>
+
+                </div>
+
+                <div class="sectionLabel" style="margin-top:22px">Learned safe</div>
+
+                <div class="card"><div id="allowList" class="termList"></div></div>
+
+            </section>
+
+        </div>
+
+    </main>
+
+    <!-- post lightbox -->
+
+    <div class="mBack hidden" id="postLightbox">
+
+        <div class="mCard lightCard">
+
+            <div class="mHead">
+
+                <span>Post</span>
+
+                <button class="mClose" id="lightClose" aria-label="Close">
+
+                    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                        <path fill="none" stroke="currentColor" stroke-width="2"
+                              stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/>
+                    </svg>
+
+                </button>
+
+            </div>
+
+            <div class="mBody" id="lightBody"></div>
+
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script src="js/socialClient.js"></script>
+    <script src="js/postCard.js"></script>
+    <script src="js/admin.js"></script>
+
+</body>
+
+</html>

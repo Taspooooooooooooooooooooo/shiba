@@ -107,6 +107,16 @@ async function getClientIp() {
 
 }
 
+/* the current viewer's quick context (id + admin), set by pages
+   after they load badges — the post card reads it to decide which
+   Actions to show. */
+
+const SocialViewer = { id: null, isAdmin: false };
+
+/* the current viewer's moderation status (set in require) */
+
+const SocialStatus = { muted: false, muteUntil: null, warning: null };
+
 /* ---------------------------------------------------------- */
 /* image compression (shrink before upload)                    */
 /* ---------------------------------------------------------- */
@@ -242,7 +252,11 @@ const SocialSession = {
 
         if (!user) { window.location.href = "index.html"; return null; }
 
-        /* banned gate — a punished account cannot use the Service */
+        SocialViewer.id = user.id;
+
+        let blocked = false, reason = null, kind = null, until = null;
+
+        /* fast banned-flag check (works after the S5 patch) */
 
         try {
 
@@ -250,38 +264,76 @@ const SocialSession = {
 
                 .select("banned, banned_reason")
 
-                .eq("user_id", user.id)
-
-                .maybeSingle();
+                .eq("user_id", user.id).maybeSingle();
 
             if (data && data.banned) {
 
-                this.bannedScreen(data.banned_reason);
-
-                return null;
+                blocked = true; reason = data.banned_reason; kind = "ban";
 
             }
 
         } catch (e) { /* column missing pre-patch — ignore */ }
 
+        /* richer status (after the S6 patch): timeouts / mutes / warns */
+
+        const st = await SocialAPI.selfStatus();
+
+        if (st && st.blocked) {
+
+            blocked = true; reason = st.block_reason;
+
+            kind = st.block_kind; until = st.block_until;
+
+        }
+
+        SocialStatus.muted = !!(st && st.muted);
+
+        SocialStatus.muteUntil = (st && st.mute_until) || null;
+
+        SocialStatus.warning = (st && st.warning) || null;
+
+        if (blocked) { this.bannedScreen(reason, kind, until); return null; }
+
+        /* one-time warning notice */
+
+        if (SocialStatus.warning && !sessionStorage.getItem("shibaWarnSeen")) {
+
+            sessionStorage.setItem("shibaWarnSeen", "1");
+
+            setTimeout(() => SToast.info(
+
+                "Warning from moderators: " + SocialStatus.warning), 700);
+
+        }
+
         return user;
 
     },
 
-    /* full-page notice for a banned account, then clear the session */
+    /* full-page notice for a blocked account, then clear the session */
 
-    bannedScreen(reason) {
+    bannedScreen(reason, kind, until) {
+
+        const title = kind === "timeout" ? "You are timed out" : "Account suspended";
+
+        const untilTxt = until
+
+            ? '<p class="bannedReason">Until: ' +
+              escapeHtml(new Date(until).toLocaleString()) + '</p>'
+
+            : '';
 
         document.body.innerHTML =
 
             '<div class="bannedWrap">' +
             '<div class="bannedCard">' +
             '<div class="bannedMark">!</div>' +
-            '<h1>Account suspended</h1>' +
-            '<p>Your account has been suspended for violating the ' +
-            'SHIBA Social Terms of Use.</p>' +
+            '<h1>' + title + '</h1>' +
+            '<p>Your access to SHIBA Social is currently restricted for ' +
+            'violating the Terms of Use.</p>' +
             (reason ? '<p class="bannedReason">Reason: ' +
                 escapeHtml(reason) + '</p>' : '') +
+            untilTxt +
             '<p class="bannedFoot">If you believe this is a mistake, ' +
             'contact the administrators.</p>' +
             '</div></div>';
@@ -737,7 +789,7 @@ const SocialAPI = {
     /* attach author (with resolved badges), like/comment counts,
        and drop private authors' posts for non-friends. */
 
-    async _hydrate(posts, viewerId, friendIds) {
+    async _hydrate(posts, viewerId, friendIds, noFilter) {
 
         if (!posts.length) return [];
 
@@ -823,6 +875,8 @@ const SocialAPI = {
 
         });
 
+        if (noFilter) return built;
+
         return built.filter(p =>
 
             !p.author.is_private ||
@@ -830,6 +884,22 @@ const SocialAPI = {
             p.author_id === viewerId ||
 
             friendIds.has(p.author_id));
+
+    },
+
+    /* admin: every post by an author, unfiltered (private included) */
+
+    async adminListPosts(authorId, viewerId) {
+
+        const { data, error } = await window.sdb.from("social_posts")
+
+            .select("*").eq("author_id", authorId)
+
+            .order("created_at", { ascending: false }).limit(100);
+
+        if (error) throw error;
+
+        return this._hydrate(data || [], viewerId, new Set(), true);
 
     },
 
@@ -1283,6 +1353,119 @@ const SocialAPI = {
             return !!data;
 
         } catch (e) { return false; }
+
+    },
+
+    /* delete a post (owner or admin — RLS off for now) */
+
+    async deletePost(postId) {
+
+        const { error } = await window.sdb.from("social_posts")
+
+            .delete().eq("id", postId);
+
+        if (error) throw error;
+
+    },
+
+    /* ---- sanctions (admin, via DEFINER RPCs) ------------- */
+
+    async sanction(userId, kind, reason, minutes) {
+
+        const { data, error } = await window.sdb.rpc("social_sanction", {
+
+            p_user: userId, p_kind: kind,
+
+            p_reason: reason || null, p_minutes: minutes || null
+
+        });
+
+        if (error) throw error;
+
+        return data;
+
+    },
+
+    async liftSanction(userId, kind) {
+
+        const { data, error } = await window.sdb.rpc("social_lift", {
+
+            p_user: userId, p_kind: kind || null
+
+        });
+
+        if (error) throw error;
+
+        return data;
+
+    },
+
+    async selfStatus() {
+
+        try {
+
+            const { data } = await window.sdb.rpc("social_self_status");
+
+            return data || { blocked: false };
+
+        } catch (e) { return { blocked: false }; }
+
+    },
+
+    async adminSanctions(userId) {
+
+        try {
+
+            const { data } = await window.sdb
+
+                .rpc("social_admin_sanctions", { p_user: userId });
+
+            return data || [];
+
+        } catch (e) { return []; }
+
+    },
+
+    /* look up a user for the admin panel (full profile — admins see
+       private accounts and contact details) */
+
+    async adminGetUser(query) {
+
+        const raw = (query || "").trim();
+
+        if (!raw) return null;
+
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+            .test(raw);
+
+        let u = null;
+
+        if (isUuid) {
+
+            const r = await window.sdb.from("users")
+
+                .select("id, username").eq("id", raw).maybeSingle();
+
+            u = r.data;
+
+        } else {
+
+            const r = await window.sdb.from("users").select("id, username")
+
+                .eq("username", raw.toLowerCase().replace(/^@/, "")).maybeSingle();
+
+            u = r.data;
+
+        }
+
+        if (!u) return null;
+
+        const { data: p } = await window.sdb.from("social_profiles")
+
+            .select("*").eq("user_id", u.id).maybeSingle();
+
+        return { id: u.id, username: u.username, profile: p || {} };
 
     }
 

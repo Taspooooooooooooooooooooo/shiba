@@ -430,4 +430,135 @@ insert into public.social_mod_terms (term, category) values
   ('master race','Hate ideology')
 on conflict do nothing;
 
+-- ============================================================
+-- S6 — richer sanctions (ban / timeout / mute / warn) + admin
+-- ============================================================
+
+alter table public.social_punishments
+  add column if not exists kind text default 'ban';
+alter table public.social_punishments
+  add column if not exists expires_at timestamp with time zone;
+
+-- only active, non-expired BAN or TIMEOUT sanctions block signup
+create or replace function public.social_check_banned(
+  p_email text, p_phone text, p_ip text)
+returns boolean
+language sql security definer set search_path = public
+as $$
+  select exists(
+    select 1 from public.social_punishments
+     where active
+       and coalesce(kind,'ban') in ('ban','timeout')
+       and (expires_at is null or expires_at > now())
+       and (
+         (nullif(trim(p_email),'') is not null
+            and lower(email)=lower(trim(p_email)))
+      or (nullif(regexp_replace(coalesce(p_phone,''),'\D','','g'),'') is not null
+            and regexp_replace(coalesce(phone,''),'\D','','g')
+                = regexp_replace(coalesce(p_phone,''),'\D','','g'))
+      or (nullif(trim(p_ip),'') is not null and ip=trim(p_ip))
+       )
+  );
+$$;
+grant execute on function public.social_check_banned(text,text,text)
+  to anon, authenticated;
+
+-- issue a sanction (admins only). p_minutes null = no expiry.
+create or replace function public.social_sanction(
+  p_user uuid, p_kind text, p_reason text default null,
+  p_minutes integer default null)
+returns json language plpgsql security definer set search_path = public as $$
+declare v_admin uuid := auth.uid(); v_by text; v_prof record;
+        v_exp timestamptz;
+begin
+  if not public.social_is_admin(v_admin) then
+    return json_build_object('ok',false,'reason','not authorized'); end if;
+  if p_kind not in ('ban','timeout','mute','warn') then
+    return json_build_object('ok',false,'reason','bad kind'); end if;
+  select username into v_by from public.users where id=v_admin;
+  select * into v_prof from public.social_profiles where user_id=p_user;
+  if p_minutes is not null and p_minutes>0 then
+    v_exp := now() + make_interval(mins => p_minutes); end if;
+  insert into public.social_punishments
+    (user_id, kind, reason, email, phone, ip, issued_by, active, expires_at)
+  values (p_user, p_kind, p_reason, v_prof.email, v_prof.phone,
+          v_prof.signup_ip, v_by, true, v_exp);
+  if p_kind='ban' then
+    update public.social_profiles
+       set banned=true, banned_reason=coalesce(p_reason,'Banned')
+     where user_id=p_user;
+  end if;
+  return json_build_object('ok',true);
+end; $$;
+grant execute on function public.social_sanction(uuid,text,text,integer)
+  to authenticated;
+
+-- lift active sanctions of a kind (or all). Admins only.
+create or replace function public.social_lift(p_user uuid, p_kind text default null)
+returns json language plpgsql security definer set search_path = public as $$
+declare v_admin uuid := auth.uid();
+begin
+  if not public.social_is_admin(v_admin) then
+    return json_build_object('ok',false,'reason','not authorized'); end if;
+  update public.social_punishments set active=false
+   where user_id=p_user and active and (p_kind is null or kind=p_kind);
+  if p_kind is null or p_kind='ban' then
+    update public.social_profiles set banned=false, banned_reason=null
+     where user_id=p_user;
+  end if;
+  return json_build_object('ok',true);
+end; $$;
+grant execute on function public.social_lift(uuid,text) to authenticated;
+
+-- the caller's own moderation status (so the app can enforce it)
+create or replace function public.social_self_status()
+returns json language plpgsql security definer set search_path = public as $$
+declare v_me uuid := auth.uid(); v_block record; v_mute record; v_warn record;
+begin
+  if v_me is null then return json_build_object('blocked',false); end if;
+  select * into v_block from public.social_punishments
+   where user_id=v_me and active and coalesce(kind,'ban') in ('ban','timeout')
+     and (expires_at is null or expires_at>now())
+   order by created_at desc limit 1;
+  select * into v_mute from public.social_punishments
+   where user_id=v_me and active and kind='mute'
+     and (expires_at is null or expires_at>now())
+   order by created_at desc limit 1;
+  select * into v_warn from public.social_punishments
+   where user_id=v_me and active and kind='warn'
+   order by created_at desc limit 1;
+  return json_build_object(
+    'blocked', v_block.id is not null,
+    'block_kind', v_block.kind,
+    'block_reason', v_block.reason,
+    'block_until', v_block.expires_at,
+    'muted', v_mute.id is not null,
+    'mute_until', v_mute.expires_at,
+    'warning', v_warn.reason);
+end; $$;
+grant execute on function public.social_self_status() to authenticated;
+
+-- a user's sanction history (admins only)
+create or replace function public.social_admin_sanctions(p_user uuid)
+returns setof public.social_punishments
+language sql security definer set search_path = public as $$
+  select * from public.social_punishments
+   where public.social_is_admin(auth.uid()) and user_id=p_user
+   order by created_at desc;
+$$;
+grant execute on function public.social_admin_sanctions(uuid) to authenticated;
+
+-- grant the owner (vladko) the Social admin permission (permanent)
+insert into public.permission_grants
+  (officer_id, permission, kind, reason, granted_by, expires_at)
+select o.id, 'socialmedia.admin', 'Permanent',
+       'SHIBA Social administrator', 'system', now() + interval '100 years'
+from public.officers o
+join public.users u on u.id = o.user_id
+where u.username = 'vladko'
+  and not exists (
+    select 1 from public.permission_grants pg
+     where pg.officer_id = o.id and pg.permission = 'socialmedia.admin'
+       and pg.revoked_at is null and pg.expires_at > now());
+
 select 'SHIBA SOCIAL schema ready' as result;

@@ -857,24 +857,126 @@ img { max-width: 100%; display: block; }
 
 .emptyArt { color: var(--faint); margin-bottom: 12px; }
 
-/* report */
+/* report + actions (textured pills, right-aligned) */
 
-.reportBtn {
+.actionsRight {
 
     margin-left: auto;
-    background: none;
-    border: none;
-    color: var(--faint);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.reportBtn,
+.actionsBtn {
+
+    background: var(--bg-2);
+    border: 1px solid var(--line-strong);
+    color: var(--muted);
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
-    padding: 2px 4px;
+    padding: 6px 12px;
+    border-radius: 999px;
     transition: .15s;
 }
 
-.reportBtn:hover:not(:disabled) { color: var(--err); }
+.reportBtn:hover:not(:disabled) { border-color: var(--err); color: var(--err); }
 
-.reportBtn:disabled { color: var(--faint); cursor: default; }
+.reportBtn:disabled { opacity: .6; cursor: default; }
+
+.actionsBtn { background: var(--surface-2); color: var(--text); }
+
+.actionsBtn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* actions dropdown panel */
+
+.actionsPanel {
+
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.apItem {
+
+    display: block;
+    text-align: left;
+    width: 100%;
+    padding: 11px 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--bg-2);
+    color: var(--text);
+    font-size: 14px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: .15s;
+}
+
+.apItem:hover { background: var(--surface-2); border-color: var(--line-strong); }
+
+.apItem.danger { color: var(--err); border-color: rgba(251,113,133,.4); }
+
+.apLabel { font-size: 13px; color: var(--muted); font-weight: 600; }
+
+.apInput {
+
+    width: 100%;
+    padding: 11px 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--bg-2);
+    color: var(--text);
+    font-size: 14px;
+    outline: none;
+    margin-bottom: 8px;
+}
+
+.apInput:focus { border-color: var(--accent); }
+
+.apRow { display: flex; gap: 8px; }
+
+.apRow .btn { margin-top: 0; flex: 1; }
+
+/* admin panel */
+
+.adminTabs { margin-bottom: 18px; }
+
+.adminGrid {
+
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 6px;
+}
+
+.adminField {
+
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 12px;
+}
+
+.afLabel {
+
+    display: block;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    color: var(--faint);
+    margin-bottom: 3px;
+}
+
+.afValue { font-size: 14px; color: var(--text); word-break: break-word; }
+
+.sanBtns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+
+.sanBtns .btn { margin-top: 0; flex: 1; min-width: 90px; }
 
 .reportBar {
 

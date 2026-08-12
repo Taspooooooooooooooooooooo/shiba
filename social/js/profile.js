@@ -228,6 +228,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         viewerIsAdmin = !!(badgeMap[viewer.id] && badgeMap[viewer.id].is_admin);
 
+        SocialViewer.isAdmin = viewerIsAdmin;
+
         rel = relation;
 
         counts = cnt;

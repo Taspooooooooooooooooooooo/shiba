@@ -134,9 +134,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         const bf = badges[viewerId] || {};
 
+        SocialViewer.isAdmin = !!bf.is_admin;
+
         const logoutBtn = document.getElementById("logoutBtn");
 
-        /* admins get the moderation queue */
+        /* admins get the admin panel */
 
         if (bf.is_admin) {
 
@@ -144,9 +146,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             mod.className = "pimsMenuLink";
 
-            mod.href = "moderation.html";
+            mod.href = "admin.html";
 
-            mod.textContent = "Moderation";
+            mod.textContent = "Admin panel";
 
             logoutBtn.parentNode.insertBefore(mod, logoutBtn);
 
@@ -250,6 +252,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     let chosenFile = null;
 
     function openCompose() {
+
+        if (SocialStatus.muted) {
+
+            SToast.err("You're muted and can't post right now.");
+
+            return;
+
+        }
 
         chosenFile = null;
 
