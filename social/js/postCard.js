@@ -30,9 +30,15 @@ function renderPostCard(post, viewerId) {
 
     /* header ------------------------------------------------ */
 
-    const head = document.createElement("header");
+    const head = document.createElement("a");
 
-    head.className = "postHead";
+    head.className = "postHead pLink";
+
+    if (post.author.user_id) {
+
+        head.href = "profile.html?id=" + encodeURIComponent(post.author.user_id);
+
+    }
 
     head.innerHTML =
         '<div class="pAvatar">' +
@@ -42,7 +48,8 @@ function renderPostCard(post, viewerId) {
         '</div>' +
         '<div class="pWho">' +
         '<div class="pName">' +
-        escapeHtml(post.author.display_name || "Someone") + '</div>' +
+        escapeHtml(post.author.display_name || "Someone") +
+        badgeChipsHtml(post.author.badges) + '</div>' +
         '<div class="pMeta">' + timeAgo(post.created_at) + ' ago</div>' +
         '</div>';
 

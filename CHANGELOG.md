@@ -2,6 +2,38 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.52.0 — 2026-08-12 · SHIBA Social S3 — follows, privacy & badges
+
+### Added
+- **Follow / Unfollow** — every profile now views for anyone
+  (`profile.html?id=…` or `?u=username`); post authors link to their profile.
+  A **friend** is a **mutual follow** (you follow each other). Stats became
+  **Posts · Followers · Following**, with a **Friends** pill when mutual.
+- **Public / Private accounts** — a private profile's posts (and its feed
+  entries) are visible only to the owner and their friends; everyone else sees
+  a "This account is private" lock.
+- **Badges** next to names, in the feed and on profiles:
+  - **Police officer** — automatic for any account linked to an officer record.
+  - **Administrator shield** — automatic for command-tier ranks
+    (Commander / Deputy Chief / Chief / Chief of Police).
+  - **Verified** (Instagram-style check) — granted by an admin (a Verify /
+    Unverify button appears on other people's profiles when you're an admin).
+- **Per-badge visibility** — each badge you have can be set to **Public**,
+  **Friends only**, or **Hidden** from the profile editor.
+
+### SQL — run `social/SETUP-SOCIAL.sql` (the S3 section)
+- New `social_follows` table; `social_profiles` gains `is_private`,
+  `is_verified`, and `badge_officer_vis` / `badge_admin_vis` /
+  `badge_verified_vis`; new `social_badges(uuid[])` SECURITY DEFINER function
+  that returns just the officer/admin booleans without exposing officer tables.
+- The app **degrades gracefully** until this is run (feed and profiles keep
+  working; badges/follows simply don't appear yet).
+
+### Notes
+- All inline-SVG, still emoji-free. Badges/follows are **client-side UX** for
+  now (RLS hardening remains Phase 9). Next: **S4** the PIMS bridge, and the
+  deferred **stories**.
+
 ## v0.51.0 — 2026-08-12 · SHIBA Social S2 — photo feed + DOB + PIMS shortcut
 
 ### Added

@@ -971,3 +971,164 @@ img { max-width: 100%; display: block; }
 
     .mCard { border-radius: 18px; }
 }
+
+/* ==========================================================
+   S3 — badges, follow, privacy
+========================================================== */
+
+/* badge chips next to names */
+
+.nameRow {
+
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.nameBadges {
+
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.vBadge {
+
+    display: inline-flex;
+    align-items: center;
+    line-height: 0;
+}
+
+.vBadge svg { display: block; }
+
+/* badges inside a post header name */
+
+.pName {
+
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+
+.pName .nameBadges,
+.pName .vBadge { display: inline-flex; }
+
+/* post header is now a link — keep it looking like a header */
+
+a.postHead { text-decoration: none; color: inherit; }
+
+a.postHead:hover .pName { color: var(--accent); }
+
+/* friends pill */
+
+.friendPill {
+
+    display: inline-block;
+    margin-top: 8px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: rgba(168,85,247,.16);
+    border: 1px solid rgba(168,85,247,.4);
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* relationship actions row (Edit / Follow / Verify) */
+
+.relActions {
+
+    display: flex;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+.relActions .btn { margin-top: 0; flex: 1; }
+
+/* privacy switch */
+
+.switchRow {
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    cursor: pointer;
+}
+
+.switchText { font-size: 14px; color: var(--text); font-weight: 600; }
+
+.switchText small {
+
+    display: block;
+    font-weight: 400;
+    color: var(--faint);
+    font-size: 12px;
+    margin-top: 2px;
+}
+
+.switch {
+
+    appearance: none;
+    -webkit-appearance: none;
+    width: 46px;
+    height: 26px;
+    border-radius: 999px;
+    background: var(--surface-2);
+    border: 1px solid var(--line-strong);
+    position: relative;
+    cursor: pointer;
+    flex: none;
+    transition: .2s;
+}
+
+.switch::after {
+
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #fff;
+    transition: .2s;
+}
+
+.switch:checked {
+
+    background: var(--accent-grad);
+    border-color: transparent;
+}
+
+.switch:checked::after { transform: translateX(20px); }
+
+/* badge visibility rows */
+
+.badgeVisRow {
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 0;
+    border-top: 1px solid var(--line);
+}
+
+.bvLabel { font-size: 14px; color: var(--text); }
+
+.bvSelect {
+
+    padding: 9px 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--bg-2);
+    color: var(--text);
+    font-size: 14px;
+    outline: none;
+    cursor: pointer;
+}
+
+.bvSelect:focus { border-color: var(--accent); }

@@ -130,4 +130,60 @@ $$;
 grant execute on function public.purge_expired_stories()
   to anon, authenticated;
 
+-- ============================================================
+-- S3 — social graph (follows), privacy & badges
+-- ============================================================
+
+-- who follows whom. A "friend" is a mutual follow (A→B and B→A).
+create table if not exists public.social_follows (
+  id uuid not null default gen_random_uuid(),
+  follower_id uuid references public.users(id) on delete cascade,
+  following_id uuid references public.users(id) on delete cascade,
+  created_at timestamp with time zone default now(),
+  constraint social_follows_pkey primary key (id),
+  constraint social_follows_unique unique (follower_id, following_id),
+  constraint social_follows_no_self check (follower_id <> following_id)
+);
+create index if not exists social_follows_follower_idx
+  on public.social_follows (follower_id);
+create index if not exists social_follows_following_idx
+  on public.social_follows (following_id);
+
+-- profile: privacy, a verified flag, and per-badge visibility.
+-- Each badge visibility is 'public' | 'friends' | 'hidden'.
+alter table public.social_profiles
+  add column if not exists is_private boolean default false;
+alter table public.social_profiles
+  add column if not exists is_verified boolean default false;
+alter table public.social_profiles
+  add column if not exists badge_officer_vis text default 'public';
+alter table public.social_profiles
+  add column if not exists badge_admin_vis text default 'public';
+alter table public.social_profiles
+  add column if not exists badge_verified_vis text default 'public';
+
+-- derived badges (officer / admin) for a set of users. SECURITY
+-- DEFINER so the public site can read just these two booleans
+-- without exposing the officers/ranks tables. Officer = has an
+-- officer record; Admin = a command-tier rank.
+create or replace function public.social_badges(p_user_ids uuid[])
+returns table(user_id uuid, is_officer boolean, is_admin boolean)
+language sql
+security definer
+set search_path = public
+as $$
+  select u.id,
+         (o.id is not null) as is_officer,
+         coalesce(
+           r.name in ('Commander','Deputy Chief','Chief','Chief of Police'),
+           false
+         ) as is_admin
+  from public.users u
+  left join public.officers o on o.user_id = u.id
+  left join public.ranks r on r.id = o.rank_id
+  where u.id = any(p_user_ids);
+$$;
+
+grant execute on function public.social_badges(uuid[]) to anon, authenticated;
+
 select 'SHIBA SOCIAL schema ready' as result;

@@ -1,33 +1,129 @@
 /* ==========================================================
-   SHIBA SOCIAL — profile (view + edit)
+   SHIBA SOCIAL — profile (S3)
 
-   View your own profile and edit display name, bio and photo.
-   Avatars are compressed in the browser (~512px), stored in
-   the public "cloud" bucket under social/avatars/, and the
-   public URL is saved on social_profiles.
+   Views ANY user's profile:
+     profile.html            → your own
+     profile.html?id=<uuid>  → someone else's
+     profile.html?u=<name>   → someone else's by username
+
+   Adds Follow/Unfollow (a "friend" is a mutual follow), a
+   public/private gate on posts, badges (admin shield / verified
+   check / police officer) shown per each owner's visibility, and
+   — for your own profile — privacy + per-badge visibility + the
+   name/bio/avatar editor.
 ========================================================== */
 
 document.addEventListener("DOMContentLoaded", async () => {
 
-    const user = await SocialSession.require();
+    const viewer = await SocialSession.require();
 
-    if (!user) return;
+    if (!viewer) return;
 
-    const meta = user.user_metadata || {};
+    /* ----------------------------------------------------- */
+    /* work out whose profile we're looking at               */
+    /* ----------------------------------------------------- */
 
-    const username = meta.username || SocialSession.cached()?.username || "you";
+    const params = new URLSearchParams(location.search);
 
-    /* state */
+    const paramId = params.get("id");
+
+    const paramUser = params.get("u");
+
+    let target = null;      /* { id, username } */
+
+    try {
+
+        if (paramId) {
+
+            const { data } = await window.sdb.from("users")
+
+                .select("id, username").eq("id", paramId).maybeSingle();
+
+            if (data) target = { id: data.id, username: data.username };
+
+        } else if (paramUser) {
+
+            const { data } = await window.sdb.from("users")
+
+                .select("id, username")
+
+                .eq("username", paramUser.trim().toLowerCase()).maybeSingle();
+
+            if (data) target = { id: data.id, username: data.username };
+
+        }
+
+    } catch (e) { /* fall through to not-found handling */ }
+
+    if (!target) {
+
+        /* no valid param → your own profile */
+
+        if (!paramId && !paramUser) {
+
+            target = {
+
+                id: viewer.id,
+
+                username: viewer.user_metadata?.username ||
+
+                    SocialSession.cached()?.username || "you"
+
+            };
+
+        } else {
+
+            SToast.err("That profile could not be found.");
+
+            setTimeout(() => window.location.href = "home.html", 900);
+
+            return;
+
+        }
+
+    }
+
+    const isSelf = target.id === viewer.id;
+
+    /* ----------------------------------------------------- */
+    /* shared state                                          */
+    /* ----------------------------------------------------- */
 
     let profile = {
-        display_name: username,
+
+        display_name: target.username,
+
         bio: "",
+
         avatar_url: null,
+
         avatar_path: null,
+
+        is_private: false,
+
+        is_verified: false,
+
+        badge_officer_vis: "public",
+
+        badge_admin_vis: "public",
+
+        badge_verified_vis: "public",
+
         created_at: null
+
     };
 
-    let pendingAvatarBlob = null;    /* chosen but not yet uploaded */
+    let targetFacts = {};     /* { is_officer, is_admin } */
+
+    let viewerIsAdmin = false;
+
+    let rel = { self: isSelf, iFollow: false, followsMe: false, isFriend: false };
+
+    let counts = { followers: 0, following: 0 };
+
+    let postCount = 0;
+
+    let pendingAvatarBlob = null;
 
     /* elements */
 
@@ -35,61 +131,17 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const editMode = document.getElementById("editMode");
 
-    /* ----------------------------------------------------- */
-    /* load the profile                                       */
-    /* ----------------------------------------------------- */
+    const grid = document.getElementById("postGrid");
 
-    try {
+    const noPosts = document.getElementById("noPosts");
 
-        const { data } = await window.sdb
+    const lockedPosts = document.getElementById("lockedPosts");
 
-            .from("social_profiles")
-
-            .select("display_name, bio, avatar_url, avatar_path, created_at")
-
-            .eq("user_id", user.id)
-
-            .maybeSingle();
-
-        if (data) profile = { ...profile, ...data };
-
-    } catch (e) { /* offline — show defaults */ }
-
-    /* also count posts + active stories for the little stats row
-       (tables may be empty in S1 — that's fine) */
-
-    let postCount = 0, storyCount = 0;
-
-    try {
-
-        const [p, s] = await Promise.all([
-
-            window.sdb.from("social_posts")
-                .select("id", { count: "exact", head: true })
-                .eq("author_id", user.id),
-
-            window.sdb.from("social_stories")
-                .select("id", { count: "exact", head: true })
-                .eq("author_id", user.id)
-                .gt("expires_at", new Date().toISOString())
-
-        ]);
-
-        postCount = p.count || 0;
-
-        storyCount = s.count || 0;
-
-    } catch (e) { /* ignore */ }
+    const relActions = document.getElementById("relActions");
 
     /* ----------------------------------------------------- */
-    /* render the VIEW                                        */
+    /* helpers                                               */
     /* ----------------------------------------------------- */
-
-    function initialOf(name) {
-
-        return (name && name[0] ? name[0] : "?").toUpperCase();
-
-    }
 
     function paintAvatar(host, initialEl, url, name) {
 
@@ -105,21 +157,112 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             host.appendChild(img);
 
-        } else if (initialEl) {
+        } else {
 
-            initialEl.textContent = initialOf(name);
+            host.innerHTML = '<span>' + initialOf(name) + '</span>';
+
+            if (initialEl) initialEl.textContent = initialOf(name);
 
         }
 
     }
 
+    /* ----------------------------------------------------- */
+    /* load everything + render                              */
+    /* ----------------------------------------------------- */
+
+    async function load() {
+
+        /* profile row — try the S3 columns, fall back to the base
+           ones if the patch isn't run yet */
+
+        try {
+
+            let res = await window.sdb
+
+                .from("social_profiles")
+
+                .select("display_name, bio, avatar_url, avatar_path, " +
+                        "is_private, is_verified, badge_officer_vis, " +
+                        "badge_admin_vis, badge_verified_vis, created_at")
+
+                .eq("user_id", target.id)
+
+                .maybeSingle();
+
+            if (res.error) {
+
+                res = await window.sdb.from("social_profiles")
+
+                    .select("display_name, bio, avatar_url, avatar_path, created_at")
+
+                    .eq("user_id", target.id)
+
+                    .maybeSingle();
+
+            }
+
+            if (res.data) profile = { ...profile, ...res.data };
+
+        } catch (e) { /* offline — keep defaults */ }
+
+        /* badges facts (target + viewer), relationship, counts */
+
+        const [badgeMap, relation, cnt] = await Promise.all([
+
+            SocialAPI.getBadges([target.id, viewer.id]),
+
+            isSelf
+
+                ? Promise.resolve({ self: true, iFollow: false,
+
+                    followsMe: false, isFriend: false })
+
+                : SocialAPI.relationship(viewer.id, target.id),
+
+            SocialAPI.followCounts(target.id)
+
+        ]);
+
+        targetFacts = badgeMap[target.id] || {};
+
+        viewerIsAdmin = !!(badgeMap[viewer.id] && badgeMap[viewer.id].is_admin);
+
+        rel = relation;
+
+        counts = cnt;
+
+        try {
+
+            const { count } = await window.sdb.from("social_posts")
+
+                .select("id", { count: "exact", head: true })
+
+                .eq("author_id", target.id);
+
+            postCount = count || 0;
+
+        } catch (e) { postCount = 0; }
+
+        renderView();
+
+        renderRelActions();
+
+        renderPostsSection();
+
+    }
+
+    /* ----------------------------------------------------- */
+    /* render: header                                        */
+    /* ----------------------------------------------------- */
+
     function renderView() {
 
-        const name = profile.display_name || username;
+        const name = profile.display_name || target.username;
 
         document.getElementById("viewName").textContent = name;
 
-        document.getElementById("viewHandle").textContent = "@" + username;
+        document.getElementById("viewHandle").textContent = "@" + target.username;
 
         paintAvatar(
 
@@ -127,9 +270,23 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             document.getElementById("viewInitial"),
 
-            profile.avatar_url, name
+            profile.avatar_url, name);
 
-        );
+        /* badges (respect this owner's per-badge visibility) */
+
+        const badges = resolveBadges(profile, targetFacts,
+
+            { isSelf, isFriend: rel.isFriend });
+
+        document.getElementById("viewBadges").innerHTML = badgeChipsHtml(badges);
+
+        /* friends pill */
+
+        document.getElementById("friendPill")
+
+            .classList.toggle("hidden", !rel.isFriend);
+
+        /* bio */
 
         const bioEl = document.getElementById("viewBio");
 
@@ -141,59 +298,175 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         } else {
 
-            bioEl.textContent = "No bio yet.";
+            bioEl.textContent = isSelf ? "No bio yet." : "";
 
-            bioEl.classList.add("empty-bio");
+            bioEl.classList.toggle("empty-bio", true);
 
         }
 
+        /* stats */
+
         document.getElementById("statPosts").textContent = postCount;
 
-        document.getElementById("statStories").textContent = storyCount;
+        document.getElementById("statFollowers").textContent = counts.followers;
 
-        document.getElementById("statSince").textContent =
-            profile.created_at
-                ? new Date(profile.created_at).toLocaleDateString(undefined,
-                    { month: "short", year: "numeric" })
-                : "—";
+        document.getElementById("statFollowing").textContent = counts.following;
 
     }
 
-    renderView();
-
     /* ----------------------------------------------------- */
-    /* your posts grid + lightbox                             */
+    /* render: relationship actions                          */
     /* ----------------------------------------------------- */
 
-    const grid = document.getElementById("postGrid");
+    function renderRelActions() {
 
-    const noPosts = document.getElementById("noPosts");
+        relActions.innerHTML = "";
 
-    const lightbox = document.getElementById("postLightbox");
+        if (isSelf) {
 
-    const lightBody = document.getElementById("lightBody");
+            const edit = document.createElement("button");
 
-    async function loadMyPosts() {
+            edit.className = "btn ghost";
+
+            edit.textContent = "Edit profile";
+
+            edit.addEventListener("click", openEdit);
+
+            relActions.appendChild(edit);
+
+            return;
+
+        }
+
+        /* follow / following toggle */
+
+        const followBtn = document.createElement("button");
+
+        followBtn.className = rel.iFollow ? "btn ghost" : "btn";
+
+        followBtn.textContent = rel.iFollow
+
+            ? (rel.isFriend ? "Following · Friends" : "Following")
+
+            : (rel.followsMe ? "Follow back" : "Follow");
+
+        followBtn.addEventListener("click", async () => {
+
+            followBtn.disabled = true;
+
+            try {
+
+                if (rel.iFollow) {
+
+                    await SocialAPI.unfollow(viewer.id, target.id);
+
+                } else {
+
+                    await SocialAPI.follow(viewer.id, target.id);
+
+                }
+
+                await load();     /* re-derive friend state, posts, badges */
+
+            } catch (e) {
+
+                console.error("follow toggle failed:", e);
+
+                SToast.err("Couldn't update. Is the Social schema up to date?");
+
+                followBtn.disabled = false;
+
+            }
+
+        });
+
+        relActions.appendChild(followBtn);
+
+        /* admin-only: verify / unverify this account */
+
+        if (viewerIsAdmin) {
+
+            const verifyBtn = document.createElement("button");
+
+            verifyBtn.className = "btn ghost";
+
+            verifyBtn.textContent = profile.is_verified ? "Unverify" : "Verify";
+
+            verifyBtn.addEventListener("click", async () => {
+
+                verifyBtn.disabled = true;
+
+                try {
+
+                    await window.sdb.from("social_profiles")
+
+                        .update({ is_verified: !profile.is_verified })
+
+                        .eq("user_id", target.id);
+
+                    SToast.ok(profile.is_verified
+
+                        ? "Verification removed." : "Account verified.");
+
+                    await load();
+
+                } catch (e) {
+
+                    SToast.err("Could not change verification.");
+
+                    verifyBtn.disabled = false;
+
+                }
+
+            });
+
+            relActions.appendChild(verifyBtn);
+
+        }
+
+    }
+
+    /* ----------------------------------------------------- */
+    /* render: posts (grid, empty, or private-locked)        */
+    /* ----------------------------------------------------- */
+
+    async function renderPostsSection() {
+
+        const canSee = isSelf || !profile.is_private || rel.isFriend;
+
+        grid.innerHTML = "";
+
+        noPosts.classList.add("hidden");
+
+        lockedPosts.classList.add("hidden");
+
+        if (!canSee) {
+
+            lockedPosts.classList.remove("hidden");
+
+            return;
+
+        }
 
         let posts = [];
 
         try {
 
-            posts = await SocialAPI.listByAuthor(user.id, user.id, 60);
+            posts = await SocialAPI.listByAuthor(target.id, viewer.id, 60);
 
-        } catch (e) { /* schema maybe not set up — leave grid empty */ }
-
-        grid.innerHTML = "";
+        } catch (e) { /* schema maybe not set up */ }
 
         if (!posts.length) {
+
+            document.getElementById("noPostsText").textContent =
+
+                isSelf ? "You haven't posted yet." : "No posts yet.";
 
             noPosts.classList.remove("hidden");
 
             return;
 
         }
-
-        noPosts.classList.add("hidden");
 
         posts.forEach(p => {
 
@@ -221,11 +494,19 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     }
 
+    /* ----------------------------------------------------- */
+    /* lightbox                                              */
+    /* ----------------------------------------------------- */
+
+    const lightbox = document.getElementById("postLightbox");
+
+    const lightBody = document.getElementById("lightBody");
+
     function openLightbox(post) {
 
         lightBody.innerHTML = "";
 
-        lightBody.appendChild(renderPostCard(post, user.id));
+        lightBody.appendChild(renderPostCard(post, viewer.id));
 
         lightbox.classList.remove("hidden");
 
@@ -249,10 +530,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     });
 
-    loadMyPosts();
-
     /* ----------------------------------------------------- */
-    /* switch to EDIT                                         */
+    /* EDIT (self only)                                      */
     /* ----------------------------------------------------- */
 
     const editName = document.getElementById("editName");
@@ -261,15 +540,19 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const bioCount = document.getElementById("bioCount");
 
+    const editPrivate = document.getElementById("editPrivate");
+
     function openEdit() {
 
         pendingAvatarBlob = null;
 
-        editName.value = profile.display_name || username;
+        editName.value = profile.display_name || target.username;
 
         editBio.value = profile.bio || "";
 
         bioCount.textContent = editBio.value.length;
+
+        editPrivate.checked = !!profile.is_private;
 
         paintAvatar(
 
@@ -277,13 +560,49 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             document.getElementById("editInitial"),
 
-            profile.avatar_url, editName.value
+            profile.avatar_url, editName.value);
 
-        );
+        /* badge visibility rows — show only the badges you have */
+
+        const has = {
+
+            officer: !!targetFacts.is_officer,
+
+            admin: !!targetFacts.is_admin,
+
+            verified: !!profile.is_verified
+
+        };
+
+        const anyBadge = has.officer || has.admin || has.verified;
+
+        document.getElementById("badgeVisBlock")
+
+            .classList.toggle("hidden", !anyBadge);
+
+        setBadgeRow("officer", has.officer, profile.badge_officer_vis);
+
+        setBadgeRow("admin", has.admin, profile.badge_admin_vis);
+
+        setBadgeRow("verified", has.verified, profile.badge_verified_vis);
 
         viewMode.classList.add("hidden");
 
         editMode.classList.remove("hidden");
+
+    }
+
+    function setBadgeRow(badge, has, value) {
+
+        const row = document.querySelector('.badgeVisRow[data-badge="' + badge + '"]');
+
+        if (row) row.classList.toggle("hidden", !has);
+
+        const sel = document.getElementById(
+
+            "vis" + badge.charAt(0).toUpperCase() + badge.slice(1));
+
+        if (sel) sel.value = value || "public";
 
     }
 
@@ -295,8 +614,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     }
 
-    document.getElementById("editBtn").addEventListener("click", openEdit);
-
     document.getElementById("cancelBtn").addEventListener("click", closeEdit);
 
     editBio.addEventListener("input", () => {
@@ -305,9 +622,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     });
 
-    /* ----------------------------------------------------- */
-    /* pick + preview a new avatar (upload happens on Save)   */
-    /* ----------------------------------------------------- */
+    /* avatar pick + preview */
 
     const avatarFile = document.getElementById("avatarFile");
 
@@ -329,11 +644,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         }
 
-        /* compress to a small square-ish avatar */
-
         pendingAvatarBlob = await compressImage(file, 512, 0.85);
-
-        /* local preview */
 
         const prevUrl = URL.createObjectURL(pendingAvatarBlob);
 
@@ -349,9 +660,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     });
 
-    /* ----------------------------------------------------- */
-    /* SAVE                                                   */
-    /* ----------------------------------------------------- */
+    /* save */
 
     document.getElementById("saveBtn").addEventListener("click", async () => {
 
@@ -372,18 +681,28 @@ document.addEventListener("DOMContentLoaded", async () => {
         saveBtn.textContent = "Saving…";
 
         const update = {
-            display_name: name,
-            bio: editBio.value.trim()
-        };
 
-        /* upload a new avatar first, if one was chosen */
+            display_name: name,
+
+            bio: editBio.value.trim(),
+
+            is_private: !!editPrivate.checked,
+
+            badge_officer_vis: document.getElementById("visOfficer").value,
+
+            badge_admin_vis: document.getElementById("visAdmin").value,
+
+            badge_verified_vis: document.getElementById("visVerified").value
+
+        };
 
         if (pendingAvatarBlob) {
 
             try {
 
                 const { path, url } =
-                    await uploadToCloud("avatars", user.id, pendingAvatarBlob);
+
+                    await uploadToCloud("avatars", viewer.id, pendingAvatarBlob);
 
                 update.avatar_url = url;
 
@@ -399,16 +718,40 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         }
 
-        /* write the profile (upsert so it's robust even if the
-           row somehow doesn't exist yet) */
+        let { error } = await window.sdb.from("social_profiles")
 
-        const { error } = await window.sdb
+            .update(update).eq("user_id", viewer.id);
 
-            .from("social_profiles")
+        if (error) {
 
-            .update(update)
+            /* S3 columns may not exist yet — save the base fields so
+               name/bio/avatar still work before the patch is run */
 
-            .eq("user_id", user.id);
+            const base = {
+
+                display_name: update.display_name,
+
+                bio: update.bio
+
+            };
+
+            if (update.avatar_url) base.avatar_url = update.avatar_url;
+
+            if (update.avatar_path) base.avatar_path = update.avatar_path;
+
+            const retry = await window.sdb.from("social_profiles")
+
+                .update(base).eq("user_id", viewer.id);
+
+            error = retry.error;
+
+            if (!error) {
+
+                SToast.info("Saved. Run the S3 patch to save privacy + badge settings.");
+
+            }
+
+        }
 
         if (error) {
 
@@ -424,11 +767,23 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         }
 
-        /* reflect locally (avoids a stale read-after-write) */
-
         profile = { ...profile, ...update };
 
         pendingAvatarBlob = null;
+
+        /* keep the cached identity fresh for comment authorship */
+
+        SocialSession.save({
+
+            id: viewer.id,
+
+            username: target.username,
+
+            displayName: profile.display_name,
+
+            avatarUrl: profile.avatar_url
+
+        });
 
         renderView();
 
@@ -441,5 +796,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         saveBtn.textContent = "Save changes";
 
     });
+
+    /* go */
+
+    load();
 
 });
