@@ -18,6 +18,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     window.sdb.rpc("purge_expired_stories").then(() => {}, () => {});
 
+    /* load the moderation bot's word lists (for scanning new posts) */
+
+    SocialMod.load();
+
     /* ----------------------------------------------------- */
     /* load viewer profile (avatar + name)                    */
     /* ----------------------------------------------------- */
@@ -128,13 +132,34 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         const badges = await SocialAPI.getBadges([viewerId]);
 
-        const isOfficer = !!(badges[viewerId] && badges[viewerId].is_officer);
+        const bf = badges[viewerId] || {};
+
+        const logoutBtn = document.getElementById("logoutBtn");
+
+        /* admins get the moderation queue */
+
+        if (bf.is_admin) {
+
+            const mod = document.createElement("a");
+
+            mod.className = "pimsMenuLink";
+
+            mod.href = "moderation.html";
+
+            mod.textContent = "Moderation";
+
+            logoutBtn.parentNode.insertBefore(mod, logoutBtn);
+
+        }
+
+        /* linked officers get a shortcut into PIMS; everyone else
+           gets the "link a police account" flow */
 
         const link = document.createElement("a");
 
         link.className = "pimsMenuLink";
 
-        if (isOfficer) {
+        if (bf.is_officer) {
 
             link.href = "../lapd/index.html";
 
@@ -148,11 +173,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         }
 
-        const logoutBtn = document.getElementById("logoutBtn");
-
         logoutBtn.parentNode.insertBefore(link, logoutBtn);
 
-    } catch (e) { /* badges RPC not available yet — skip the link */ }
+    } catch (e) { /* badges RPC not available yet — skip the links */ }
 
     /* ----------------------------------------------------- */
     /* feed                                                   */
@@ -315,6 +338,19 @@ document.addEventListener("DOMContentLoaded", async () => {
             const created = await SocialAPI.createPost(
 
                 viewerId, chosenFile, captionEl.value, titleEl.value);
+
+            /* moderation bot: flag the post for admin review if its
+               text matches a banned term (the post still publishes) */
+
+            try {
+
+                const scan = SocialMod.scan(
+
+                    (created.title || "") + " " + (created.caption || ""));
+
+                if (scan.flagged) await SocialAPI.flagPost(created, scan);
+
+            } catch (e) { /* moderation not set up yet — skip */ }
 
             /* hydrate the single new post with the viewer as author
                so it renders instantly at the top of the feed */

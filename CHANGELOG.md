@@ -2,6 +2,46 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.54.0 — 2026-08-12 · SHIBA Social S5 — moderation (auto-flag bot + review + bans) + Terms of Use
+
+### Added
+- **Terms of Use** at **/social/tos** — a long, original ToS with zero-tolerance
+  rules on racism and hateful/extremist ideologies, moderation & enforcement,
+  data collection (email/phone/IP), and the usual disclaimers/liability. The
+  sign-up form now shows *"By clicking Create account you agree to our Terms of
+  Use."* with a link.
+- **Moderation bot** — new posts' text (title + caption) is scanned against an
+  **admin-managed banned-terms list stored in the database** (not the repo).
+  A match **flags the post for admin review** with the reason (matched terms +
+  category). The post still publishes.
+- **Moderation queue** (`moderation.html`, admins only) — each flagged post is
+  shown with **what it was flagged for**, and three actions:
+  - **Confirm** → delete the post and **ban the author**, recording a punishment
+    tied to their **email, phone, and IP** (captured at signup).
+  - **Cancel** → dismiss the flag, keep the post.
+  - **False** → keep the post and **teach the bot** (the matched terms are added
+    to a learned-safe allow-list it skips forever after).
+- **Banned-words manager** in the same page — add/remove terms + categories.
+- **Ban enforcement** — a banned account is locked out; a banned **email / phone
+  / IP** is refused at registration.
+
+### Security
+- The **`social_punishments`** table (PII: email/phone/IP) is **RLS-locked**;
+  all reads/writes go through **SECURITY DEFINER** functions that re-check the
+  caller is a Social admin server-side (`social_confirm_flag` / `_cancel_` /
+  `_false_` / `social_check_banned` / `social_is_admin`).
+
+### SQL — run `social/SETUP-SOCIAL.sql` (the S5 section)
+- New `social_mod_terms`, `social_mod_allow`, `social_flags`,
+  `social_punishments` (RLS on); `social_profiles` gains `banned` /
+  `banned_reason` / `signup_ip`; the moderation RPCs above; and a starter set of
+  extremist/hate markers. Degrades gracefully until run.
+
+### Notes
+- Detection is **client-side text-only** (images aren't auto-scanned without an
+  AI vision service; a determined client can bypass client-side flagging —
+  server-side/RLS enforcement remains the Phase 9 hardening).
+
 ## v0.53.0 — 2026-08-12 · SHIBA Social S4 — PIMS bridge + admin permission, email/phone, post titles & views
 
 ### Changed

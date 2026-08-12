@@ -72,6 +72,41 @@ async function sha256Hex(text) {
 
 }
 
+function escapeRegex(s) {
+
+    return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+}
+
+/* best-effort public IP (used for moderation / ban enforcement).
+   Resolves to null if the lookup fails — nothing blocks on it. */
+
+async function getClientIp() {
+
+    try {
+
+        const ctrl = new AbortController();
+
+        const t = setTimeout(() => ctrl.abort(), 3500);
+
+        const res = await fetch("https://api.ipify.org?format=json",
+
+            { signal: ctrl.signal });
+
+        clearTimeout(t);
+
+        const data = await res.json();
+
+        return data && data.ip ? data.ip : null;
+
+    } catch (e) {
+
+        return null;
+
+    }
+
+}
+
 /* ---------------------------------------------------------- */
 /* image compression (shrink before upload)                    */
 /* ---------------------------------------------------------- */
@@ -207,7 +242,53 @@ const SocialSession = {
 
         if (!user) { window.location.href = "index.html"; return null; }
 
+        /* banned gate — a punished account cannot use the Service */
+
+        try {
+
+            const { data } = await window.sdb.from("social_profiles")
+
+                .select("banned, banned_reason")
+
+                .eq("user_id", user.id)
+
+                .maybeSingle();
+
+            if (data && data.banned) {
+
+                this.bannedScreen(data.banned_reason);
+
+                return null;
+
+            }
+
+        } catch (e) { /* column missing pre-patch — ignore */ }
+
         return user;
+
+    },
+
+    /* full-page notice for a banned account, then clear the session */
+
+    bannedScreen(reason) {
+
+        document.body.innerHTML =
+
+            '<div class="bannedWrap">' +
+            '<div class="bannedCard">' +
+            '<div class="bannedMark">!</div>' +
+            '<h1>Account suspended</h1>' +
+            '<p>Your account has been suspended for violating the ' +
+            'SHIBA Social Terms of Use.</p>' +
+            (reason ? '<p class="bannedReason">Reason: ' +
+                escapeHtml(reason) + '</p>' : '') +
+            '<p class="bannedFoot">If you believe this is a mistake, ' +
+            'contact the administrators.</p>' +
+            '</div></div>';
+
+        try { window.sdb.auth.signOut(); } catch (e) { /* ignore */ }
+
+        localStorage.removeItem(this.KEY);
 
     },
 
@@ -408,6 +489,110 @@ function resolveBadges(profile, facts, ctx) {
     return out;
 
 }
+
+/* ---------------------------------------------------------- */
+/* SocialMod — the moderation bot. Scans post text against an  */
+/* admin-managed banned-terms list (kept in the DB, not the    */
+/* repo) and skips anything on the learned-safe allow list.    */
+/* ---------------------------------------------------------- */
+
+const SocialMod = {
+
+    _terms: null,
+
+    _allow: null,
+
+    async load() {
+
+        try {
+
+            const [t, a] = await Promise.all([
+
+                window.sdb.from("social_mod_terms")
+
+                    .select("term, category, active"),
+
+                window.sdb.from("social_mod_allow").select("term")
+
+            ]);
+
+            this._terms = (t.data || []).filter(x => x.active !== false);
+
+            this._allow = new Set(
+
+                (a.data || []).map(x => (x.term || "").toLowerCase()));
+
+        } catch (e) {
+
+            this._terms = [];
+
+            this._allow = new Set();
+
+        }
+
+    },
+
+    /* returns { flagged, categories:[], matched:[], reason } */
+
+    scan(text) {
+
+        const terms = this._terms || [];
+
+        const allow = this._allow || new Set();
+
+        /* normalise: lowercase, punctuation → spaces, padded */
+
+        const hay = " " +
+            String(text || "").toLowerCase().replace(/[^a-z0-9\s]/g, " ") +
+            " ";
+
+        const matched = [];
+
+        const cats = new Set();
+
+        terms.forEach(t => {
+
+            const term = (t.term || "").toLowerCase().trim();
+
+            if (!term || allow.has(term)) return;
+
+            const re = new RegExp(
+
+                "(^|[^a-z0-9])" + escapeRegex(term) + "([^a-z0-9]|$)");
+
+            if (re.test(hay)) {
+
+                matched.push(t.term);
+
+                cats.add(t.category || "Flagged");
+
+            }
+
+        });
+
+        const flagged = matched.length > 0;
+
+        return {
+
+            flagged,
+
+            categories: [...cats],
+
+            matched,
+
+            reason: flagged
+
+                ? ("Matched: " + matched.join(", ") +
+
+                   " — " + [...cats].join(", "))
+
+                : ""
+
+        };
+
+    }
+
+};
 
 /* ---------------------------------------------------------- */
 /* SocialAPI — posts, feed, likes, comments, follows, badges   */
@@ -887,6 +1072,181 @@ const SocialAPI = {
             return {};
 
         }
+
+    },
+
+    /* ---- moderation ------------------------------------- */
+
+    /* raise a flag on a post from a scan result (keeps a snapshot
+       so the record survives the post being deleted) */
+
+    async flagPost(post, scan) {
+
+        try {
+
+            await window.sdb.from("social_flags").insert({
+
+                post_id: post.id,
+
+                author_id: post.author_id,
+
+                category: scan.categories.join(", "),
+
+                matched: scan.matched.join(","),
+
+                reason: scan.reason,
+
+                snapshot_title: post.title || null,
+
+                snapshot_caption: post.caption || null,
+
+                snapshot_image: post.image_url || null
+
+            });
+
+        } catch (e) { console.warn("flagPost:", e.message); }
+
+    },
+
+    async listPendingFlags() {
+
+        const { data, error } = await window.sdb
+
+            .from("social_flags")
+
+            .select("*")
+
+            .eq("status", "Pending")
+
+            .order("created_at", { ascending: false });
+
+        if (error) throw error;
+
+        return data || [];
+
+    },
+
+    async confirmFlag(flagId, reason) {
+
+        const { data, error } = await window.sdb
+
+            .rpc("social_confirm_flag", { p_flag: flagId, p_reason: reason || null });
+
+        if (error) throw error;
+
+        return data;
+
+    },
+
+    async cancelFlag(flagId) {
+
+        const { data, error } = await window.sdb
+
+            .rpc("social_cancel_flag", { p_flag: flagId });
+
+        if (error) throw error;
+
+        return data;
+
+    },
+
+    async falseFlag(flagId) {
+
+        const { data, error } = await window.sdb
+
+            .rpc("social_false_flag", { p_flag: flagId });
+
+        if (error) throw error;
+
+        return data;
+
+    },
+
+    /* banned-terms manager */
+
+    async listBannedTerms() {
+
+        const { data, error } = await window.sdb
+
+            .from("social_mod_terms")
+
+            .select("*")
+
+            .order("created_at", { ascending: false });
+
+        if (error) throw error;
+
+        return data || [];
+
+    },
+
+    async addBannedTerm(term, category, by) {
+
+        const { error } = await window.sdb.from("social_mod_terms")
+
+            .insert({
+
+                term: term.trim().toLowerCase(),
+
+                category: category || "Hate ideology",
+
+                created_by: by || null
+
+            });
+
+        if (error) throw error;
+
+    },
+
+    async removeBannedTerm(id) {
+
+        const { error } = await window.sdb.from("social_mod_terms")
+
+            .delete().eq("id", id);
+
+        if (error) throw error;
+
+    },
+
+    async listAllowTerms() {
+
+        const { data } = await window.sdb.from("social_mod_allow")
+
+            .select("*").order("created_at", { ascending: false });
+
+        return data || [];
+
+    },
+
+    async removeAllowTerm(id) {
+
+        const { error } = await window.sdb.from("social_mod_allow")
+
+            .delete().eq("id", id);
+
+        if (error) throw error;
+
+    },
+
+    /* ban enforcement */
+
+    async checkBanned(email, phone, ip) {
+
+        try {
+
+            const { data } = await window.sdb.rpc("social_check_banned", {
+
+                p_email: email || null,
+
+                p_phone: phone || null,
+
+                p_ip: ip || null
+
+            });
+
+            return !!data;
+
+        } catch (e) { return false; }
 
     }
 

@@ -226,4 +226,208 @@ $$;
 
 grant execute on function public.social_badges(uuid[]) to anon, authenticated;
 
+-- ============================================================
+-- S5 — moderation: an auto-flag bot + admin review + bans
+-- ============================================================
+
+-- banned terms the bot looks for (admin-managed; the actual word
+-- list lives here in the DB, NOT in the public repo).
+create table if not exists public.social_mod_terms (
+  id uuid not null default gen_random_uuid(),
+  term text not null,
+  category text not null default 'Hate ideology',
+  active boolean not null default true,
+  created_by text,
+  created_at timestamp with time zone default now(),
+  constraint social_mod_terms_pkey primary key (id)
+);
+create unique index if not exists social_mod_terms_uniq
+  on public.social_mod_terms (lower(term));
+
+-- terms the bot LEARNED are safe (added when an admin marks a
+-- flag as False). The bot skips these on future scans.
+create table if not exists public.social_mod_allow (
+  id uuid not null default gen_random_uuid(),
+  term text not null,
+  created_by text,
+  created_at timestamp with time zone default now(),
+  constraint social_mod_allow_pkey primary key (id)
+);
+create unique index if not exists social_mod_allow_uniq
+  on public.social_mod_allow (lower(term));
+
+-- a flag the bot raised on a post, awaiting admin review. Keeps a
+-- snapshot so the record survives the post being deleted.
+create table if not exists public.social_flags (
+  id uuid not null default gen_random_uuid(),
+  post_id uuid references public.social_posts(id) on delete set null,
+  author_id uuid references public.users(id) on delete set null,
+  category text,
+  matched text,                    -- comma-joined matched terms
+  reason text,                     -- human summary of why it flagged
+  snapshot_title text,
+  snapshot_caption text,
+  snapshot_image text,
+  status text not null default 'Pending',  -- Pending|Confirmed|Cancelled|False
+  reviewed_by text,
+  reviewed_at timestamp with time zone,
+  created_at timestamp with time zone default now(),
+  constraint social_flags_pkey primary key (id)
+);
+create index if not exists social_flags_status_idx
+  on public.social_flags (status, created_at desc);
+
+-- a punishment issued on Confirm, tied to the offender's contacts
+-- so a ban follows the email / phone / IP. RLS-locked: only the
+-- SECURITY DEFINER functions below can read or write it (the PII
+-- must never be listable from the browser).
+create table if not exists public.social_punishments (
+  id uuid not null default gen_random_uuid(),
+  user_id uuid references public.users(id) on delete set null,
+  post_id uuid,
+  email text,
+  phone text,
+  ip text,
+  category text,
+  reason text,
+  issued_by text,
+  active boolean not null default true,
+  created_at timestamp with time zone default now(),
+  constraint social_punishments_pkey primary key (id)
+);
+alter table public.social_punishments enable row level security;
+
+-- profile: ban flag + the IP captured at signup (for enforcement)
+alter table public.social_profiles
+  add column if not exists banned boolean default false;
+alter table public.social_profiles
+  add column if not exists banned_reason text;
+alter table public.social_profiles
+  add column if not exists signup_ip text;
+
+-- is this email / phone / ip under an active punishment?
+create or replace function public.social_check_banned(
+  p_email text, p_phone text, p_ip text)
+returns boolean
+language sql security definer set search_path = public
+as $$
+  select exists(
+    select 1 from public.social_punishments
+     where active
+       and (
+         (nullif(trim(p_email),'') is not null
+            and lower(email) = lower(trim(p_email)))
+      or (nullif(regexp_replace(coalesce(p_phone,''),'\D','','g'),'') is not null
+            and regexp_replace(coalesce(phone,''),'\D','','g')
+                = regexp_replace(coalesce(p_phone,''),'\D','','g'))
+      or (nullif(trim(p_ip),'') is not null and ip = trim(p_ip))
+       )
+  );
+$$;
+grant execute on function public.social_check_banned(text,text,text)
+  to anon, authenticated;
+
+-- who counts as a Social admin (linked officer + active grant)
+create or replace function public.social_is_admin(p_user uuid)
+returns boolean language sql security definer set search_path = public as $$
+  select exists(
+    select 1 from public.officers o
+    join public.permission_grants pg on pg.officer_id = o.id
+    where o.user_id = p_user
+      and pg.permission = 'socialmedia.admin'
+      and pg.revoked_at is null and pg.expires_at > now());
+$$;
+grant execute on function public.social_is_admin(uuid) to anon, authenticated;
+
+-- CONFIRM: punish the author (record email/phone/ip), ban them,
+-- delete the post, and resolve the flag. Admins only.
+create or replace function public.social_confirm_flag(
+  p_flag uuid, p_reason text default null)
+returns json language plpgsql security definer set search_path = public as $$
+declare v_flag record; v_prof record; v_admin uuid := auth.uid();
+        v_by text;
+begin
+  if not public.social_is_admin(v_admin) then
+    return json_build_object('ok', false, 'reason', 'not authorized');
+  end if;
+  select username into v_by from public.users where id = v_admin;
+  select * into v_flag from public.social_flags where id = p_flag;
+  if v_flag.id is null then
+    return json_build_object('ok', false, 'reason', 'flag not found');
+  end if;
+  select * into v_prof from public.social_profiles where user_id = v_flag.author_id;
+  insert into public.social_punishments
+    (user_id, post_id, email, phone, ip, category, reason, issued_by)
+  values (v_flag.author_id, v_flag.post_id, v_prof.email, v_prof.phone,
+          v_prof.signup_ip, v_flag.category,
+          coalesce(p_reason, v_flag.reason), v_by);
+  update public.social_profiles
+     set banned = true, banned_reason = coalesce(p_reason, v_flag.category)
+   where user_id = v_flag.author_id;
+  if v_flag.post_id is not null then
+    delete from public.social_posts where id = v_flag.post_id;
+  end if;
+  update public.social_flags
+     set status = 'Confirmed', reviewed_at = now(), reviewed_by = v_by
+   where id = p_flag;
+  return json_build_object('ok', true);
+end; $$;
+grant execute on function public.social_confirm_flag(uuid, text) to authenticated;
+
+-- CANCEL: dismiss the flag, keep the post. Admins only.
+create or replace function public.social_cancel_flag(p_flag uuid)
+returns json language plpgsql security definer set search_path = public as $$
+declare v_admin uuid := auth.uid(); v_by text;
+begin
+  if not public.social_is_admin(v_admin) then
+    return json_build_object('ok', false, 'reason', 'not authorized');
+  end if;
+  select username into v_by from public.users where id = v_admin;
+  update public.social_flags
+     set status = 'Cancelled', reviewed_at = now(), reviewed_by = v_by
+   where id = p_flag;
+  return json_build_object('ok', true);
+end; $$;
+grant execute on function public.social_cancel_flag(uuid) to authenticated;
+
+-- FALSE: mark a false positive, keep the post, and TEACH the bot
+-- by allow-listing the matched terms. Admins only.
+create or replace function public.social_false_flag(p_flag uuid)
+returns json language plpgsql security definer set search_path = public as $$
+declare v_admin uuid := auth.uid(); v_by text; v_matched text; t text;
+begin
+  if not public.social_is_admin(v_admin) then
+    return json_build_object('ok', false, 'reason', 'not authorized');
+  end if;
+  select username into v_by from public.users where id = v_admin;
+  select matched into v_matched from public.social_flags where id = p_flag;
+  if v_matched is not null then
+    foreach t in array string_to_array(v_matched, ',') loop
+      if length(trim(t)) > 0 then
+        insert into public.social_mod_allow (term, created_by)
+        values (lower(trim(t)), v_by) on conflict do nothing;
+      end if;
+    end loop;
+  end if;
+  update public.social_flags
+     set status = 'False', reviewed_at = now(), reviewed_by = v_by
+   where id = p_flag;
+  return json_build_object('ok', true);
+end; $$;
+grant execute on function public.social_false_flag(uuid) to authenticated;
+
+-- starter banned terms (extremist / hate markers). Add your own
+-- community-specific terms from the moderation page.
+insert into public.social_mod_terms (term, category) values
+  ('heil hitler','Hate ideology'),
+  ('sieg heil','Hate ideology'),
+  ('white power','Hate ideology'),
+  ('racial holy war','Hate ideology'),
+  ('1488','Hate ideology'),
+  ('14 words','Hate ideology'),
+  ('gas the','Violence / genocide'),
+  ('ethnic cleansing','Violence / genocide'),
+  ('master race','Hate ideology')
+on conflict do nothing;
+
 select 'SHIBA SOCIAL schema ready' as result;

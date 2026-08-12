@@ -217,6 +217,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
         btn.textContent = "Creating…";
 
+        /* ban enforcement — refuse a banned email / phone / device */
+
+        const ip = await getClientIp();
+
+        if (await SocialAPI.checkBanned(email, phone, ip)) {
+
+            SToast.err("This email, phone number, or device is banned " +
+                "from SHIBA Social.");
+
+            btn.disabled = false;
+
+            btn.textContent = "Create account";
+
+            return;
+
+        }
+
         /* 1) make the Supabase Auth account */
 
         const { data, error } = await window.sdb.auth.signUp({
@@ -305,6 +322,20 @@ document.addEventListener("DOMContentLoaded", () => {
             btn.textContent = "Create account";
 
             return;
+
+        }
+
+        /* record the signup IP for moderation / ban enforcement */
+
+        if (ip) {
+
+            try {
+
+                await window.sdb.from("social_profiles")
+
+                    .update({ signup_ip: ip }).eq("user_id", data.user.id);
+
+            } catch (e) { /* column missing pre-patch — ignore */ }
 
         }
 

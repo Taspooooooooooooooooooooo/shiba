@@ -1149,3 +1149,244 @@ a.postHead:hover .pName { color: var(--accent); }
 }
 
 .bvSelect:focus { border-color: var(--accent); }
+
+/* ==========================================================
+   S5 — moderation, ToS, ban screen
+========================================================== */
+
+/* signup agreement line */
+
+.tosAgree {
+
+    margin-top: 12px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--faint);
+    text-align: center;
+}
+
+.tosAgree a { color: var(--accent); font-weight: 600; }
+
+/* danger button */
+
+.btn.danger {
+
+    background: linear-gradient(120deg, #e11d48, #f43f5e);
+    color: #fff;
+}
+
+/* ToS document */
+
+.tosDoc {
+
+    max-width: 760px;
+    margin: 0 auto;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 26px 22px 30px;
+}
+
+.tosDoc h1 { font-size: 26px; margin-bottom: 4px; }
+
+.tosMeta { color: var(--faint); font-size: 13px; margin-bottom: 18px; }
+
+.tosDoc h2 {
+
+    font-size: 17px;
+    margin: 24px 0 8px;
+    color: var(--text);
+}
+
+.tosDoc p { color: var(--muted); line-height: 1.65; margin-bottom: 12px; }
+
+.tosDoc strong { color: var(--text); }
+
+.tosDoc ul { margin: 0 0 14px 2px; padding-left: 18px; }
+
+.tosDoc li { color: var(--muted); line-height: 1.6; margin-bottom: 8px; }
+
+.tosBack { margin-top: 22px; }
+
+.tosBack a { color: var(--accent); font-weight: 600; }
+
+/* moderation queue */
+
+.qCount { color: var(--accent); font-weight: 700; }
+
+.flagCard { border-color: rgba(251,113,133,.35); }
+
+.flagHead {
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.flagReason { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.flagChip {
+
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: rgba(251,113,133,.16);
+    border: 1px solid rgba(251,113,133,.4);
+    color: var(--err);
+    font-size: 12px;
+    font-weight: 600;
+    margin-left: 6px;
+}
+
+.termRow .flagChip { color: var(--muted); background: var(--surface-2);
+    border-color: var(--line-strong); }
+
+.flagTime { color: var(--faint); font-size: 12px; flex: none; }
+
+.flagImg {
+
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 12px;
+    background: #000;
+    display: flex;
+    justify-content: center;
+}
+
+.flagImg img { max-height: 340px; width: 100%; object-fit: contain; }
+
+.flagWhy {
+
+    font-size: 13.5px;
+    color: var(--muted);
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin: 10px 0;
+    line-height: 1.5;
+    word-break: break-word;
+}
+
+.flagWhy b { color: var(--text); }
+
+.flagBy { font-size: 13px; color: var(--faint); margin-bottom: 14px; }
+
+.flagBy a { color: var(--accent); }
+
+.flagActions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.flagActions .btn { margin-top: 0; flex: 1; min-width: 120px; padding: 11px; }
+
+/* banned-words manager */
+
+.bwAdd { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+
+.bwAdd input {
+
+    flex: 1;
+    min-width: 140px;
+    padding: 11px 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--bg-2);
+    color: var(--text);
+    font-size: 14px;
+    outline: none;
+}
+
+.bwAdd input:focus { border-color: var(--accent); }
+
+.bwAdd select {
+
+    padding: 11px 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--bg-2);
+    color: var(--text);
+    font-size: 14px;
+    outline: none;
+}
+
+.bwAdd .btn { margin-top: 0; width: auto; padding: 11px 18px; }
+
+.termList { display: flex; flex-direction: column; gap: 8px; }
+
+.termRow {
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 12px;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+}
+
+.termWord { font-weight: 600; }
+
+.termRemove {
+
+    background: none;
+    border: none;
+    color: var(--err);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 4px 6px;
+}
+
+/* banned full-page screen */
+
+.bannedWrap {
+
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+
+.bannedCard {
+
+    max-width: 420px;
+    text-align: center;
+    background: var(--surface);
+    border: 1px solid rgba(251,113,133,.4);
+    border-radius: var(--radius);
+    padding: 34px 26px;
+    box-shadow: var(--shadow);
+}
+
+.bannedMark {
+
+    width: 60px;
+    height: 60px;
+    margin: 0 auto 18px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 34px;
+    font-weight: 800;
+    color: #fff;
+    background: linear-gradient(120deg, #e11d48, #f43f5e);
+}
+
+.bannedCard h1 { font-size: 22px; margin-bottom: 10px; }
+
+.bannedCard p { color: var(--muted); line-height: 1.55; margin-bottom: 10px; }
+
+.bannedReason {
+
+    color: var(--text);
+    font-weight: 600;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px;
+}
+
+.bannedFoot { font-size: 13px; color: var(--faint); }
