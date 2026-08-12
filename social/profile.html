@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>SHIBA Social | Profile</title>
+
+    <meta name="theme-color" content="#0e0b16">
+
+    <link rel="icon" type="image/svg+xml" href="assets/social-badge.svg">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+
+    <link rel="stylesheet" href="css/social.css">
+</head>
+
+<body>
+
+    <!-- topbar -->
+
+    <header class="topbar">
+
+        <a class="brand" href="home.html">
+
+            <span class="glyph">◈</span>
+
+            <span class="word"><b>SHIBA</b> <span>Social</span></span>
+
+        </a>
+
+        <div class="actions">
+
+            <a class="iconBtn" href="home.html" title="Home">⌂</a>
+
+        </div>
+
+    </header>
+
+    <main class="page">
+
+        <!-- VIEW MODE -->
+
+        <div id="viewMode">
+
+            <div class="card">
+
+                <div class="profileHead">
+
+                    <div class="profileAvatar" id="viewAvatar">
+
+                        <span id="viewInitial">·</span>
+
+                    </div>
+
+                    <div class="profileMeta">
+
+                        <div class="name" id="viewName">—</div>
+
+                        <div class="handle" id="viewHandle">—</div>
+
+                    </div>
+
+                </div>
+
+                <div class="profileStats">
+
+                    <div class="stat"><b id="statPosts">0</b><span>Posts</span></div>
+
+                    <div class="stat"><b id="statStories">0</b><span>Stories</span></div>
+
+                    <div class="stat"><b id="statSince">—</b><span>Joined</span></div>
+
+                </div>
+
+                <div class="bioText empty-bio" id="viewBio">No bio yet.</div>
+
+                <div style="margin-top:18px">
+
+                    <button class="btn ghost" id="editBtn">Edit profile</button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- EDIT MODE -->
+
+        <div id="editMode" class="hidden">
+
+            <div class="card">
+
+                <h2 style="margin-bottom:16px">Edit profile</h2>
+
+                <div class="avatarPick">
+
+                    <div class="preview" id="editAvatarPrev">
+
+                        <span id="editInitial">·</span>
+
+                    </div>
+
+                    <div>
+
+                        <button class="btn ghost" id="pickAvatarBtn"
+                                style="width:auto;padding:10px 16px">
+                            Change photo</button>
+
+                        <input type="file" id="avatarFile" accept="image/*"
+                               class="hidden">
+
+                    </div>
+
+                </div>
+
+                <div class="field">
+
+                    <label for="editName">Display name</label>
+
+                    <input id="editName" type="text" maxlength="40"
+                           placeholder="Your name">
+
+                </div>
+
+                <div class="field">
+
+                    <label for="editBio">Bio</label>
+
+                    <textarea id="editBio" maxlength="300"
+                              placeholder="Tell the community a little about you…"></textarea>
+
+                    <div class="hint"><span id="bioCount">0</span>/300</div>
+
+                </div>
+
+                <div class="rowBtns">
+
+                    <button class="btn ghost" id="cancelBtn">Cancel</button>
+
+                    <button class="btn" id="saveBtn">Save changes</button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script src="js/socialClient.js"></script>
+    <script src="js/profile.js"></script>
+
+</body>
+
+</html>

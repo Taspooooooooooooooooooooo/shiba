@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>SHIBA Social | Home</title>
+
+    <meta name="theme-color" content="#0e0b16">
+
+    <link rel="icon" type="image/svg+xml" href="assets/social-badge.svg">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+
+    <link rel="stylesheet" href="css/social.css">
+</head>
+
+<body>
+
+    <!-- topbar -->
+
+    <header class="topbar">
+
+        <a class="brand" href="home.html">
+
+            <span class="glyph">◈</span>
+
+            <span class="word"><b>SHIBA</b> <span>Social</span></span>
+
+        </a>
+
+        <div class="actions">
+
+            <button class="iconBtn" id="newPostBtn" title="New post">＋</button>
+
+            <button class="avatarBtn" id="avatarBtn" title="You">
+
+                <span id="avatarInitial">·</span>
+
+            </button>
+
+        </div>
+
+    </header>
+
+    <!-- profile dropdown -->
+
+    <div class="menu hidden" id="userMenu">
+
+        <div class="who">
+
+            <div class="n" id="menuName">—</div>
+
+            <div class="h" id="menuHandle">—</div>
+
+        </div>
+
+        <a href="profile.html">Your profile</a>
+
+        <button class="danger" id="logoutBtn">Log out</button>
+
+    </div>
+
+    <!-- page -->
+
+    <main class="page">
+
+        <div class="card" id="welcomeCard">
+
+            <h2 id="greeting">Welcome 👋</h2>
+
+            <p style="color:var(--muted);margin-top:6px;line-height:1.5">
+               Your corner of SHIBA Social is ready.</p>
+
+        </div>
+
+        <div class="sectionLabel">Community feed</div>
+
+        <div class="card">
+
+            <div class="empty">
+
+                <div class="big">🖼️</div>
+
+                <h3>The feed is on its way</h3>
+
+                <p>Photo posts, likes and comments land in the next update.
+                   For now, make your profile yours.</p>
+
+                <div style="margin-top:18px">
+
+                    <a class="btn" href="profile.html"
+                       style="display:inline-block;width:auto;padding:12px 22px">
+                       Set up your profile</a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script src="js/socialClient.js"></script>
+    <script src="js/home.js"></script>
+
+</body>
+
+</html>

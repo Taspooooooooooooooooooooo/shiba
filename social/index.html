@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>SHIBA Social</title>
+
+    <meta name="description" content="SHIBA Social — a small community for photos and stories.">
+    <meta name="theme-color" content="#0e0b16">
+
+    <link rel="icon" type="image/svg+xml" href="assets/social-badge.svg">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+
+    <link rel="stylesheet" href="css/social.css">
+</head>
+
+<body>
+
+    <div class="authWrap">
+
+        <!-- hero -->
+
+        <div class="authHero">
+
+            <div class="brand">
+
+                <span class="glyph">◈</span>
+
+                <span class="word"><b>SHIBA</b> <span>Social</span></span>
+
+            </div>
+
+            <h1>Share the little moments.</h1>
+
+            <p>A calm little corner for our community — photos and
+               24-hour stories. No noise, no videos, just us.</p>
+
+        </div>
+
+        <!-- auth card -->
+
+        <div class="authCard">
+
+            <div class="authTabs">
+
+                <button id="tabSignIn" class="active" type="button">Sign in</button>
+
+                <button id="tabSignUp" type="button">Create account</button>
+
+            </div>
+
+            <!-- SIGN IN -->
+
+            <form id="signInForm">
+
+                <div class="field">
+
+                    <label for="siUser">Username</label>
+
+                    <input id="siUser" type="text" autocomplete="username"
+                           placeholder="your username" required>
+
+                </div>
+
+                <div class="field">
+
+                    <label for="siPass">Password</label>
+
+                    <input id="siPass" type="password" autocomplete="current-password"
+                           placeholder="your password" required>
+
+                </div>
+
+                <button class="btn" type="submit">Sign in</button>
+
+            </form>
+
+            <!-- SIGN UP -->
+
+            <form id="signUpForm" class="hidden">
+
+                <div class="field">
+
+                    <label for="suName">Display name</label>
+
+                    <input id="suName" type="text" autocomplete="name"
+                           placeholder="What should people call you?">
+
+                    <div class="hint">Optional — defaults to your username.</div>
+
+                </div>
+
+                <div class="field">
+
+                    <label for="suUser">Username</label>
+
+                    <input id="suUser" type="text" autocomplete="username"
+                           placeholder="pick a username" required>
+
+                    <div class="hint">3–24 characters · a–z, 0–9, . _ -</div>
+
+                </div>
+
+                <div class="field">
+
+                    <label for="suPass">Password</label>
+
+                    <input id="suPass" type="password" autocomplete="new-password"
+                           placeholder="at least 8 characters" required>
+
+                </div>
+
+                <div class="field">
+
+                    <label for="suPass2">Confirm password</label>
+
+                    <input id="suPass2" type="password" autocomplete="new-password"
+                           placeholder="repeat your password" required>
+
+                </div>
+
+                <button class="btn" type="submit">Create account</button>
+
+            </form>
+
+            <div class="authFoot">SHIBA Social · Alpha</div>
+
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script src="js/socialClient.js"></script>
+    <script src="js/landing.js"></script>
+
+</body>
+
+</html>

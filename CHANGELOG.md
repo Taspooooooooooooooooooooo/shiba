@@ -2,6 +2,37 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.50.0 — 2026-08-12 · SHIBA Social S1 — foundation (a new sibling app) 🎉
+
+### Added
+- **SHIBA Social** (`/social/`) — a small-community photo + story app that
+  **shares the SHIBA account system** with PIMS but runs completely separately.
+  - **Sign up** creates a normal SHIBA account (a `public.users` row) with **no
+    officer and no mention of PIMS** — the police side stays behind its own
+    activation flow, which is **left untouched**.
+  - **Sign in** accepts any SHIBA account (a Social-made one *or* an existing
+    PIMS officer) — always as a **Social-only session** that does **not** unlock
+    PIMS. Social gets its own auth `storageKey`, so the two sessions never mix.
+  - **Profile** — display name, bio, and avatar. Photos are **compressed in the
+    browser (~512px avatars / ~1080px posts)** before upload and stored in the
+    public **cloud** bucket under a `social/` prefix, keeping a small community
+    inside the free storage tier.
+  - Fresh **violet→pink** look — a friendly sibling to the police-blue PIMS —
+    mobile-first, with its own badge, toasts, and topbar.
+- **New SQL** (`social/SETUP-SOCIAL.sql`, run once): `social_profiles`,
+  `social_posts`, `social_likes`, `social_comments`, `social_stories`, plus
+  `social_register()` (idempotent shared-account + profile creation) and
+  `purge_expired_stories()`.
+
+### Notes
+- **S1 = foundation** (schema + app shell + shared-auth signup/login + profile).
+  Next: **S2** photo feed (post + likes + comments), **S3** 24h stories,
+  **S4** the PIMS bridge (a *Social* nav link shown to activated officers, and
+  social users activating PIMS via the unchanged `complete_activation`).
+- The activation/reset contract is **not modified** — a social account can later
+  be activated into an officer because `complete_activation` already upserts
+  `users` with `on conflict (id) do nothing`.
+
 ## v0.49.0 — 2026-08-02 · Mobile pass v1 — hamburger drawer navigation
 
 ### Changed
