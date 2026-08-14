@@ -125,6 +125,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
         });
 
+        /* police officers (accounts with a PIN) get the extra PIN
+           step before entering Social; everyone else goes straight in */
+
+        if (SocialSession.needsPin(data.user) &&
+
+            !SocialSession.pinCleared(data.user.id)) {
+
+            window.location.href = SocialSession.startPinGate(data.user.id);
+
+            return;
+
+        }
+
         window.location.href = "home.html";
 
     });

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>SHIBA · Security verification</title>
+
+    <meta name="theme-color" content="#0e0b16">
+
+    <link rel="icon" type="image/svg+xml" href="../../social/assets/social-badge.svg">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+
+    <link rel="stylesheet" href="../../social/css/social.css">
+</head>
+
+<body>
+
+    <div class="authWrap">
+
+        <div class="authCard" style="max-width:360px">
+
+            <div class="authHero" style="margin-bottom:6px">
+
+                <div class="brand" style="justify-content:center">
+
+                    <span class="glyph">◈</span>
+
+                    <span class="word"><b>SHIBA</b></span>
+
+                </div>
+
+            </div>
+
+            <!-- normal state -->
+
+            <div id="pinState">
+
+                <h1 style="font-size:20px;text-align:center;margin:6px 0 6px">
+                    Security verification</h1>
+
+                <p style="text-align:center;color:var(--muted);font-size:14px;
+                          line-height:1.5;margin-bottom:18px">
+                   This account is linked to a police identity. Enter your
+                   PIN to continue to SHIBA Social.</p>
+
+                <div class="field">
+
+                    <label for="pin">Security PIN</label>
+
+                    <input id="pin" type="password" inputmode="numeric"
+                           maxlength="4" placeholder="••••"
+                           style="text-align:center;letter-spacing:8px;font-size:20px">
+
+                </div>
+
+                <button class="btn" id="verifyBtn">Verify</button>
+
+                <button class="btn ghost" id="cancelBtn"
+                        style="margin-top:10px">Cancel</button>
+
+            </div>
+
+            <!-- error state -->
+
+            <div id="errState" class="hidden">
+
+                <div class="empty">
+
+                    <h3 id="errTitle">This link is no longer valid</h3>
+
+                    <p id="errText">Please sign in again.</p>
+
+                    <div style="margin-top:16px">
+
+                        <a class="btn" href="../../social/index.html"
+                           style="display:inline-block;width:auto;padding:12px 22px">
+                           Back to sign in</a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script src="../../social/js/socialClient.js"></script>
+    <script src="pin.js"></script>
+
+</body>
+
+</html>

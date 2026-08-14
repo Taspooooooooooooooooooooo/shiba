@@ -2,6 +2,26 @@
 
 All notable changes to the SHIBA Police Information Management System.
 
+## v0.57.0 — 2026-08-12 · SHIBA Social — police PIN gate on casual login
+
+### Added
+- **Police PIN on Social login.** A casual username+password sign-in by a
+  **linked police officer** (an account that carries a PIN in its PIMS identity)
+  now redirects to a small verification window at **`/lapd/pin/?<token>`**, and
+  only continues into Social once the PIN clears — the same SHA-256 PIN check
+  PIMS itself uses. Regular members (no police link) are unaffected.
+- The gate is enforced on **every Social page** (not just the login) until the
+  PIN is cleared for the browser session, so it can't be skipped by navigating
+  directly. Clearing resets on logout; linking a police account marks it cleared
+  for that session (they set the PIN there).
+
+### Notes
+- No SQL — reuses the `pin_hash` already in each officer's auth metadata; all
+  client-side, consistent with PIMS's own PIN step.
+- The **"Continue with SHIBA PIMS"** button still takes officers to the PIMS app
+  (it "just lets them pass" there); a full PIMS→Social single-sign-on token
+  handoff is a larger, separate piece (the two apps use independent sessions).
+
 ## v0.56.0 — 2026-08-12 · SHIBA Social S6 — admin panel + post Actions + sanctions
 
 ### Added

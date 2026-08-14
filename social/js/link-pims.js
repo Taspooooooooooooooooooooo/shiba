@@ -220,6 +220,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             }
 
+            /* they just set their PIN here — don't re-prompt this session */
+
+            SocialSession.setPinCleared(viewer.id);
+
             document.getElementById("pinCard").classList.add("hidden");
 
             document.getElementById("doneText").textContent =

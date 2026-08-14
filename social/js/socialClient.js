@@ -107,6 +107,18 @@ async function getClientIp() {
 
 }
 
+/* random hex token (for the police PIN handoff URL) */
+
+function randomToken() {
+
+    const a = new Uint8Array(24);
+
+    crypto.getRandomValues(a);
+
+    return [...a].map(b => b.toString(16).padStart(2, "0")).join("");
+
+}
+
 /* the current viewer's quick context (id + admin), set by pages
    after they load badges — the post card reads it to decide which
    Actions to show. */
@@ -234,6 +246,50 @@ const SocialSession = {
 
     },
 
+    /* police PIN gate: a linked officer (an account carrying a PIN
+       in its metadata) must clear its PIN once per browser session
+       before using Social. Members have no PIN and are unaffected. */
+
+    needsPin(user) {
+
+        return !!(user && user.user_metadata && user.user_metadata.pin_hash);
+
+    },
+
+    pinCleared(userId) {
+
+        try { return sessionStorage.getItem("shibaPinCleared") === userId; }
+
+        catch (e) { return false; }
+
+    },
+
+    setPinCleared(userId) {
+
+        try { sessionStorage.setItem("shibaPinCleared", userId); } catch (e) {}
+
+    },
+
+    /* create a one-time token + pending record and return the PIN
+       window URL (hosted under /lapd/pin/ so it reads as a police
+       security step). */
+
+    startPinGate(userId) {
+
+        const token = randomToken();
+
+        try {
+
+            localStorage.setItem("shibaPinPending",
+
+                JSON.stringify({ token, userId, ts: Date.now() }));
+
+        } catch (e) {}
+
+        return "../lapd/pin/?" + token;
+
+    },
+
     async user() {
 
         try {
@@ -306,6 +362,16 @@ const SocialSession = {
 
         }
 
+        /* police PIN gate — cops must clear their PIN before Social */
+
+        if (this.needsPin(user) && !this.pinCleared(user.id)) {
+
+            window.location.href = this.startPinGate(user.id);
+
+            return null;
+
+        }
+
         return user;
 
     },
@@ -349,6 +415,10 @@ const SocialSession = {
         try { await window.sdb.auth.signOut(); } catch (e) { /* ignore */ }
 
         localStorage.removeItem(this.KEY);
+
+        localStorage.removeItem("shibaPinPending");
+
+        try { sessionStorage.removeItem("shibaPinCleared"); } catch (e) {}
 
         window.location.href = "index.html";
 
