@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SITE-72 // Hit Detection System</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap');
+
+  :root {
+    --bg: #080b0f;
+    --surface: #0d1117;
+    --panel: #111820;
+    --border: #1e2d3d;
+    --red: #c0392b;
+    --red-dim: #7a1f16;
+    --red-glow: rgba(192,57,43,0.15);
+    --green: #00ff88;
+    --green-dim: #00994d;
+    --blue: #4fc3f7;
+    --amber: #ffb300;
+    --text: #c9d1d9;
+    --text-dim: #6e7a85;
+    --mono: 'Share Tech Mono', monospace;
+    --sans: 'Rajdhani', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  header {
+    border-bottom: 1px solid var(--red);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: var(--surface);
+  }
+  .logo-mark {
+    width: 36px; height: 36px;
+    border: 2px solid var(--red);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--red);
+    letter-spacing: 1px;
+    flex-shrink: 0;
+  }
+  header h1 {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--red);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+  header p {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    margin-top: 2px;
+  }
+  .status-dot {
+    margin-left: auto;
+    display: flex; align-items: center; gap: 8px;
+    font-family: var(--mono); font-size: 11px; color: var(--green);
+  }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* NAV TABS */
+  nav {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  nav::-webkit-scrollbar { display: none; }
+  .tab {
+    padding: 12px 20px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: all 0.2s;
+    background: none; border-top: none; border-left: none; border-right: none;
+  }
+  .tab:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+  .tab.active { color: var(--red); border-bottom-color: var(--red); }
+
+  /* MAIN */
+  main { padding: 24px; max-width: 900px; margin: 0 auto; }
+
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* CANVAS PANELS */
+  .canvas-wrap {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 20px;
+    position: relative;
+  }
+  .canvas-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--border);
+    letter-spacing: 2px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  canvas { display: block; width: 100%; }
+
+  /* MATH BLOCKS */
+  .math-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--red);
+    border-radius: 4px;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+  }
+  .math-block h3 {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--red);
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+  }
+  .formula {
+    font-family: var(--mono);
+    font-size: 14px;
+    color: var(--green);
+    background: rgba(0,255,136,0.05);
+    padding: 10px 14px;
+    border-radius: 3px;
+    margin: 8px 0;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  .var-list {
+    margin-top: 10px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 4px 16px;
+  }
+  .var-key { font-family: var(--mono); font-size: 12px; color: var(--amber); }
+  .var-val { font-family: var(--sans); font-size: 13px; color: var(--text-dim); }
+
+  /* SLIDERS */
+  .controls {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  @media(max-width:500px){ .controls { grid-template-columns: 1fr; } }
+  .ctrl-group label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    display: flex; justify-content: space-between; margin-bottom: 6px;
+  }
+  .ctrl-group label span { color: var(--amber); }
+  input[type=range] {
+    width: 100%; accent-color: var(--red);
+    height: 4px; cursor: pointer;
+  }
+
+  /* RESULT DISPLAY */
+  .result-bar {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+  }
+  .result-item { flex: 1; min-width: 120px; }
+  .result-item .label { font-family: var(--mono); font-size: 10px; color: var(--text-dim); letter-spacing: 1px; }
+  .result-item .value { font-family: var(--mono); font-size: 22px; color: var(--green); margin-top: 4px; }
+  .result-item .value.warn { color: var(--amber); }
+  .result-item .value.danger { color: var(--red); }
+
+  /* VERDICT */
+  .verdict {
+    padding: 12px 18px;
+    border-radius: 4px;
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 1px;
+    margin-bottom: 20px;
+  }
+  .verdict.accept { background: rgba(0,255,136,0.08); border: 1px solid var(--green-dim); color: var(--green); }
+  .verdict.reject { background: rgba(192,57,43,0.1); border: 1px solid var(--red-dim); color: var(--red); }
+
+  /* HITBOX TABLE */
+  .zone-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+  .zone-table th {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 2px;
+    color: var(--text-dim); padding: 8px 12px; text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  .zone-table td {
+    font-family: var(--mono); font-size: 13px;
+    padding: 10px 12px; border-bottom: 1px solid rgba(30,45,61,0.5);
+  }
+  .zone-table tr:hover td { background: rgba(255,255,255,0.02); }
+  .zone-name { color: var(--blue); }
+  .zone-mult { color: var(--amber); }
+  .zone-final { color: var(--green); }
+  .zone-bar-wrap { width: 120px; }
+  .zone-bar { height: 6px; border-radius: 3px; background: var(--red); transition: width 0.3s; }
+
+  /* FLOW DIAGRAM */
+  .flow { display: flex; flex-direction: column; gap: 0; margin-bottom: 20px; }
+  .flow-step {
+    display: flex; align-items: flex-start; gap: 14px;
+    padding: 14px 16px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-bottom: none;
+    position: relative;
+  }
+  .flow-step:first-child { border-radius: 4px 4px 0 0; }
+  .flow-step:last-child { border-bottom: 1px solid var(--border); border-radius: 0 0 4px 4px; }
+  .flow-num {
+    font-family: var(--mono); font-size: 11px; color: var(--red);
+    background: var(--red-glow); border: 1px solid var(--red-dim);
+    width: 26px; height: 26px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 2px;
+  }
+  .flow-content h4 { font-family: var(--sans); font-weight: 700; font-size: 15px; color: var(--text); margin-bottom: 4px; }
+  .flow-content p { font-family: var(--sans); font-size: 13px; color: var(--text-dim); line-height: 1.5; }
+  .flow-content code { font-family: var(--mono); font-size: 12px; color: var(--amber); background: rgba(255,179,0,0.08); padding: 1px 5px; border-radius: 2px; }
+  .flow-arrow {
+    text-align: center; font-family: var(--mono); font-size: 16px;
+    color: var(--border); padding: 2px 0;
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    padding-left: 32px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-mark">SCP</div>
+  <div>
+    <h1>SITE-72 // Hit Detection Mathematics</h1>
+    <p>SERVER-AUTHORITATIVE BALLISTICS SYSTEM — VISUAL REFERENCE</p>
+  </div>
+  <div class="status-dot"><div class="dot"></div>SECURE</div>
+</header>
+
+<nav>
+  <button class="tab active" onclick="switchTab('ray')">01 RAY CAST</button>
+  <button class="tab" onclick="switchTab('lag')">02 LAG COMP</button>
+  <button class="tab" onclick="switchTab('falloff')">03 DAMAGE FALLOFF</button>
+  <button class="tab" onclick="switchTab('zones')">04 HIT ZONES</button>
+  <button class="tab" onclick="switchTab('flow')">05 SERVER FLOW</button>
+</nav>
+
+<main>
+
+<!-- TAB 1: RAY CAST -->
+<div class="section active" id="tab-ray">
+  <div class="math-block">
+    <h3>RAY-SPHERE INTERSECTION</h3>
+    <div class="formula">P(t) = O + t·D</div>
+    <div class="formula">t = −dot(D, O−C) ± √( dot(D,O−C)² − (|O−C|² − r²) )</div>
+    <div class="var-list">
+      <span class="var-key">O</span><span class="var-val">Ray origin — gun barrel world position</span>
+      <span class="var-key">D</span><span class="var-val">Normalised direction vector (unit length 1)</span>
+      <span class="var-key">C</span><span class="var-val">Hitbox sphere centre (target player)</span>
+      <span class="var-key">r</span><span class="var-val">Hitbox radius in studs</span>
+      <span class="var-key">t</span><span class="var-val">Distance along ray to intersection</span>
+    </div>
+  </div>
+
+  <div class="canvas-wrap">
+    <div class="canvas-label">
+      <span>RAY VISUALISER — DRAG SHOOTER OR TARGET</span>
+      <span id="ray-status" style="color:var(--green)">MOVE POINTS TO TEST</span>
+    </div>
+    <canvas id="rayCanvas" height="320"></canvas>
+  </div>
+
+  <div class="math-block">
+    <h3>DISCRIMINANT RULE</h3>
+    <div class="formula">Δ = dot(D,O−C)² − (|O−C|² − r²)</div>
+    <div class="var-list">
+      <span class="var-key">Δ &lt; 0</span><span class="var-val">Ray misses sphere entirely — NO HIT</span>
+      <span class="var-key">Δ = 0</span><span class="var-val">Ray grazes the edge — GRAZE HIT</span>
+      <span class="var-key">Δ &gt; 0</span><span class="var-val">Ray passes through sphere — CONFIRMED HIT</span>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 2: LAG COMP -->
+<div class="section" id="tab-lag">
+  <div class="math-block">
+    <h3>POSITION REWIND FORMULA</h3>
+    <div class="formula">t_rewind = T_server − ping / 2</div>
+    <div class="formula">P_fire = P_current − V × t_rewind</div>
+    <div class="var-list">
+      <span class="var-key">T_server</span><span class="var-val">Server timestamp when shot was received</span>
+      <span class="var-key">ping</span><span class="var-val">Client round-trip latency in seconds</span>
+      <span class="var-key">P_current</span><span class="var-val">Target's position right now on server</span>
+      <span class="var-key">V</span><span class="var-val">Target's velocity vector at time of shot</span>
+      <span class="var-key">P_fire</span><span class="var-val">Rewound position — where target WAS when client fired</span>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="ctrl-group">
+      <label>PLAYER PING (ms) <span id="pingVal">80</span></label>
+      <input type="range" id="pingSlider" min="10" max="400" value="80" oninput="updateLag()">
+    </div>
+    <div class="ctrl-group">
+      <label>PLAYER SPEED (studs/s) <span id="speedVal">16</span></label>
+      <input type="range" id="speedSlider" min="0" max="50" value="16" oninput="updateLag()">
+    </div>
+  </div>
+
+  <div class="result-bar" id="lagResults">
+    <div class="result-item">
+      <div class="label">REWIND TIME</div>
+      <div class="value" id="rewindTime">0.040s</div>
+    </div>
+    <div class="result-item">
+      <div class="label">POSITION OFFSET</div>
+      <div class="value" id="posOffset">0.64 studs</div>
+    </div>
+    <div class="result-item">
+      <div class="label">COMPENSATION</div>
+      <div class="value" id="compStatus">ACTIVE</div>
+    </div>
+  </div>
+
+  <div class="canvas-wrap">
+    <div class="canvas-label"><span>LAG COMPENSATION VISUALISER</span></div>
+    <canvas id="lagCanvas" height="260"></canvas>
+  </div>
+
+  <div class="math-block">
+    <h3>WHY THIS MATTERS</h3>
+    <div class="var-list">
+      <span class="var-key">No comp</span><span class="var-val">High-ping players can't hit anyone — shots land behind targets</span>
+      <span class="var-key">With comp</span><span class="var-val">Server validates shot against where target was from shooter's perspective</span>
+      <span class="var-key">SITE-72</span><span class="var-val">Cap rewind at ~200ms max to prevent abuse by artificially high-ping exploiters</span>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 3: DAMAGE FALLOFF -->
+<div class="section" id="tab-falloff">
+  <div class="math-block">
+    <h3>EXPONENTIAL DAMAGE FALLOFF</h3>
+    <div class="formula">D(r) = D_max × e^(−λr)</div>
+    <div class="var-list">
+      <span class="var-key">D_max</span><span class="var-val">Maximum damage at point-blank range</span>
+      <span class="var-key">λ</span><span class="var-val">Falloff constant — higher = faster decay</span>
+      <span class="var-key">r</span><span class="var-val">Distance between shooter and target (studs)</span>
+      <span class="var-key">e</span><span class="var-val">Euler's number ≈ 2.71828</span>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="ctrl-group">
+      <label>MAX DAMAGE <span id="dmaxVal">35</span></label>
+      <input type="range" id="dmaxSlider" min="10" max="100" value="35" oninput="updateFalloff()">
+    </div>
+    <div class="ctrl-group">
+      <label>FALLOFF (λ × 100) <span id="lambdaVal">2.5</span></label>
+      <input type="range" id="lambdaSlider" min="1" max="10" value="2.5" step="0.1" oninput="updateFalloff()">
+    </div>
+    <div class="ctrl-group">
+      <label>DISTANCE (studs) <span id="distVal">20</span></label>
+      <input type="range" id="distSlider" min="1" max="100" value="20" oninput="updateFalloff()">
+    </div>
+    <div class="ctrl-group">
+      <label>HIT ZONE</label>
+      <select id="zoneSelect" onchange="updateFalloff()" style="width:100%;background:var(--surface);color:var(--text);border:1px solid var(--border);padding:6px;font-family:var(--mono);font-size:12px;border-radius:3px;">
+        <option value="2.5">HEAD (×2.5)</option>
+        <option value="1.0" selected>CHEST (×1.0)</option>
+        <option value="0.6">ARMS (×0.6)</option>
+        <option value="0.5">LEGS (×0.5)</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="result-bar">
+    <div class="result-item">
+      <div class="label">BASE DAMAGE</div>
+      <div class="value" id="baseDmg">35.0</div>
+    </div>
+    <div class="result-item">
+      <div class="label">AFTER FALLOFF</div>
+      <div class="value warn" id="falloffDmg">21.3</div>
+    </div>
+    <div class="result-item">
+      <div class="label">FINAL DAMAGE</div>
+      <div class="value danger" id="finalDmg">21.3</div>
+    </div>
+    <div class="result-item">
+      <div class="label">SHOTS TO KILL</div>
+      <div class="value" id="stk">5</div>
+    </div>
+  </div>
+
+  <div class="canvas-wrap">
+    <div class="canvas-label"><span>DAMAGE CURVE</span><span id="curveLabel" style="color:var(--amber)">GLOCK-17 // CHEST</span></div>
+    <canvas id="falloffCanvas" height="220"></canvas>
+  </div>
+</div>
+
+<!-- TAB 4: HIT ZONES -->
+<div class="section" id="tab-zones">
+  <div class="math-block">
+    <h3>FINAL DAMAGE FORMULA</h3>
+    <div class="formula">FinalDamage = D(r) × Z = D_max × e^(−λr) × Z</div>
+    <div class="var-list">
+      <span class="var-key">Z</span><span class="var-val">Zone multiplier — varies by body region</span>
+    </div>
+  </div>
+
+  <div style="margin-bottom:16px;">
+    <div class="controls" style="grid-template-columns:1fr 1fr 1fr; margin-bottom:0;">
+      <div class="ctrl-group">
+        <label>DISTANCE (studs) <span id="zDistVal">15</span></label>
+        <input type="range" id="zDistSlider" min="1" max="80" value="15" oninput="updateZones()">
+      </div>
+      <div class="ctrl-group">
+        <label>MAX DAMAGE <span id="zDmaxVal">35</span></label>
+        <input type="range" id="zDmaxSlider" min="10" max="100" value="35" oninput="updateZones()">
+      </div>
+      <div class="ctrl-group">
+        <label>FALLOFF λ <span id="zLambdaVal">0.025</span></label>
+        <input type="range" id="zLambdaSlider" min="1" max="10" value="2.5" step="0.1" oninput="updateZones()">
+      </div>
+    </div>
+  </div>
+
+  <table class="zone-table">
+    <thead>
+      <tr>
+        <th>ZONE</th>
+        <th>MULTIPLIER</th>
+        <th>DAMAGE @ DIST</th>
+        <th>SHOTS TO KILL</th>
+        <th>SEVERITY</th>
+      </tr>
+    </thead>
+    <tbody id="zoneTableBody"></tbody>
+  </table>
+
+  <div class="canvas-wrap">
+    <div class="canvas-label"><span>HITBOX DIAGRAM</span></div>
+    <canvas id="zoneCanvas" height="340"></canvas>
+  </div>
+</div>
+
+<!-- TAB 5: SERVER FLOW -->
+<div class="section" id="tab-flow">
+  <div class="flow">
+    <div class="flow-step">
+      <div class="flow-num">1</div>
+      <div class="flow-content">
+        <h4>Client Fires</h4>
+        <p>Client sends <code>RemoteEvent:FireServer(origin, direction, timestamp)</code> — nothing else. No damage value, no hit target. The client has zero authority.</p>
+      </div>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-step">
+      <div class="flow-num">2</div>
+      <div class="flow-content">
+        <h4>Timestamp Validation</h4>
+        <p>Server checks <code>|T_server − T_client| &lt; MaxWindow</code>. If timestamp is too old or in the future, the shot is dropped silently and flagged.</p>
+      </div>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-step">
+      <div class="flow-num">3</div>
+      <div class="flow-content">
+        <h4>Position Rewind</h4>
+        <p>Server rewinds all nearby player positions to <code>T_client</code> using stored position history. Raycast runs against rewound positions, not current ones.</p>
+      </div>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-step">
+      <div class="flow-num">4</div>
+      <div class="flow-content">
+        <h4>Ray-Sphere Intersection</h4>
+        <p>Server casts ray from <code>origin</code> along <code>direction</code>. Checks discriminant <code>Δ</code> against each hitbox sphere. First positive intersection wins.</p>
+      </div>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-step">
+      <div class="flow-num">5</div>
+      <div class="flow-content">
+        <h4>Sanity Checks</h4>
+        <p>Verify <code>distance ≤ WeaponRange</code>. Verify shooter isn't dead. Verify rate limit not exceeded <code>(shots/sec ≤ WeaponFireRate)</code>. Any failure → reject + log.</p>
+      </div>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-step">
+      <div class="flow-num">6</div>
+      <div class="flow-content">
+        <h4>Damage Calculation</h4>
+        <p>Server computes <code>D(r) × Z</code>. Applies to target health server-side only. No client can modify this value.</p>
+      </div>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-step">
+      <div class="flow-num">7</div>
+      <div class="flow-content">
+        <h4>Death & Logging</h4>
+        <p>If <code>health ≤ 0</code>, server fires death event → triggers 8s respawn, department spawn logic, SCP containment state update. Every shot logged regardless of outcome.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="math-block">
+    <h3>SITE-72 EXPLOIT FLAGS</h3>
+    <div class="var-list">
+      <span class="var-key">SPEED</span><span class="var-val">|ΔPos| / Δt &gt; MaxSpeed × 1.4 → teleport exploit flag</span>
+      <span class="var-key">DAMAGE</span><span class="var-val">Any damage not originating from server function → instant reject</span>
+      <span class="var-key">RATE</span><span class="var-val">Shots fired faster than weapon fire rate → flag + auto-kick threshold</span>
+      <span class="var-key">RANGE</span><span class="var-val">Hit distance &gt; weapon range → reject, log shooter ID</span>
+      <span class="var-key">STATE</span><span class="var-val">Dead player triggers any game action → session terminate</span>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<script>
+// TAB SWITCHING
+function switchTab(id) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  event.target.classList.add('active');
+  setTimeout(() => {
+    if(id==='ray') drawRay();
+    if(id==='lag') { updateLag(); drawLag(); }
+    if(id==='falloff') updateFalloff();
+    if(id==='zones') updateZones();
+  }, 50);
+}
+
+// ---- TAB 1: RAY CAST ----
+const rayCanvas = document.getElementById('rayCanvas');
+const rctx = rayCanvas.getContext('2d');
+let shooter = {x:0.15, y:0.5};
+let target = {x:0.65, y:0.45};
+const targetR = 0.09;
+let dragging = null;
+
+function resizeCanvas(c) {
+  c.width = c.offsetWidth * window.devicePixelRatio || c.offsetWidth;
+  c.height = parseInt(c.style.height || c.getAttribute('height')) * (c.offsetWidth / c.offsetWidth);
+  c.style.height = c.getAttribute('height') + 'px';
+  c.width = c.offsetWidth;
+  c.height = parseInt(c.getAttribute('height'));
+}
+
+function drawRay() {
+  resizeCanvas(rayCanvas);
+  const w = rayCanvas.width, h = rayCanvas.height;
+  rctx.clearRect(0,0,w,h);
+  rctx.fillStyle = '#0d1117';
+  rctx.fillRect(0,0,w,h);
+
+  const sx = shooter.x*w, sy = shooter.y*h;
+  const tx = target.x*w, ty = target.y*h;
+  const tr = targetR * Math.min(w,h);
+
+  // Direction vector
+  let dx = tx-sx, dy = ty-sy;
+  const len = Math.sqrt(dx*dx+dy*dy);
+  dx/=len; dy/=len;
+
+  // Extend ray
+  const ext = Math.max(w,h)*2;
+  const ex = sx+dx*ext, ey = sy+dy*ext;
+
+  // Discriminant
+  const ocx = sx-tx, ocy = sy-ty;
+  const dotDOC = dx*ocx + dy*ocy;
+  const disc = dotDOC*dotDOC - (ocx*ocx+ocy*ocy - tr*tr);
+  const hit = disc >= 0;
+
+  // Draw grid
+  rctx.strokeStyle = '#1e2d3d'; rctx.lineWidth = 1;
+  for(let i=0;i<w;i+=40){ rctx.beginPath(); rctx.moveTo(i,0); rctx.lineTo(i,h); rctx.stroke(); }
+  for(let j=0;j<h;j+=40){ rctx.beginPath(); rctx.moveTo(0,j); rctx.lineTo(w,j); rctx.stroke(); }
+
+  // Hitbox sphere
+  const grad = rctx.createRadialGradient(tx,ty,0,tx,ty,tr);
+  grad.addColorStop(0, hit ? 'rgba(192,57,43,0.25)' : 'rgba(79,195,247,0.1)');
+  grad.addColorStop(1, 'transparent');
+  rctx.beginPath(); rctx.arc(tx,ty,tr,0,Math.PI*2);
+  rctx.fillStyle = grad; rctx.fill();
+  rctx.strokeStyle = hit ? '#c0392b' : '#4fc3f7';
+  rctx.lineWidth = 2; rctx.setLineDash([4,4]); rctx.stroke(); rctx.setLineDash([]);
+
+  // Ray
+  rctx.beginPath(); rctx.moveTo(sx,sy); rctx.lineTo(ex,ey);
+  rctx.strokeStyle = hit ? 'rgba(192,57,43,0.7)' : 'rgba(0,255,136,0.5)';
+  rctx.lineWidth = 2; rctx.stroke();
+
+  // Shooter
+  rctx.beginPath(); rctx.arc(sx,sy,8,0,Math.PI*2);
+  rctx.fillStyle = '#ffb300'; rctx.fill();
+  rctx.fillStyle = '#080b0f'; rctx.font = 'bold 9px Share Tech Mono';
+  rctx.textAlign='center'; rctx.textBaseline='middle';
+  rctx.fillText('S',sx,sy);
+
+  // Target
+  rctx.beginPath(); rctx.arc(tx,ty,8,0,Math.PI*2);
+  rctx.fillStyle = hit ? '#c0392b' : '#4fc3f7'; rctx.fill();
+  rctx.fillStyle = '#fff'; rctx.fillText('T',tx,ty);
+
+  // Labels
+  rctx.fillStyle = '#6e7a85'; rctx.font = '11px Share Tech Mono';
+  rctx.textAlign='left';
+  rctx.fillText(`O (shooter)`, sx+12, sy-12);
+  rctx.fillText(`C (target)`, tx+12, ty-tr-8);
+  rctx.fillText(`r = ${Math.round(tr)}px`, tx+12, ty-tr+12);
+
+  // Discriminant display
+  rctx.fillStyle = hit ? '#c0392b' : '#00ff88';
+  rctx.font = 'bold 12px Share Tech Mono';
+  rctx.textAlign = 'right';
+  rctx.fillText(`Δ = ${disc.toFixed(1)} → ${hit ? 'HIT' : 'MISS'}`, w-16, h-16);
+
+  document.getElementById('ray-status').textContent = hit ? '● HIT CONFIRMED' : '○ NO HIT';
+  document.getElementById('ray-status').style.color = hit ? 'var(--red)' : 'var(--green)';
+}
+
+function getCanvasPos(canvas, e) {
+  const rect = canvas.getBoundingClientRect();
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  return { x: (clientX-rect.left)/rect.width, y: (clientY-rect.top)/rect.height };
+}
+
+function startDrag(e) {
+  const pos = getCanvasPos(rayCanvas, e);
+  const w=1, h=rayCanvas.height/rayCanvas.width;
+  const ds = Math.hypot(pos.x-shooter.x, pos.y-shooter.y);
+  const dt = Math.hypot(pos.x-target.x, pos.y-target.y);
+  if(ds < 0.05) dragging='shooter';
+  else if(dt < 0.1) dragging='target';
+}
+function doDrag(e) {
+  if(!dragging) return;
+  e.preventDefault();
+  const pos = getCanvasPos(rayCanvas, e);
+  if(dragging==='shooter') shooter={x:Math.max(0.05,Math.min(0.95,pos.x)), y:Math.max(0.05,Math.min(0.95,pos.y))};
+  if(dragging==='target') target={x:Math.max(0.05,Math.min(0.95,pos.x)), y:Math.max(0.05,Math.min(0.95,pos.y))};
+  drawRay();
+}
+function endDrag() { dragging=null; }
+rayCanvas.addEventListener('mousedown', startDrag);
+rayCanvas.addEventListener('mousemove', doDrag);
+rayCanvas.addEventListener('mouseup', endDrag);
+rayCanvas.addEventListener('touchstart', startDrag, {passive:false});
+rayCanvas.addEventListener('touchmove', doDrag, {passive:false});
+rayCanvas.addEventListener('touchend', endDrag);
+
+// ---- TAB 2: LAG COMP ----
+const lagCanvas = document.getElementById('lagCanvas');
+const lctx = lagCanvas.getContext('2d');
+
+function updateLag() {
+  const ping = parseInt(document.getElementById('pingSlider').value);
+  const speed = parseInt(document.getElementById('speedSlider').value);
+  document.getElementById('pingVal').textContent = ping;
+  document.getElementById('speedVal').textContent = speed;
+  const rewind = ping/2/1000;
+  const offset = speed * rewind;
+  document.getElementById('rewindTime').textContent = rewind.toFixed(3)+'s';
+  document.getElementById('posOffset').textContent = offset.toFixed(2)+' studs';
+  const comp = document.getElementById('compStatus');
+  if(ping > 250) { comp.textContent='CAPPED'; comp.className='value warn'; }
+  else { comp.textContent='ACTIVE'; comp.className='value'; }
+  drawLag(ping, speed);
+}
+
+function drawLag(ping=80, speed=16) {
+  resizeCanvas(lagCanvas);
+  const w=lagCanvas.width, h=lagCanvas.height;
+  lctx.clearRect(0,0,w,h);
+  lctx.fillStyle='#0d1117'; lctx.fillRect(0,0,w,h);
+
+  const rewind = Math.min(ping/2/1000, 0.2);
+  const offset = Math.min(speed * rewind * (w*0.008), w*0.3);
+
+  // Timeline
+  const midY = h*0.45;
+  lctx.strokeStyle='#1e2d3d'; lctx.lineWidth=1;
+  lctx.beginPath(); lctx.moveTo(30,midY); lctx.lineTo(w-30,midY); lctx.stroke();
+
+  // Current position
+  const curX = w*0.65;
+  lctx.beginPath(); lctx.arc(curX, midY, 14, 0, Math.PI*2);
+  lctx.fillStyle='rgba(79,195,247,0.15)'; lctx.fill();
+  lctx.strokeStyle='#4fc3f7'; lctx.lineWidth=2; lctx.stroke();
+  lctx.fillStyle='#4fc3f7'; lctx.font='10px Share Tech Mono'; lctx.textAlign='center';
+  lctx.fillText('NOW',curX,midY+1);
+
+  // Rewound position
+  const rewX = curX - offset;
+  lctx.beginPath(); lctx.arc(rewX, midY, 14, 0, Math.PI*2);
+  lctx.fillStyle='rgba(192,57,43,0.2)'; lctx.fill();
+  lctx.strokeStyle='#c0392b'; lctx.lineWidth=2; lctx.setLineDash([4,3]); lctx.stroke(); lctx.setLineDash([]);
+  lctx.fillStyle='#c0392b'; lctx.fillText('FIRE',rewX,midY+1);
+
+  // Arrow between
+  lctx.beginPath(); lctx.moveTo(rewX+16, midY-20); lctx.lineTo(curX-16, midY-20);
+  lctx.strokeStyle='#ffb300'; lctx.lineWidth=1.5; lctx.stroke();
+  lctx.fillStyle='#ffb300'; lctx.font='10px Share Tech Mono'; lctx.textAlign='center';
+  lctx.fillText(`${(speed*(ping/2/1000)).toFixed(1)} studs`, (rewX+curX)/2, midY-28);
+
+  // Shooter
+  lctx.beginPath(); lctx.arc(w*0.2, midY, 12, 0, Math.PI*2);
+  lctx.fillStyle='#ffb300'; lctx.fill();
+  lctx.fillStyle='#080b0f'; lctx.fillText('MTF',w*0.2,midY+1);
+
+  // Ray from shooter to rewound
+  lctx.beginPath(); lctx.moveTo(w*0.2+13,midY); lctx.lineTo(rewX-15,midY);
+  lctx.strokeStyle='rgba(192,57,43,0.6)'; lctx.lineWidth=2; lctx.stroke();
+
+  // Labels
+  lctx.fillStyle='#6e7a85'; lctx.font='11px Share Tech Mono';
+  lctx.textAlign='center';
+  lctx.fillText('P_fire (rewound)', rewX, midY+35);
+  lctx.fillText('P_current', curX, midY+35);
+  lctx.fillStyle='#c9d1d9';
+  lctx.fillText(`ping = ${ping}ms → rewind = ${(ping/2).toFixed(0)}ms`, w/2, h-16);
+}
+
+// ---- TAB 3: FALLOFF ----
+const falloffCanvas = document.getElementById('falloffCanvas');
+const fctx = falloffCanvas.getContext('2d');
+
+function updateFalloff() {
+  const dmax = parseFloat(document.getElementById('dmaxSlider').value);
+  const lambda = parseFloat(document.getElementById('lambdaSlider').value)/100;
+  const dist = parseFloat(document.getElementById('distSlider').value);
+  const zone = parseFloat(document.getElementById('zoneSelect').value);
+  document.getElementById('dmaxVal').textContent = dmax;
+  document.getElementById('lambdaVal').textContent = (lambda*100).toFixed(1);
+  document.getElementById('distVal').textContent = dist;
+  const base = dmax * Math.exp(-lambda*dist);
+  const final = base * zone;
+  document.getElementById('baseDmg').textContent = dmax.toFixed(1);
+  document.getElementById('falloffDmg').textContent = base.toFixed(1);
+  document.getElementById('finalDmg').textContent = final.toFixed(1);
+  document.getElementById('stk').textContent = Math.ceil(100/final);
+  const zname = document.getElementById('zoneSelect').selectedOptions[0].text;
+  document.getElementById('curveLabel').textContent = `GLOCK-17 // ${zname}`;
+  drawFalloff(dmax, lambda, dist, zone);
+}
+
+function drawFalloff(dmax=35, lambda=0.025, curDist=20, zone=1) {
+  resizeCanvas(falloffCanvas);
+  const w=falloffCanvas.width, h=falloffCanvas.height;
+  fctx.clearRect(0,0,w,h);
+  fctx.fillStyle='#0d1117'; fctx.fillRect(0,0,w,h);
+  const pad={l:50,r:20,t:16,b:40};
+  const cw=w-pad.l-pad.r, ch=h-pad.t-pad.b;
+
+  // Grid
+  fctx.strokeStyle='#1e2d3d'; fctx.lineWidth=1;
+  for(let i=0;i<=4;i++){
+    const y=pad.t+ch*(i/4);
+    fctx.beginPath(); fctx.moveTo(pad.l,y); fctx.lineTo(w-pad.r,y); fctx.stroke();
+    fctx.fillStyle='#6e7a85'; fctx.font='10px Share Tech Mono'; fctx.textAlign='right';
+    fctx.fillText(Math.round(dmax*(1-i/4)*zone), pad.l-6, y+4);
+  }
+  for(let i=0;i<=5;i++){
+    const x=pad.l+cw*(i/5);
+    fctx.beginPath(); fctx.moveTo(x,pad.t); fctx.lineTo(x,pad.t+ch); fctx.stroke();
+    fctx.fillStyle='#6e7a85'; fctx.textAlign='center';
+    fctx.fillText(Math.round(i*100/5)+'st', x, h-8);
+  }
+
+  // Curve
+  fctx.beginPath();
+  for(let px=0;px<=cw;px++){
+    const r=px/cw*100;
+    const d=dmax*Math.exp(-lambda*r)*zone;
+    const x=pad.l+px;
+    const y=pad.t+ch*(1-d/(dmax*zone));
+    if(px===0) fctx.moveTo(x,y); else fctx.lineTo(x,y);
+  }
+  fctx.strokeStyle='#c0392b'; fctx.lineWidth=2.5; fctx.stroke();
+
+  // Fill under curve
+  fctx.lineTo(w-pad.r, pad.t+ch); fctx.lineTo(pad.l, pad.t+ch); fctx.closePath();
+  fctx.fillStyle='rgba(192,57,43,0.08)'; fctx.fill();
+
+  // Current distance marker
+  const cx=pad.l+(curDist/100)*cw;
+  const cd=dmax*Math.exp(-lambda*curDist)*zone;
+  const cy=pad.t+ch*(1-cd/(dmax*zone));
+  fctx.beginPath(); fctx.moveTo(cx,pad.t+ch); fctx.lineTo(cx,cy);
+  fctx.strokeStyle='rgba(255,179,0,0.5)'; fctx.lineWidth=1; fctx.setLineDash([4,3]); fctx.stroke(); fctx.setLineDash([]);
+  fctx.beginPath(); fctx.arc(cx,cy,5,0,Math.PI*2);
+  fctx.fillStyle='#ffb300'; fctx.fill();
+  fctx.fillStyle='#ffb300'; fctx.font='11px Share Tech Mono'; fctx.textAlign='left';
+  fctx.fillText(`${cd.toFixed(1)} dmg`, cx+8, cy-4);
+}
+
+// ---- TAB 4: ZONES ----
+const zoneCanvas = document.getElementById('zoneCanvas');
+const zctx = zoneCanvas.getContext('2d');
+const zones = [
+  {name:'HEAD',    mult:2.5, color:'#c0392b'},
+  {name:'CHEST',   mult:1.0, color:'#4fc3f7'},
+  {name:'ARMS',    mult:0.6, color:'#ffb300'},
+  {name:'LEGS',    mult:0.5, color:'#00ff88'},
+];
+
+function updateZones() {
+  const dist = parseFloat(document.getElementById('zDistSlider').value);
+  const dmax = parseFloat(document.getElementById('zDmaxSlider').value);
+  const lambda = parseFloat(document.getElementById('zLambdaSlider').value)/100;
+  document.getElementById('zDistVal').textContent = dist;
+  document.getElementById('zDmaxVal').textContent = dmax;
+  document.getElementById('zLambdaVal').textContent = lambda.toFixed(3);
+  const base = dmax * Math.exp(-lambda*dist);
+  const tbody = document.getElementById('zoneTableBody');
+  tbody.innerHTML = '';
+  zones.forEach(z => {
+    const final = base*z.mult;
+    const stk = Math.ceil(100/final);
+    const pct = Math.min(100, (final/dmax)*100);
+    tbody.innerHTML += `<tr>
+      <td class="zone-name">${z.name}</td>
+      <td class="zone-mult">× ${z.mult}</td>
+      <td class="zone-final" style="color:${z.color}">${final.toFixed(1)}</td>
+      <td style="color:#c9d1d9">${stk}</td>
+      <td class="zone-bar-wrap"><div class="zone-bar" style="width:${pct}%;background:${z.color}"></div></td>
+    </tr>`;
+  });
+  drawZones(base);
+}
+
+function drawZones(base=30) {
+  resizeCanvas(zoneCanvas);
+  const w=zoneCanvas.width, h=zoneCanvas.height;
+  zctx.clearRect(0,0,w,h);
+  zctx.fillStyle='#0d1117'; zctx.fillRect(0,0,w,h);
+  const cx=w*0.38, midY=h*0.5;
+  const scale=Math.min(w,h)*0.0014;
+
+  // Body silhouette
+  // Head
+  zctx.beginPath(); zctx.arc(cx, midY-110*scale, 28*scale, 0, Math.PI*2);
+  zctx.fillStyle='rgba(192,57,43,0.15)'; zctx.fill();
+  zctx.strokeStyle='#c0392b'; zctx.lineWidth=2; zctx.stroke();
+
+  // Torso
+  zctx.beginPath();
+  zctx.roundRect(cx-25*scale, midY-78*scale, 50*scale, 80*scale, 5);
+  zctx.fillStyle='rgba(79,195,247,0.1)'; zctx.fill();
+  zctx.strokeStyle='#4fc3f7'; zctx.stroke();
+
+  // Arms
+  [-1,1].forEach(side=>{
+    zctx.beginPath();
+    zctx.roundRect(cx+side*25*scale, midY-75*scale, side*30*scale, 70*scale, 5);
+    zctx.fillStyle='rgba(255,179,0,0.1)'; zctx.fill();
+    zctx.strokeStyle='#ffb300'; zctx.stroke();
+  });
+
+  // Legs
+  [-1,1].forEach(side=>{
+    zctx.beginPath();
+    zctx.roundRect(cx+side*22*scale, midY+2*scale, 20*scale, 90*scale, 5);
+    zctx.fillStyle='rgba(0,255,136,0.08)'; zctx.fill();
+    zctx.strokeStyle='#00ff88'; zctx.stroke();
+  });
+
+  // Labels
+  const labels = [
+    {text:`HEAD ×2.5 → ${(base*2.5).toFixed(1)}`, x:cx+65*scale, y:midY-110*scale, color:'#c0392b'},
+    {text:`CHEST ×1.0 → ${(base*1.0).toFixed(1)}`, x:cx+65*scale, y:midY-40*scale, color:'#4fc3f7'},
+    {text:`ARMS ×0.6 → ${(base*0.6).toFixed(1)}`, x:cx+65*scale, y:midY-10*scale, color:'#ffb300'},
+    {text:`LEGS ×0.5 → ${(base*0.5).toFixed(1)}`, x:cx+65*scale, y:midY+50*scale, color:'#00ff88'},
+  ];
+  zctx.font=`${Math.max(10,12*scale/0.0014)}px Share Tech Mono`;
+  labels.forEach(l=>{
+    zctx.fillStyle=l.color;
+    zctx.textAlign='left';
+    zctx.fillText(l.text, l.x, l.y+4);
+  });
+}
+
+// Init
+window.addEventListener('resize', ()=>{
+  drawRay(); updateLag(); updateFalloff(); updateZones();
+});
+setTimeout(()=>{ drawRay(); updateLag(); updateFalloff(); updateZones(); }, 100);
+</script>
+</body>
+</html>
